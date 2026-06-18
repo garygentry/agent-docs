@@ -43,8 +43,9 @@
       "fixedAt": "2026-06-18T00:00:00Z"
     },
     "forge-3-specs": {
-      "status": "in-progress",
+      "status": "complete",
       "version": 1,
+      "commitHash": "98c81ac",
       "basedOnVersions": {
         "forge-1-prd": 1,
         "forge-2-tech": 1
@@ -62,6 +63,13 @@
         "TRACEABILITY.md"
       ],
       "completedAt": "2026-06-18T00:00:00Z"
+    },
+    "forge-verify-specs": {
+      "status": "findings-applied",
+      "findingsFile": ".verification/VERIFY-specs-2026-06-18.md",
+      "findingsCount": 21,
+      "verifiedAt": "2026-06-18T00:00:00Z",
+      "fixedAt": "2026-06-18T00:00:00Z"
     }
   }
 }

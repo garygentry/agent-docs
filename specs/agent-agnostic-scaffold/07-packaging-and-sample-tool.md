@@ -510,8 +510,12 @@ bundle (§3.1).
 - **Skill file**: emitted as a Cursor **rule** at `rules/docs-helper.mdc` (MUST be
   `.mdc`), frontmatter `{ description, globs: [], alwaysApply: false }`. The skill
   `name` survives only as the filename.
-- **Verbatim**: the `references/style-guide.md` copy (per `04` §8 skill-owned refs are
-  carried alongside).
+- **Verbatim**: the `references/style-guide.md` copy is carried alongside the rule as a
+  skill-owned verbatim record (`04-transforms.md §4.6` — "Skill-owned references /
+  verbatim copies"). Because the skill is flattened to a `rules/<n>.mdc` rule, the exact
+  relpath the verbatim `references/` files land under is defined by `04` §4.6, which is
+  authoritative for the chosen cursor verbatim relpath; this section defers to that path
+  rather than asserting a specific one here.
 - **Drops** (`fallback`): `name` (now only in filename), the `metadata`
   (`argument-hint`, `allowed-tools`) — no Cursor `.mdc` field for these (`04` §8.2).
 

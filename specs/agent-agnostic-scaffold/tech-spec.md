@@ -84,6 +84,10 @@ agent-docs/
       __golden__/<target>/…       # checked-in expected output (REQ-VALID-04)
 ```
 
+> The detailed module set — incl. `config.ts`, `schema-gen.ts`, `frontmatter.ts`,
+> `paths.ts`, `targets/index.ts`, `plugin.ts` — is finalized in
+> `01-architecture-layout.md` §2 (authoritative); the tree here is indicative.
+
 Public API surface: the emitter is invoked via package scripts (`bun run build`,
 `bun run build --check`); `src/index.ts` re-exports the core functions
 (`loadManifest`, `emit`, `driftCheck`) for programmatic reuse (REQ-REUSE-01).
@@ -258,24 +262,21 @@ Carry over feature-forge's determinism guarantees and extend them:
 ```ts
 const ToolType = z.enum(["skill", "agent", "command", "script", "reference"]);
 
-const TargetOverrides = z.record(
-  z.enum(["codex", "cursor", "gemini", "copilot", "claude"]),
-  z.object({
-    exclude: z.boolean().optional(),        // skip this tool for this target
-    // file-level override declarations are discovered from overrides/<target>/,
-    // not enumerated here; this slot is for per-target mapping flags
-  }).optional()
-);
+const Target = z.enum(["claude", "codex", "copilot", "cursor", "gemini"]);
+
+const TargetToolFlags = z.object({
+  exclude: z.boolean().optional(),          // skip this tool for this target
+  // file-level override declarations are discovered from overrides/<target>/,
+  // not enumerated here; this slot is for per-target mapping flags
+});
 
 const ToolEntry = z.object({
   name: z.string(),                         // kebab-case; matches source path
   type: ToolType,
   source: z.string(),                       // repo-relative path to canonical file/dir
   description: z.string().optional(),
-  targets: TargetOverrides.optional(),      // per-target overrides/exclusions (REQ-DISC-01)
+  targets: z.record(Target, TargetToolFlags).optional(), // per-target flags/exclusions (REQ-DISC-01)
 });
-
-const Target = z.enum(["claude", "codex", "copilot", "cursor", "gemini"]);
 
 // Emitter config surface — single source of truth for paths + targets (REQ-REUSE-01).
 // Defaults match the repo-root layout (§2); another repo overrides them here.
@@ -306,7 +307,7 @@ emitter module hardcodes a root path or the target list.
 - `AgentRecord { name, description, body, claudeKeys (ordered), sourcePath }`
 - `CommandRecord { name, description, argumentHint?, body, sourcePath }` _(new)_
 - `EmittedFile { relpath, content, mode }`
-- `DropRecord { target, source, construct, reason }`
+- `DropRecord { target, source, construct, kind: "fallback" | "skipped", reason }`
 - `ManifestEntry { name, description, extra }` (codex/gemini aggregate manifests)
 - `VerbatimRecord { relpath, sourcePath }` — files copied byte-identical (no provenance header)
 - `EmitResult { files: EmittedFile[], drops: DropRecord[], manifestEntries, overridden: string[], verbatim: VerbatimRecord[] }`
@@ -337,6 +338,11 @@ emitter module hardcodes a root path or the target list.
 Slash-command rows are added per §3.5; exact target formats finalized in
 forge-3-specs (TQ-1). Fixed target emission order: `claude, codex, copilot,
 cursor, gemini`.
+
+> **Authoritative source:** `04` §7–§10 (2026 research) governs per-target
+> filenames/formats and supersedes this table where they differ — explicitly:
+> codex skills are `skills/<n>/SKILL.md` (not `<n>.md`); codex/cursor agents use
+> the TOML/`.md` forms in 04.
 
 ### 5.3 Provenance forms (ported)
 
@@ -428,6 +434,8 @@ External (dev/runtime, versions matched to rauf):
 - `zod` ^3.24, `zod-to-json-schema`
 - `yaml` (YAML serialization for frontmatter + codex `openai.yaml`; byte-stable
   options)
+- `smol-toml` ^1.3.0 (byte-stable TOML serializer; already committed in 01 §3
+  `package.json`) — required for byte-stable Codex/Gemini TOML output (REQ-EMIT-06)
 - `vitest` ^3, `eslint` 9 + `typescript-eslint`, `prettier` ^3
 
 Internal: none (greenfield). No production dependency on feature-forge or rauf —

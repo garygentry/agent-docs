@@ -52,7 +52,9 @@ All shared types (`SkillRecord`, `AgentRecord`, `CommandRecord`, `EmittedFile`,
   extras nested under `metadata`, incl. `argument-hint`, `allowed-tools`), and
   `serializeFrontmatter()`.
 - `01-architecture-layout.md` — module placement: `src/targets/index.ts` (registry)
-  and `src/targets/{claude,codex,copilot,cursor,gemini}.ts`.
+  and `src/targets/{claude,codex,copilot,cursor,gemini}.ts`; and `smol-toml@^1.3.0`
+  (committed in §3 `package.json`) — the byte-stable TOML serializer used by
+  `codex.ts` (agent `.toml`) and `gemini.ts` (command `.toml`).
 
 Must be implemented **after** `03` (consumes its records) and **before**
 `05-overrides-publish-determinism.md` (which calls the registry and serializes
@@ -164,8 +166,16 @@ export interface TargetTransform {
    * transformed, with entries pre-sorted by `name` (determinism, REQ-EMIT-06).
    * Serialization (provenance Form C / YAML) lives in this method; the engine in
    * `05` only writes the returned EmittedFile.
+   *
+   * `identity` ({ name, version }) is the resolved project identity from
+   * `PluginMeta` (07 §3.2). The engine passes it to every target; only gemini
+   * (§9.4) consumes it (extension name/version). codex and the no-op targets
+   * ignore it.
    */
-  aggregateManifest(entries: ManifestEntry[]): EmittedFile | null;
+  aggregateManifest(
+    entries: ManifestEntry[],
+    identity: { name: string; version: string },
+  ): EmittedFile | null;
 }
 ```
 
@@ -317,6 +327,49 @@ and a `GENERATION-REPORT.md` row (`00` §3.5; `06-validation-and-drift-guard.md`
 The `exclude` flag (`00` §2.2 `TargetToolFlags`) is handled by the engine (it skips
 calling the transform and records a `kind: "skipped"` drop) — transforms themselves
 never see excluded tools.
+
+### 4.6 Skill-owned references / verbatim copies (REQ-EMIT-03)
+
+A `SkillRecord` carries `ownRefs: string[]` (`00` §3.4) — skill-owned
+reference/script files (repo-relative POSIX paths, e.g. a skill's `references/`
+subtree) that must be copied **byte-identical, with no provenance header**, into
+each adapter alongside the skill. These are not transformed; they become
+`VerbatimRecord`s (`00` §3.4) carried out of the transform via the existing
+`EmitResult.verbatim` channel — the engine in `05` performs the actual copy and the
+per-target transform only declares the intended destination relpath.
+
+**Per-target destination relpath.** For every target whose skill lives in its own
+directory, the refs land **under that skill directory**, preserving the subtree
+relative to the skill root:
+
+| Target | Skill artifact | Verbatim refs destination (adapter-relative) |
+|--------|---------------|-----------------------------------------------|
+| claude | `skills/<n>/SKILL.md` | `skills/<n>/<ref-subpath>` |
+| codex | `skills/<n>/SKILL.md` | `skills/<n>/<ref-subpath>` |
+| gemini | `skills/<n>/<n>.md` | `skills/<n>/<ref-subpath>` |
+| copilot | `instructions/<n>.instructions.md` (flat) | `instructions/<n>/<ref-subpath>` |
+| **cursor** | `rules/<n>.mdc` (**flattened**, no skill dir) | `rules/<n>/<ref-subpath>` |
+
+`<ref-subpath>` is the `ownRefs` entry rebased to its position relative to the
+skill's canonical root (e.g. a canonical `skills/foo/references/bar.md` → adapter
+`references/bar.md` under the per-target skill location).
+
+**Cursor (flattened) resolution.** The Cursor skill is emitted as a single flat
+`rules/<n>.mdc` rule file (§8) — there is **no** `rules/<n>/` skill directory. We
+choose to **co-locate the refs subtree under a sibling directory named for the
+rule**: `rules/<n>/<ref-subpath>` (i.e. `rules/<n>.mdc` is the rule file and
+`rules/<n>/…` is its refs directory). This is collision-free (`<n>.mdc` is a file,
+`<n>/` is a directory — distinct entries in `rules/`), keeps a ref's relative path
+stable across all targets (always `<skill-location>/<ref-subpath>`), and keeps the
+refs discoverable directly beside the rule that owns them. (The alternative — a
+single shared `references/` sibling pooling all skills' refs — was rejected because
+it loses per-skill ownership and risks cross-skill filename collisions.)
+
+Each such copy is emitted as a `VerbatimRecord { relpath, sourcePath }` (no
+provenance header per `00` §3.4 / §5 below). Per-skill transforms surface these
+through the engine's `EmitResult.verbatim`; `TransformOutput` (§3) itself does not
+add a new field — the verbatim set is assembled by the engine in `05` from each
+skill's `ownRefs` using the destination relpath rule above.
 
 ## 5. Provenance forms (REQ-EMIT-06)
 
@@ -562,6 +615,13 @@ drop-with-record). `model` and `model_reasoning_effort` MAY be representable but
   },
 ```
 
+`stringifyYaml` is sourced from the `yaml` package (mirroring `03` §2.3's
+`serializeFrontmatter` sourcing note): `import { stringify as stringifyYaml } from "yaml";`.
+The two-arg call `stringifyYaml(doc, YAML_OPTS)` uses `yaml`'s single-options-arg
+`stringify(value, options)` overload (no replacer); `YAML_OPTS` carries
+`sortKeys: false`, so the `_generated`-first Form C ordering of the literal `doc`
+object is preserved byte-for-byte (REQ-EMIT-06).
+
 ### 7.5 `renderCodexAgentToml`
 
 ```typescript
@@ -579,12 +639,11 @@ drop-with-record). `model` and `model_reasoning_effort` MAY be representable but
 declare function renderCodexAgentToml(agent: AgentRecord): string;
 ```
 
-WARNING: there is no `@iarna/toml`/TOML writer in the tech-spec §9 dependency list
-(only `yaml`). The implementer MUST either (a) add a vetted TOML serializer that
-emits byte-stable triple-quoted multiline strings, or (b) hand-render TOML with an
-escaping helper. Multiline `developer_instructions` MUST use TOML triple-quote
-literals (`'''…'''`) with deterministic escaping. Flag this as a dependency
-decision for `05`/`08`.
+RESOLVED — byte-stable TOML via `smol-toml@^1.3.0` (see
+`01-architecture-layout.md` §3 `package.json`). Residual carry-forward:
+verify/pre-sort `smol-toml` key ordering and use TOML triple-quoted literals
+(`'''…'''`) for multiline `developer_instructions` to satisfy REQ-EMIT-06, with
+deterministic escaping.
 
 ### 7.6 Before/after example
 
@@ -722,7 +781,8 @@ DropRecords: `skill.argument-hint` (fallback), `skill.metadata` (fallback).
 in `gemini-extension.json`; agents emit `.gemini/agents/<n>.md`
 (`{name, description}`, optional `tools`/`model`); commands emit
 `.gemini/commands/<n>.toml` (**TOML**, required `prompt`, optional `description`,
-args via `{{args}}`, subdir → `:` namespacing).
+args via `{{args}}`). Gemini `:` subdir command namespacing is **OUT of scope for
+v1** — see §9.2 note.
 
 ### 9.1 Rules table
 
@@ -781,13 +841,16 @@ export const geminiTransform: TargetTransform = {
     return { files: [{ relpath: `commands/${command.name}.toml`, content, mode: 0o644 }], drops, manifestEntries: [] };
   },
 
-  aggregateManifest(entries) {
+  // identity = { name, version } threaded from the resolved PluginMeta (07 §3.2,
+  // the single source of project identity). The engine in 05 passes it through;
+  // other targets ignore the second arg (their aggregateManifest is a no-op/null).
+  aggregateManifest(entries, identity: { name: string; version: string }) {
     if (entries.length === 0) return null;
     // Form C: _generated FIRST key in strict JSON. entries pre-sorted by name (05).
     const doc = {
       _generated: { source: "skills/*", regenerate: REGEN_CMD },
-      name: "agent-docs",   // WARNING §12: extension name/version are canon constants
-      version: "0.1.0",
+      name: identity.name,        // from resolved PluginMeta (07 §3.2), not a literal
+      version: identity.version,  // from resolved PluginMeta (07 §3.2), not a literal
       skills: entries.map((e) => ({ name: e.name, description: e.description })),
     };
     const content = JSON.stringify(doc, null, 2) + "\n"; // strict JSON, 2-space, trailing \n (REQ-EMIT-06)
@@ -797,9 +860,12 @@ export const geminiTransform: TargetTransform = {
 ```
 
 `renderGeminiCommandToml` emits a leading `# GENERATED …` TOML comment, then
-`description = "…"` and a triple-quoted `prompt = '''…'''` in fixed order; subdir
-namespacing (`a/b.toml` → command `a:b`) is handled by the relpath the engine
-assigns (out of scope for the per-command transform, which sees a flat `name`).
+`description = "…"` and a triple-quoted `prompt = '''…'''` in fixed order. Gemini
+`:` subdir command namespacing (`a/b.toml` → command `a:b`) is **OUT of scope for
+v1**: nested command sources are flattened/not supported — the per-command transform
+sees a flat `name` and emits `commands/<name>.toml` only. The MVP `docs-helper`
+sample (`07-packaging-and-sample-tool.md`) has no nested commands, so no flattening
+or `:` mapping is exercised. (No engine performs `:` namespacing this version.)
 
 WARNING (LOW): the research notes Gemini's `GEMINI.md` context file has **no
 frontmatter**. We do NOT emit a `GEMINI.md`; we emit per-skill `.md` + the
@@ -807,6 +873,10 @@ extension manifest. If a future version wants a `GEMINI.md` aggregate, it is For
 (HTML comment) — flagged but not implemented here.
 
 ### 9.3 `gemini-extension.json` example (Form C)
+
+The `name`/`version` below are illustrative values produced from the resolved
+`PluginMeta` identity (07 §3.2) threaded into `aggregateManifest` — they are not
+hardcoded by the transform.
 
 ```json
 {
@@ -976,15 +1046,19 @@ low confidence — expanding the keep-set is a deliberate future change once ver
 - **WARNING (Cursor command args):** no confirmed structured argument syntax;
   `argument-hint` is dropped with a record (MEDIUM-LOW), not mapped.
 - **WARNING (Gemini GEMINI.md frontmatter):** `GEMINI.md` has no frontmatter (LOW);
-  we do not emit it — per-skill `.md` + `gemini-extension.json` only. Extension
-  `name`/`version` in the manifest are canon constants the implementer must source
-  from `07-packaging-and-sample-tool.md`, not hardcode here.
+  we do not emit it — per-skill `.md` + `gemini-extension.json` only.
+- **RESOLVED (Gemini extension name/version):** the extension `name`/`version` are
+  **not** hardcoded; gemini's `aggregateManifest(entries, identity)` receives a
+  `{ name, version }` identity threaded from the resolved `PluginMeta`
+  (`07-packaging-and-sample-tool.md` §3.2, the single source of project identity).
+  §9.2/§9.3 reflect this.
 - **WARNING (Copilot mode vs agent):** `.github/agents/<n>.agent.md` (current) is
   emitted over legacy `.github/chatmodes/<n>.chatmode.md`. The `tools`/`model`
   keep-set for `.agent.md` is MEDIUM; default to dropping both if unconfirmed.
-- **WARNING (TOML serializer):** tech-spec §9 lists no TOML writer. Codex agents and
-  Gemini commands need byte-stable TOML (triple-quoted multiline strings). Resolve
-  the dependency in `05`/`08`.
+- **RESOLVED (TOML serializer):** byte-stable TOML via `smol-toml@^1.3.0` (committed
+  in `01-architecture-layout.md` §3 `package.json`), used by Codex agents and Gemini
+  commands. Residual carry-forward: verify/pre-sort `smol-toml` key ordering and use
+  TOML triple-quoted literals (`'''…'''`) for multiline strings to satisfy REQ-EMIT-06.
 
 These supersede feature-forge where they differ: feature-forge emitted **markdown**
 codex agents and Cursor `.mdc` agents and had **no** TOML or `.agent.md`/`.toml`

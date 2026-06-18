@@ -135,33 +135,45 @@ export interface ParsedDoc {
 
 /** A canonical skill (skills/<name>/SKILL.md plus owned refs/scripts). */
 export interface SkillRecord {
+  /** kebab-case canonical identifier (== source basename). */
   name: string;
+  /** Canonical description; "" when frontmatter omits it. */
   description: string;
   /** Remaining frontmatter beyond name/description (e.g. metadata, allowed-tools). */
   metadata: Map<string, unknown>;
+  /** Markdown body after the frontmatter block, byte-preserved. */
   body: string;
   /** Skill-owned reference/script files (repo-relative), copied per adapter. */
   ownRefs: string[];
+  /** Repo-relative POSIX path to the canonical source. */
   sourcePath: string;
 }
 
 /** A canonical agent/subagent (agents/<name>.md). */
 export interface AgentRecord {
+  /** kebab-case canonical identifier (== source basename). */
   name: string;
+  /** Canonical description; "" when frontmatter omits it. */
   description: string;
   /** Non-name/description frontmatter, insertion order preserved (claude-only keys). */
   claudeKeys: Map<string, unknown>;
+  /** Markdown body after the frontmatter block, byte-preserved. */
   body: string;
+  /** Repo-relative POSIX path to the canonical source. */
   sourcePath: string;
 }
 
 /** A canonical slash command (commands/<name>.md). */
 export interface CommandRecord {
+  /** kebab-case canonical identifier (== source basename). */
   name: string;
+  /** Canonical description; "" when frontmatter omits it. */
   description: string;
   /** Claude `argument-hint`, if present. */
   argumentHint?: string;
+  /** Markdown body after the frontmatter block, byte-preserved. */
   body: string;
+  /** Repo-relative POSIX path to the canonical source. */
   sourcePath: string;
 }
 ```
@@ -173,6 +185,7 @@ export interface CommandRecord {
 export interface EmittedFile {
   /** adapters/<target>-relative POSIX path. */
   relpath: string;
+  /** File contents to write, byte-preserved. */
   content: string;
   /** POSIX file mode; 0o644 for docs, 0o755 for scripts. */
   mode: number;
@@ -199,7 +212,9 @@ export interface VerbatimRecord {
 
 /** Aggregate manifest entry (codex openai.yaml / gemini gemini-extension.json). */
 export interface ManifestEntry {
+  /** kebab-case canonical identifier (== source basename). */
   name: string;
+  /** Canonical description; "" when frontmatter omits it. */
   description: string;
   /** Target-specific extra fields, if any. */
   extra?: Record<string, unknown>;

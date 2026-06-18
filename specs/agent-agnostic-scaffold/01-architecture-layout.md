@@ -32,7 +32,7 @@ agent-docs/
   .prettierrc.json
   .bun-version                         # 1.3.10
   bun.lock
-  .gitignore                           # node_modules/, *.tmp-*, NOT adapters/
+  .gitignore                           # node_modules/, dist/, *.tmp-*, NOT adapters/
 
   tools.manifest.json                  # config block + tool registry (00 §2.4)
   schemas/
@@ -88,7 +88,8 @@ agent-docs/
 ```
 
 Note: `adapters/` is intentionally **committed** (CON-02) and NOT gitignored;
-`.gitignore` excludes only `node_modules/` and the `*.tmp-*` staging dirs.
+`.gitignore` excludes `node_modules/`, `dist/` (generated build output, not
+committed), and the `*.tmp-*` staging dirs.
 
 ### 2.3 Authoring conventions (REQ-STRUCT-04)
 
@@ -188,8 +189,8 @@ no compile step is needed to execute the emitter. `tsc` is used only for
 ## 5. Module export structure (`src/index.ts`)
 
 The barrel re-exports everything from `00-core-definitions.md` plus the three
-top-level entry functions, enabling programmatic reuse in other repos
-(REQ-REUSE-01):
+top-level entry functions and the packaging export, enabling programmatic reuse
+in other repos (REQ-REUSE-01):
 
 ```typescript
 export * from "./errors.js";        // 00 §4 error hierarchy
@@ -197,6 +198,8 @@ export * from "./model.js";         // 00 §2–3 types + Zod schemas + constant
 export { loadManifest } from "./manifest.js";      // (manifestPath) => Manifest
 export { emit } from "./emit.js";                  // (Manifest, roots) => EmitResult
 export { driftCheck } from "./driftguard.js";      // (Manifest, roots) => DriftEntry[]
+export { emitPlugin } from "./plugin.js";          // (07) emit .claude-plugin/ manifests
+export type { PluginMeta } from "./plugin.js";     // (07) plugin manifest metadata
 ```
 
 The CLI (`src/cli.ts`) is the only place that reads `process.argv`/exit codes;
@@ -211,8 +214,13 @@ the library functions are pure(ish) and throw the `00 §4` errors.
 - [ ] `bun install` then `bun run build` produces `adapters/` from the canonical
       source with zero manual steps (REQ-EMIT-01, SC-01).
 - [ ] `bun run gate` passes on a clean tree (CON-05 CI bar).
-- [ ] `adapters/` is tracked by git (CON-02); `node_modules/` and `*.tmp-*` are not.
-- [ ] `src/index.ts` re-exports every public type from `00` and the three entry
-      functions — importable from another repo via the package `main`/`types`.
-- [ ] No emitter module hardcodes a root path or the target list; all come from
-      `EmitterConfig` (REQ-REUSE-01).
+- [ ] `adapters/` is tracked by git (CON-02); `node_modules/`, `dist/`, and
+      `*.tmp-*` are not.
+- [ ] `src/index.ts` re-exports every public type from `00`, the three entry
+      functions, and the `emitPlugin` packaging export — importable from another
+      repo via the package `main`/`types`.
+- [ ] No emitter module hardcodes an adapter or canonical *root* path or the
+      target list — all roots come from `EmitterConfig` (REQ-REUSE-01). (The
+      committed JSON-Schema output path `schemas/…` and the build-output `dist/`
+      are intentional fixed build-tooling paths, not part of the reuse config
+      surface.)

@@ -212,6 +212,9 @@ products.
 - **OOS-04**: Generalizing the scaffold into a standalone, distributable **CLI** tool
   to run anywhere (beyond the in-repo build command). Reusability is a design
   requirement (REQ-REUSE-01), but a packaged CLI is not.
+- **OOS-05**: Gemini slash-command subdirectory `:` namespacing (nested-command
+  `a/b` → `a:b`) is out of scope for v1. The MVP `docs-helper` sample has no nested
+  commands; commands are emitted flat.
 
 ## 7. Open Questions
 

@@ -231,6 +231,15 @@ drift.
 dir, then swaps it into place with a single rename — so a failed run never leaves a
 partial or mixed tree (fail-intact, tech-spec §3.6).
 
+The published set includes both `EmitResult.files` **and** `EmitResult.verbatim` (`00`
+§3.4). The `verbatim` records — skill-owned reference/`ownRefs` copies routed through the
+verbatim channel (`04-transforms.md §4.6`) — are published byte-for-byte to their
+per-target relpaths alongside `files`, under the same atomic staging+rename and the same
+determinism guarantees (no provenance header, no trailing-newline fixups, §6). The engine
+overlays overrides onto and concatenates both channels into the single `EmittedFile[]`
+passed to `publish`, so a verbatim copy is staged, swapped, and stale-cleaned exactly like
+any other emitted file.
+
 ```typescript
 import type { EmittedFile } from "./model.js";
 

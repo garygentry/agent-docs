@@ -84,11 +84,16 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { Manifest } from "../../model.js";
+import { resolveRoots } from "../../config.js"; // 01 §2 / 05 §7.1: EmitterConfig → ResolvedRoots
+import type { ResolvedRoots } from "../../config.js"; // 05 §7.1
 import type { z } from "zod";
 
 /** Resolved absolute roots for a temp fixture repo. */
 export interface FixtureRepo {
+  /** Filesystem path to the temp repo root (for disk-reading helpers only). */
   root: string;
+  /** Resolved absolute roots (05 §7.1) — the `roots` arg to emit/driftCheck. */
+  roots: ResolvedRoots;
   manifestPath: string;
   manifest: z.infer<typeof Manifest>;
 }
@@ -176,7 +181,11 @@ export function makeFixtureRepo(opts: {
   const manifest = Manifest.parse({ version: 1, config: {}, tools });
   const manifestPath = path.join(root, "tools.manifest.json");
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
-  return { root, manifestPath, manifest };
+  // ResolvedRoots is what emit/driftCheck consume (05 §7.1); config.ts resolves
+  // each EmitterConfig path against repoRoot (01 §2). repo.root stays the raw
+  // string path for the disk-reading helpers (anyAdapterFile etc.).
+  const roots = resolveRoots(manifest.config, root);
+  return { root, roots, manifestPath, manifest };
 }
 
 /** Remove a fixture repo created by makeFixtureRepo. */
@@ -185,10 +194,43 @@ export function cleanupFixtureRepo(repo: FixtureRepo): void {
 }
 ```
 
+`emit` is **in-memory only** (`05` §3/§4): it returns an `EmitResult` and never
+writes. Tests that read committed adapter files from disk must first run the full
+build pipeline — emit → applyOverrides → publish (`05` §1 orchestration). The
+`buildAndPublish` helper below is the single seam for those disk-reading
+drift/orphan/override tests; it returns the `OverlayResult` (`05` §3.2) so the
+caller can assert on `overridden` / `staleOverrides` without re-reading raw `emit`.
+
+```typescript
+// src/test/__fixtures__/index.ts (continued)
+import { emit } from "../../index.js"; // (manifest, roots) => EmitResult (04/05)
+import { applyOverrides, loadOverrides } from "../../overrides.js"; // 05 §3
+import { publish } from "../../publish.js"; // 05 §4 — atomic swap into adaptersDir
+import type { OverlayResult } from "../../overrides.js"; // 05 §3.2
+
+/**
+ * Run the real build pipeline and publish the overlaid set to `roots.adaptersDir`.
+ * Mirrors `emit.ts`'s orchestration (05 §1): emit → loadOverrides →
+ * applyOverrides → publish. Returns the {@link OverlayResult} so callers can read
+ * `overridden` / `staleOverrides` (05 §3.2) directly instead of inspecting `emit`.
+ */
+export function buildAndPublish(
+  manifest: z.infer<typeof Manifest>,
+  roots: ResolvedRoots,
+): OverlayResult {
+  const result = emit(manifest, roots);
+  const overrides = loadOverrides(roots, manifest.config.targets);
+  const overlay = applyOverrides(result.files, overrides);
+  publish(overlay.files, roots.adaptersDir);
+  return overlay;
+}
+```
+
 > NOTE — `overrides` paths in `makeFixtureRepo` are keyed by their
-> `<target>/<relpath>` form under `overrides/`, e.g.
-> `"cursor/skills/sample/sample.mdc"`, matching the override layout in
-> `05-overrides-publish-determinism.md`.
+> `<target>/<relpath>` form under `overrides/`, where `<relpath>` matches the
+> `EmittedFile.relpath` the target would write (05 §2). E.g. a cursor skill
+> override is `"cursor/rules/sample.mdc"` (cursor emits skills as `rules/<n>.mdc`,
+> 04 §8.1) — matching the override layout in `05-overrides-publish-determinism.md`.
 
 ## 4. Per-area unit suites
 
@@ -202,6 +244,7 @@ invalid input. Uses inline JSON, not the fixture repo.
 import { describe, expect, it } from "vitest";
 import { loadManifestFromString } from "../manifest.js"; // see 02 for exact export
 import { ManifestValidationError } from "../errors.js";
+import { TARGET_ORDER } from "../model.js"; // 00 §5: authoritative default target set
 
 describe("manifest validation", () => {
   it("accepts a minimal valid manifest and applies config defaults", () => {
@@ -209,6 +252,10 @@ describe("manifest validation", () => {
       JSON.stringify({ version: 1, tools: [{ name: "x", type: "skill", source: "skills/x/SKILL.md" }] }),
     );
     expect(m.config.adaptersDir).toBe("adapters");
+    // `config.targets` defaults to the authoritative TARGET_ORDER (00 §5; the
+    // EmitterConfig default in 00 §2.3 / 02 §… is the same array). `claude` is a
+    // member of the configurable targets array — NOT implicit — so it appears here.
+    expect(m.config.targets).toEqual(TARGET_ORDER);
     expect(m.config.targets).toEqual(["claude", "codex", "copilot", "cursor", "gemini"]);
   });
 
@@ -293,7 +340,7 @@ describe("discover", () => {
   it("reads a skill source into a SkillRecord", () => {
     const repo = makeFixtureRepo({ skills: ["sample"] });
     repos.push(repo);
-    const records = discover(repo.manifest, repo.root);
+    const records = discover(repo.manifest, repo.roots);
     const skill = records.skills.find((s) => s.name === "sample");
     expect(skill?.description).toMatch(/minimal sample skill/);
   });
@@ -302,7 +349,7 @@ describe("discover", () => {
     const repo = makeFixtureRepo({ skills: ["sample"] });
     repos.push(repo);
     repo.manifest.tools.push({ name: "ghost", type: "agent", source: "agents/ghost.md" });
-    expect(() => discover(repo.manifest, repo.root)).toThrow(SourceNotFoundError);
+    expect(() => discover(repo.manifest, repo.roots)).toThrow(SourceNotFoundError);
   });
 });
 ```
@@ -325,7 +372,13 @@ import type { SkillRecord, AgentRecord } from "../../model.js";
 const skill: SkillRecord = {
   name: "sample",
   description: "A sample skill.",
-  metadata: new Map([["argument-hint", "<topic>"]]),
+  // Canonical TQ-3 shape (03 §4, §5 rule 2; 03 example line: metadata =
+  // Map(1){ "metadata" => Map{...} }): every extra key nests under a single
+  // "metadata" key whose value is an ordered Map. `hintValue` (04 §4.1) reads
+  // skill.metadata.get("metadata").get("argument-hint").
+  metadata: new Map<string, unknown>([
+    ["metadata", new Map([["argument-hint", "<topic>"]])],
+  ]),
   body: "# sample\n\nBody.\n",
   ownRefs: [],
   sourcePath: "skills/sample/SKILL.md",
@@ -431,7 +484,7 @@ Two load-bearing properties: **emit twice → zero diff**, and **emit then
 ```typescript
 import { afterEach, describe, expect, it } from "vitest";
 import { emit, driftCheck } from "../../index.js";
-import { cleanupFixtureRepo, makeFixtureRepo } from "../__fixtures__";
+import { buildAndPublish, cleanupFixtureRepo, makeFixtureRepo } from "../__fixtures__";
 
 let repos: ReturnType<typeof makeFixtureRepo>[] = [];
 afterEach(() => {
@@ -449,28 +502,43 @@ function snapshot(files: { relpath: string; content: string }[]): string {
 
 describe("determinism (SC-03)", () => {
   it("two emits over unchanged input produce byte-identical output", () => {
+    // The command tool is REQUIRED here: it forces TOML serialization (codex agent
+    // `.toml`, gemini command `.toml` — 04 §7.1/§9.1), so this case also exercises
+    // smol-toml's key ordering, not just YAML/markdown. See the TOML case below and §10.
     const repo = makeFixtureRepo({ skills: ["sample"], agents: ["helper"], commands: ["go"] });
     repos.push(repo);
-    const a = emit(repo.manifest, repo.root);
-    const b = emit(repo.manifest, repo.root);
+    const a = emit(repo.manifest, repo.roots);
+    const b = emit(repo.manifest, repo.roots);
     expect(snapshot(b.files)).toBe(snapshot(a.files));
   });
 
-  it("emit then driftCheck reports no drift entries", () => {
+  it("re-emits TOML constructs byte-identically (smol-toml key order, 01 §3)", () => {
+    // A command emits TOML on codex (agents/<n>.toml) and gemini (commands/<n>.toml).
+    // Assert the TOML files specifically are byte-stable across two emits — this is
+    // the determinism property the RESOLVED serializer (smol-toml@^1.3.0) must hold.
+    const repo = makeFixtureRepo({ commands: ["go"] });
+    repos.push(repo);
+    const a = emit(repo.manifest, repo.roots).files.filter((f) => f.relpath.endsWith(".toml"));
+    const b = emit(repo.manifest, repo.roots).files.filter((f) => f.relpath.endsWith(".toml"));
+    expect(a.length).toBeGreaterThan(0); // TOML is actually exercised
+    expect(snapshot(b)).toBe(snapshot(a));
+  });
+
+  it("build-then-driftCheck reports no drift entries", () => {
     const repo = makeFixtureRepo({ skills: ["sample"] });
     repos.push(repo);
-    // emit publishes adapters/ into repo.root (see 05 publish.ts)
-    emit(repo.manifest, repo.root);
-    const drift = driftCheck(repo.manifest, repo.root);
+    // emit is in-memory; buildAndPublish writes adapters/ so driftCheck has a
+    // committed tree to diff against (05 §1, §4).
+    buildAndPublish(repo.manifest, repo.roots);
+    const drift = driftCheck(repo.manifest, repo.roots);
     expect(drift).toEqual([]);
   });
 });
 ```
 
-> `emit`/`driftCheck` here are the barrel exports (`01` §5). If `emit` returns an
-> in-memory `EmitResult` without writing, the second test calls the publish step
-> from `05-overrides-publish-determinism.md` first; bind to whatever the publish
-> contract in `05` specifies. The property (zero drift after a clean emit) is fixed.
+> `emit`/`driftCheck` are the barrel exports (`01` §5). `emit` is in-memory; the
+> disk-reading property (zero drift after a clean build) goes through
+> `buildAndPublish` (emit → applyOverrides → publish, `05` §1). The property is fixed.
 
 ### 5.2 Drift / orphan guard (`src/test/driftguard.test.ts`, SC-04, SC-05a, REQ-VALID-01)
 
@@ -483,9 +551,9 @@ throws `DriftError` carrying `entries: DriftEntry[]` (`00` §4 / §3.6).
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { emit, driftCheck } from "../../index.js";
+import { driftCheck } from "../../index.js";
 import { DriftError } from "../../errors.js";
-import { cleanupFixtureRepo, makeFixtureRepo } from "../__fixtures__";
+import { buildAndPublish, cleanupFixtureRepo, makeFixtureRepo } from "../__fixtures__";
 
 let repos: ReturnType<typeof makeFixtureRepo>[] = [];
 afterEach(() => {
@@ -493,9 +561,9 @@ afterEach(() => {
   repos = [];
 });
 
-/** Locate one emitted adapter file path on disk for a target. */
-function anyAdapterFile(root: string, target: string): string {
-  const base = path.join(root, "adapters", target);
+/** Locate one committed adapter file path on disk for a target (post-publish). */
+function anyAdapterFile(adaptersDir: string, target: string): string {
+  const base = path.join(adaptersDir, target);
   const walk = (d: string): string[] =>
     fs.readdirSync(d, { withFileTypes: true }).flatMap((e) =>
       e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)],
@@ -507,21 +575,21 @@ describe("drift guard (SC-04)", () => {
   it("fails with kind:content when a committed adapter is hand-edited", () => {
     const repo = makeFixtureRepo({ skills: ["sample"] });
     repos.push(repo);
-    emit(repo.manifest, repo.root);
-    const file = anyAdapterFile(repo.root, "cursor");
+    buildAndPublish(repo.manifest, repo.roots); // emit is in-memory; publish writes adapters/
+    const file = anyAdapterFile(repo.roots.adaptersDir, "cursor");
     fs.appendFileSync(file, "\nhand edit\n");
 
-    const drift = driftCheck(repo.manifest, repo.root);
+    const drift = driftCheck(repo.manifest, repo.roots);
     expect(drift.some((d) => d.kind === "content")).toBe(true);
   });
 
-  it("passes again once the edit is reverted (re-emit)", () => {
+  it("passes again once the edit is reverted (rebuild)", () => {
     const repo = makeFixtureRepo({ skills: ["sample"] });
     repos.push(repo);
-    emit(repo.manifest, repo.root);
-    fs.appendFileSync(anyAdapterFile(repo.root, "cursor"), "\nhand edit\n");
-    emit(repo.manifest, repo.root); // re-emit overwrites the hand edit
-    expect(driftCheck(repo.manifest, repo.root)).toEqual([]);
+    buildAndPublish(repo.manifest, repo.roots);
+    fs.appendFileSync(anyAdapterFile(repo.roots.adaptersDir, "cursor"), "\nhand edit\n");
+    buildAndPublish(repo.manifest, repo.roots); // re-publish overwrites the hand edit
+    expect(driftCheck(repo.manifest, repo.roots)).toEqual([]);
   });
 });
 
@@ -529,22 +597,29 @@ describe("orphan detection (SC-05a)", () => {
   it("flags a committed adapter with no canonical source as kind:orphan", () => {
     const repo = makeFixtureRepo({ skills: ["sample", "doomed"] });
     repos.push(repo);
-    emit(repo.manifest, repo.root); // commits adapters for both skills
+    buildAndPublish(repo.manifest, repo.roots); // commits adapters for both skills
     // remove "doomed" from the manifest but leave its committed adapters in place
     repo.manifest.tools = repo.manifest.tools.filter((t) => t.name !== "doomed");
 
-    const drift = driftCheck(repo.manifest, repo.root);
-    expect(drift.some((d) => d.kind === "orphan" && d.relpath.includes("doomed"))).toBe(true);
+    const drift = driftCheck(repo.manifest, repo.roots);
+    // Derive the expectation from the doomed tool, not a hardcoded cursor path:
+    // some orphan entry's relpath must reference the removed "doomed" tool.
+    expect(
+      drift.some((d) => d.kind === "orphan" && d.relpath.includes("doomed")),
+    ).toBe(true);
   });
 
   it("a rebuild removes the orphaned adapter files (stale cleanup, REQ-EMIT-08)", () => {
     const repo = makeFixtureRepo({ skills: ["sample", "doomed"] });
     repos.push(repo);
-    emit(repo.manifest, repo.root);
+    buildAndPublish(repo.manifest, repo.roots);
     repo.manifest.tools = repo.manifest.tools.filter((t) => t.name !== "doomed");
-    emit(repo.manifest, repo.root); // atomic re-publish drops the whole subtree
-    const exists = fs.existsSync(path.join(repo.root, "adapters", "cursor", "skills", "doomed"));
-    expect(exists).toBe(false);
+    const overlay = buildAndPublish(repo.manifest, repo.roots); // atomic re-publish drops the whole subtree
+    // No SURVIVING committed file references "doomed" — walk the freshly emitted
+    // set rather than asserting a hardcoded adapters/cursor/skills/doomed path
+    // (per-target layouts differ: cursor rules/, gemini skills/, etc — 04 §6–§10).
+    expect(overlay.files.some((f) => f.relpath.includes("doomed"))).toBe(false);
+    expect(driftCheck(repo.manifest, repo.roots)).toEqual([]); // and no orphan drift remains
   });
 });
 
@@ -552,10 +627,10 @@ describe("DriftError shape", () => {
   it("carries typed DriftEntry[] so the CLI can print which files and how", () => {
     const repo = makeFixtureRepo({ skills: ["sample"] });
     repos.push(repo);
-    emit(repo.manifest, repo.root);
-    fs.appendFileSync(anyAdapterFile(repo.root, "cursor"), "\nx\n");
+    buildAndPublish(repo.manifest, repo.roots);
+    fs.appendFileSync(anyAdapterFile(repo.roots.adaptersDir, "cursor"), "\nx\n");
     // cli.ts wraps driftCheck non-empty result in DriftError (06)
-    const drift = driftCheck(repo.manifest, repo.root);
+    const drift = driftCheck(repo.manifest, repo.roots);
     const err = new DriftError("drift", drift);
     expect(err.code).toBe("DRIFT_DETECTED");
     expect(err.entries.length).toBeGreaterThan(0);
@@ -574,8 +649,10 @@ never a thrown error (tech-spec §7; `00` §4 note).
 import { afterEach, describe, expect, it } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { emit, driftCheck } from "../index.js";
-import { cleanupFixtureRepo, makeFixtureRepo } from "./__fixtures__";
+import { driftCheck } from "../index.js";
+import { applyOverrides, loadOverrides } from "../overrides.js"; // 05 §3
+import { emit } from "../index.js";
+import { buildAndPublish, cleanupFixtureRepo, makeFixtureRepo } from "./__fixtures__";
 
 let repos: ReturnType<typeof makeFixtureRepo>[] = [];
 afterEach(() => {
@@ -583,17 +660,21 @@ afterEach(() => {
   repos = [];
 });
 
-const OVERRIDE_REL = "cursor/skills/sample/sample.mdc";
+// Cursor emits a skill as `rules/<n>.mdc` (04 §8.1), so the override slot that
+// replaces the sample skill's cursor output is `cursor/rules/sample.mdc` — the
+// EmittedFile.relpath it shadows (05 §2). The override path MUST match an emitted
+// relpath exactly or it is stale.
+const OVERRIDE_REL = "cursor/rules/sample.mdc";
 const OVERRIDE_BODY = "---\ndescription: hand authored\nalwaysApply: true\n---\nCustom.\n";
 
 describe("override slots (SC-05)", () => {
   it("overlays author content into the target output and survives rebuild", () => {
     const repo = makeFixtureRepo({ skills: ["sample"], overrides: { [OVERRIDE_REL]: OVERRIDE_BODY } });
     repos.push(repo);
-    emit(repo.manifest, repo.root);
-    emit(repo.manifest, repo.root); // rebuild must NOT clobber the override
+    buildAndPublish(repo.manifest, repo.roots);
+    buildAndPublish(repo.manifest, repo.roots); // rebuild must NOT clobber the override
     const onDisk = fs.readFileSync(
-      path.join(repo.root, "adapters", "cursor", "skills", "sample", "sample.mdc"),
+      path.join(repo.roots.adaptersDir, "cursor", "rules", "sample.mdc"),
       "utf8",
     );
     expect(onDisk).toBe(OVERRIDE_BODY);
@@ -602,32 +683,36 @@ describe("override slots (SC-05)", () => {
   it("driftCheck passes — an override is not drift", () => {
     const repo = makeFixtureRepo({ skills: ["sample"], overrides: { [OVERRIDE_REL]: OVERRIDE_BODY } });
     repos.push(repo);
-    emit(repo.manifest, repo.root);
-    expect(driftCheck(repo.manifest, repo.root)).toEqual([]);
+    buildAndPublish(repo.manifest, repo.roots);
+    expect(driftCheck(repo.manifest, repo.roots)).toEqual([]);
   });
 
   it("overridden files carry NO provenance header (author content, §3.4)", () => {
     const repo = makeFixtureRepo({ skills: ["sample"], overrides: { [OVERRIDE_REL]: OVERRIDE_BODY } });
     repos.push(repo);
-    const result = emit(repo.manifest, repo.root);
-    expect(result.overridden).toContain(OVERRIDE_REL);
-    const file = result.files.find((f) => f.relpath === "cursor/skills/sample/sample.mdc")!;
+    // Read `overridden` from the OverlayResult (05 §3.2), not raw emit — emit
+    // produces only the pre-overlay file set; applyOverrides computes `overridden`.
+    const overlay = buildAndPublish(repo.manifest, repo.roots);
+    expect(overlay.overridden).toContain(OVERRIDE_REL);
+    const file = overlay.files.find((f) => f.relpath === OVERRIDE_REL)!;
     expect(file.content).not.toMatch(/GENERATED — DO NOT EDIT/);
   });
 
   it("a stale override is a non-fatal warning, not a throw", () => {
     const repo = makeFixtureRepo({
       skills: ["sample"],
-      overrides: { "cursor/skills/gone/gone.mdc": "x" }, // no canonical 'gone'
+      overrides: { "cursor/rules/gone.mdc": "x" }, // no canonical 'gone'
     });
     repos.push(repo);
-    let result!: ReturnType<typeof emit>;
+    let overlay!: ReturnType<typeof applyOverrides>;
     expect(() => {
-      result = emit(repo.manifest, repo.root);
+      // applyOverrides (05 §3.2) collects stale overrides; it never throws.
+      const result = emit(repo.manifest, repo.roots);
+      const overrides = loadOverrides(repo.roots, repo.manifest.config.targets);
+      overlay = applyOverrides(result.files, overrides);
     }).not.toThrow();
-    // staleOverrides surfaced via the report model (06 / 00 §3.5)
-    // assert through the rendered report or the EmitResult→ReportModel mapping in 06
-    expect(JSON.stringify(result)).toMatch(/gone/);
+    // staleOverrides is a first-class OverlayResult field (05 §3.2; feeds 06 / 00 §3.5).
+    expect(overlay.staleOverrides).toContain("cursor/rules/gone.mdc");
   });
 });
 ```
@@ -673,10 +758,25 @@ import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import { emit } from "../../index.js";
 import { loadManifest } from "../../manifest.js";
+import { resolveRoots } from "../../config.js"; // 05 §7.1
 
 const REPO_ROOT = path.resolve(__dirname, "../../.."); // src/test → repo root
 const GOLDEN_ROOT = path.resolve(__dirname, "__golden__");
 const SAMPLE = "sample"; // the OQ-04 sample skill name (07)
+
+/**
+ * Exact bundle-relative (`<target>/`-stripped) relpaths the sample SKILL emits per
+ * target, pinned from the per-target rules tables in 04 §6–§10 (do NOT infer from
+ * extension/`.includes(SAMPLE)` heuristics — those silently admit unrelated files).
+ * A skill contributes its per-target file PLUS each target's aggregate manifest.
+ */
+const SAMPLE_RELPATHS: Record<string, string[]> = {
+  claude: [`skills/${SAMPLE}/SKILL.md`], // 04 §6.1
+  codex: [`skills/${SAMPLE}/SKILL.md`, "agents/openai.yaml"], // 04 §7.1 (skill + aggregate)
+  copilot: [`instructions/${SAMPLE}.instructions.md`], // 04 §10.1
+  cursor: [`rules/${SAMPLE}.mdc`], // 04 §8.1
+  gemini: [`skills/${SAMPLE}/${SAMPLE}.md`, "gemini-extension.json"], // 04 §9.1 (skill + aggregate)
+};
 
 /** Read all golden files for a target as relpath→content. */
 function readGolden(target: string): Map<string, string> {
@@ -695,24 +795,28 @@ function readGolden(target: string): Map<string, string> {
 
 describe("golden snapshot — sample skill (SC-02, REQ-VALID-04)", () => {
   const manifest = loadManifest(path.join(REPO_ROOT, "tools.manifest.json"));
-  const result = emit(manifest, REPO_ROOT);
+  const roots = resolveRoots(manifest.config, REPO_ROOT); // emit takes ResolvedRoots (05 §7.1)
+  const result = emit(manifest, roots);
 
   for (const target of ["claude", "codex", "copilot", "cursor", "gemini"]) {
     it(`emits ${target} byte-equal to the golden`, () => {
       const golden = readGolden(target);
+      // Select emitted files by the EXACT pinned per-target relpaths (04 §6–§10),
+      // not by extension/substring heuristics.
+      const wanted = new Set(SAMPLE_RELPATHS[target]);
       const emitted = new Map(
         result.files
           .filter((f) => f.relpath.startsWith(`${target}/`))
-          .filter((f) => f.relpath.includes(SAMPLE) || f.relpath.endsWith(".yaml") || f.relpath.endsWith(".json"))
-          .map((f) => [f.relpath.slice(target.length + 1), f.content]),
+          .map((f) => [f.relpath.slice(target.length + 1), f.content] as const)
+          .filter(([rel]) => wanted.has(rel)),
       );
       for (const [rel, content] of golden) {
         expect(emitted.get(rel), `missing/changed: ${target}/${rel}`).toBe(content);
       }
-      // every golden file is accounted for
-      expect([...emitted.keys()].sort()).toEqual(
-        expect.arrayContaining([...golden.keys()]),
-      );
+      // Bidirectional set equality (V-013): a newly emitted sample-scoped file with
+      // no golden counterpart (or a deleted one) MUST fail, so use exact equality —
+      // arrayContaining would let extra emitted files slip through.
+      expect([...emitted.keys()].sort()).toEqual([...golden.keys()].sort());
     });
   }
 });
@@ -740,19 +844,27 @@ listing). A schema-shape check (no missing required keys) stands in for an actua
 install.
 
 ```typescript
-import { describe, expect, it } from "vitest";
-import { emitPlugin } from "../plugin.js"; // see 07 for exact export
-import { makeFixtureRepo, cleanupFixtureRepo } from "./test/__fixtures__"; // adjust to actual path
+import { afterEach, describe, expect, it } from "vitest";
+import { emitPlugin } from "./plugin.js"; // co-located src/plugin.test.ts → src/plugin.ts; see 07 for exact export
+import { cleanupFixtureRepo, makeFixtureRepo } from "./test/__fixtures__"; // src/*.test.ts → src/test/__fixtures__
+
+let repos: ReturnType<typeof makeFixtureRepo>[] = [];
+afterEach(() => {
+  repos.forEach(cleanupFixtureRepo);
+  repos = [];
+});
 
 describe("plugin packaging (SC-07)", () => {
   it("produces plugin.json with required manifest keys", () => {
     const repo = makeFixtureRepo({ skills: ["sample"] });
-    const out = emitPlugin(repo.manifest, repo.root);
+    repos.push(repo);
+    // emitPlugin takes a PluginMeta assembled from package.json + manifest config
+    // (07 §3.3, `emitPlugin(meta)`); bind the assembly to whatever 07 exposes.
+    const out = emitPlugin(repo.manifest, repo.roots);
     const plugin = out.files.find((f) => f.relpath.endsWith("plugin.json"))!;
     const json = JSON.parse(plugin.content);
     expect(json).toHaveProperty("name");
     expect(json).toHaveProperty("version");
-    cleanupFixtureRepo(repo);
   });
 });
 ```
@@ -787,7 +899,7 @@ describe("emitted manifest schemas (REQ-VALID-03)", () => {
   it("codex openai.yaml validates against the expected shape", () => {
     const repo = makeFixtureRepo({ agents: ["helper"] });
     repos.push(repo);
-    const result = emit(repo.manifest, repo.root);
+    const result = emit(repo.manifest, repo.roots);
     const file = result.files.find((f) => f.relpath === "codex/agents/openai.yaml")!;
     expect(() => OpenAiYamlShape.parse(parseYaml(file.content))).not.toThrow();
   });
@@ -795,7 +907,7 @@ describe("emitted manifest schemas (REQ-VALID-03)", () => {
   it("gemini gemini-extension.json validates and leads with _generated", () => {
     const repo = makeFixtureRepo({ skills: ["sample"] });
     repos.push(repo);
-    const result = emit(repo.manifest, repo.root);
+    const result = emit(repo.manifest, repo.roots);
     const file = result.files.find((f) => f.relpath === "gemini/gemini-extension.json")!;
     const json = JSON.parse(file.content);
     expect(Object.keys(json)[0]).toBe("_generated"); // Form C provenance (00 §5 / 04)
@@ -900,18 +1012,23 @@ must be implemented after them:
       reviewed diff — goldens never auto-update on a plain `vitest run`.
 - [ ] `schemas/tools.manifest.schema.json` equals a fresh `schema:gen` output (§7.2).
 
-## Cross-cutting WARNING — byte-stable TOML serializer not yet in deps
+## Cross-cutting note — byte-stable TOML serializer (RESOLVED)
 
-`04-transforms.md`/`05-overrides-publish-determinism.md` may emit **Codex agents
-(TOML)** and/or **Gemini commands (TOML)** depending on the slash-command formats
-finalised in those docs (tech-spec §3.5, TQ-1). Byte-stable golden tests (§6) and
-the drift guard (§5.2) require a **deterministic, byte-stable TOML serializer at
-runtime**. `package.json` (`01` §3) currently lists only `zod`,
-`zod-to-json-schema`, and `yaml` as runtime deps — **there is no TOML library**.
+`04-transforms.md`/`05-overrides-publish-determinism.md` emit **Codex agents**
+(`agents/<n>.toml`, 04 §7.1) and **Gemini commands** (`commands/<n>.toml`, 04 §9.1)
+as TOML. Byte-stable golden tests (§6) and the drift guard (§5.2) require a
+**deterministic, byte-stable TOML serializer at runtime**.
 
-ACTION FOR IMPLEMENTER: if any target emits TOML, add a byte-stable TOML serializer
-(e.g. `smol-toml` or `@iarna/toml`) to `dependencies` and pin its serialization
-options for stable key order, exactly as `YAML_OPTS` does for YAML (`00` §5).
-Without this, the TOML golden snapshots in §6 and the determinism guarantee
-(REQ-EMIT-06) are **not achievable**. Verify the chosen library produces identical
-bytes across runs before checking in any TOML golden.
+This is **resolved**: `01-architecture-layout.md` §3 pins **`smol-toml@^1.3.0`** as
+the runtime TOML serializer (alongside `zod`, `zod-to-json-schema`, `yaml`). It is
+no longer an open implementer action.
+
+The remaining concern is narrow and verifiable: confirm `smol-toml` produces
+**deterministic key ordering** so two emits yield byte-identical TOML. The
+determinism suite (§5.1) now exercises exactly this — its TOML-specific case
+re-emits a command tool (which serializes to codex `.toml` + gemini `.toml`) and
+asserts byte-identical output across runs, and §5.1's combined fixture
+(`skills` + `agents` + `commands`) ensures the TOML path is covered in the
+whole-set determinism assertion. The golden goldens (§6) pin the bytes. Key order
+must be controlled exactly as `YAML_OPTS`/`KEY_ORDER` control YAML (`00` §5); the
+§5.1 cases are the regression guard that it stays controlled.
