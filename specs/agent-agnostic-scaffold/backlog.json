@@ -69,8 +69,8 @@
         "src/manifest.test.ts covers valid load, invalid manifest, and missing source",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:33:07.292Z",
       "dependsOn": [
         "002"
       ],
