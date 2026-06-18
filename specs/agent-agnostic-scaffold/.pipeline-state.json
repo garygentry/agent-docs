@@ -1,0 +1,20 @@
+{
+  "feature": "agent-agnostic-scaffold",
+  "pipelineStatus": "active",
+  "currentStage": "forge-2-tech",
+  "createdAt": "2026-06-18T00:00:00Z",
+  "updatedAt": "2026-06-18T00:00:00Z",
+  "notes": "Canonical = Claude-native form; adapters are transforms OF Claude artifacts. Targets: Codex, Cursor, Gemini, Copilot. Tool types: skills, agents/subagents, slash commands, shared scripts/references. Emitter + scripts on Bun+TypeScript (CON-01; repo has no package.json yet). Adapters committed in-repo under adapters/<target>/ (CON-02), generated + per-target override slots that survive rebuild. Discovery via explicit tool manifest (single source feeding emitter + drift guard). Per-target transform rules; best-effort fallback for unsupported constructs. Idempotent re-run AND byte-stable output are P0 (REQ-EMIT-05/06) backing a local+CI drift guard. Validation: drift guard, schema validation, golden snapshots, coverage report. Canonical side packaged as installable Claude plugin (P1). Reusable across repos (P1). MVP = structure + emitter + 1 sample tool emitting to all 4 targets. OUT OF SCOPE: actual doc tools' content, doc-site generator feature, publishing/release automation, standalone CLI. Reference feature-forge's own adapters/ for transform rules.",
+  "stages": {
+    "forge-1-prd": {
+      "status": "complete",
+      "version": 1,
+      "commitHash": "2d0bba1",
+      "basedOnVersions": {},
+      "artifacts": [
+        "PRD.md"
+      ],
+      "completedAt": "2026-06-18T00:00:00Z"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "specsDir": "./specs",
+  "docsDir": "./docs/architecture",
+  "backlogDir": null,
+  "gitCommitAfterStage": true,
+  "commitPrefix": "forge",
+  "stack": null,
+  "typeCheckCommand": null,
+  "testCommand": null,
+  "loopIterationMultiplier": 1.5
+}
