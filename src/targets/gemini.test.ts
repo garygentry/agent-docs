@@ -50,14 +50,10 @@ describe("geminiTransform (04 §9)", () => {
   it("transformSkill emits skills/<n>/<n>.md, drops metadata, contributes an aggregate entry", () => {
     const out = geminiTransform.transformSkill(makeSkill());
     expect(out.files[0]!.relpath).toBe("skills/docs-helper/docs-helper.md");
-    expect(out.files[0]!.content).toContain(
-      PROVENANCE.yamlComment("skills/docs-helper/SKILL.md"),
-    );
+    expect(out.files[0]!.content).toContain(PROVENANCE.yamlComment("skills/docs-helper/SKILL.md"));
     expect(out.drops.map((d) => d.construct)).toEqual(["skill.metadata"]);
     expect(out.drops[0]!.kind).toBe("fallback");
-    expect(out.manifestEntries).toEqual([
-      { name: "docs-helper", description: "Help with docs." },
-    ]);
+    expect(out.manifestEntries).toEqual([{ name: "docs-helper", description: "Help with docs." }]);
   });
 
   it("transformAgent emits agents/<n>.md and drops every structural claudeKey", () => {

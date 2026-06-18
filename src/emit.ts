@@ -8,7 +8,6 @@ import type {
   EmittedFile,
   Manifest,
   ManifestEntry,
-  Target,
   VerbatimRecord,
 } from "./model.js";
 import { skillVerbatimRecords } from "./targets/_shared.js";
@@ -45,7 +44,7 @@ function byName<T extends { name: string }>(a: T, b: T): number {
  * build:
  *
  * 1. `discover()` (007) parses the canonical sources into typed records.
- * 2. For each {@link Target} in {@link TARGET_ORDER} (deterministic), look up its
+ * 2. For each target in {@link TARGET_ORDER} (deterministic), look up its
  *    {@link TargetTransform} in the registry (008) and run
  *    `transformSkill`/`transformAgent`/`transformCommand` over the records.
  * 3. Collect every {@link EmittedFile}, {@link DropRecord} and

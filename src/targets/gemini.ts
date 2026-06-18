@@ -1,9 +1,5 @@
 import { stringify as stringifyToml } from "smol-toml";
-import {
-  dropAllClaudeKeys,
-  orderFrontmatter,
-  renderFrontmatter,
-} from "./_shared.js";
+import { dropAllClaudeKeys, orderFrontmatter, renderFrontmatter } from "./_shared.js";
 import type { TargetTransform } from "./_shared.js";
 import { PROVENANCE, REGEN_CMD } from "../model.js";
 import type { DropRecord } from "../model.js";

@@ -27,16 +27,16 @@ parse/split/record logic is otherwise ported from that source.
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-|--------|-------------|---------|
-| REQ-TOOLS-01 | Discover skills (SKILL.md + owned refs/scripts) | 3.2, 3.3 |
-| REQ-TOOLS-02 | Discover agents (system prompt, tool grants, triggers) | 3.4 |
-| REQ-TOOLS-03 | Discover slash commands | 3.5 |
-| REQ-TOOLS-04 | Discover shared references and scripts | 3.6 |
-| REQ-DISC-01/02 | Manifest is the single discovery input | 3.1 |
-| REQ-EMIT-06 / REQ-REL-01 | Stable POSIX-path sort; order-preserving frontmatter | 2.2, 3.1, 3.7 |
-| REQ-SEC-01 | Reads confined to canonical roots; path-escape refused | 3.1, 3.8 |
-| TQ-3 | Canonical skill frontmatter shape; metadata/allowed-tools/argument-hint capture | 4 |
+| REQ ID                   | Requirement                                                                     | Section       |
+| ------------------------ | ------------------------------------------------------------------------------- | ------------- |
+| REQ-TOOLS-01             | Discover skills (SKILL.md + owned refs/scripts)                                 | 3.2, 3.3      |
+| REQ-TOOLS-02             | Discover agents (system prompt, tool grants, triggers)                          | 3.4           |
+| REQ-TOOLS-03             | Discover slash commands                                                         | 3.5           |
+| REQ-TOOLS-04             | Discover shared references and scripts                                          | 3.6           |
+| REQ-DISC-01/02           | Manifest is the single discovery input                                          | 3.1           |
+| REQ-EMIT-06 / REQ-REL-01 | Stable POSIX-path sort; order-preserving frontmatter                            | 2.2, 3.1, 3.7 |
+| REQ-SEC-01               | Reads confined to canonical roots; path-escape refused                          | 3.1, 3.8      |
+| TQ-3                     | Canonical skill frontmatter shape; metadata/allowed-tools/argument-hint capture | 4             |
 
 ## 1. Dependencies
 
@@ -188,13 +188,7 @@ order) and the same `b`, for any Map produced by `parseFrontmatter`.
 ### 3.1 Entry point
 
 ```typescript
-import type {
-  Manifest,
-  SkillRecord,
-  AgentRecord,
-  CommandRecord,
-  ToolEntry,
-} from "./model.js";
+import type { Manifest, SkillRecord, AgentRecord, CommandRecord, ToolEntry } from "./model.js";
 
 /** A shared (non-tool-owned) file copied verbatim into every adapter. */
 export interface SharedFile {
@@ -250,13 +244,13 @@ export function discover(manifest: Manifest, roots: Roots): DiscoveryResult;
 
 Dispatch by `ToolEntry.type` (`00` §2.1 `ToolType`):
 
-| `type` | Handler | Record |
-|--------|---------|--------|
-| `skill` | `parseSkill` (3.3) | `SkillRecord` |
-| `agent` | `parseAgent` (3.4) | `AgentRecord` |
-| `command` | `parseCommand` (3.5) | `CommandRecord` |
-| `script` | collected as owned-by-manifest into `sharedScripts` (3.6) | `SharedFile` |
-| `reference` | collected into `sharedRefs` (3.6) | `SharedFile` |
+| `type`      | Handler                                                   | Record          |
+| ----------- | --------------------------------------------------------- | --------------- |
+| `skill`     | `parseSkill` (3.3)                                        | `SkillRecord`   |
+| `agent`     | `parseAgent` (3.4)                                        | `AgentRecord`   |
+| `command`   | `parseCommand` (3.5)                                      | `CommandRecord` |
+| `script`    | collected as owned-by-manifest into `sharedScripts` (3.6) | `SharedFile`    |
+| `reference` | collected into `sharedRefs` (3.6)                         | `SharedFile`    |
 
 After dispatch, each record array and the shared lists are sorted:
 `arr.sort((a, b) => (a.sourcePath < b.sourcePath ? -1 : a.sourcePath > b.sourcePath ? 1 : 0))`.
@@ -525,11 +519,11 @@ TQ-3 resolution), so `04-transforms.md` can decide per-target what to keep/drop.
 
 ```yaml
 ---
-name: <kebab-case, == directory name>          # required
-description: <string>                          # optional, byte-preserved
-metadata:                                      # optional mapping; ALL extra keys
-  argument-hint: "<...>"                        #   live here, NOT at top level
-  allowed-tools: [...]                          #   (e.g. allowed-tools, etc.)
+name: <kebab-case, == directory name> # required
+description: <string> # optional, byte-preserved
+metadata: # optional mapping; ALL extra keys
+  argument-hint: "<...>" #   live here, NOT at top level
+  allowed-tools: [...] #   (e.g. allowed-tools, etc.)
 ---
 ```
 
@@ -591,6 +585,7 @@ name: summarize
 description: Summarize the current document.
 argument-hint: "[path]"
 ---
+
 Summarize the document at the given path...
 ```
 

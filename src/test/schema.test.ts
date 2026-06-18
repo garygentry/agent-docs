@@ -51,7 +51,9 @@ describe("emitted manifest schemas (REQ-VALID-03)", () => {
     const json = JSON.parse(file!.content) as Record<string, unknown>;
     expect(Object.keys(json)[0]).toBe("_generated"); // Form C provenance (00 §5 / 04)
     expect(() => GeminiExtensionSchema.parse(json)).not.toThrow();
-    expect(() => validateTargetManifest("gemini", targetFiles(result.files, "gemini"))).not.toThrow();
+    expect(() =>
+      validateTargetManifest("gemini", targetFiles(result.files, "gemini")),
+    ).not.toThrow();
   });
 
   it("rejects a corrupted codex aggregate (no silent pass)", () => {

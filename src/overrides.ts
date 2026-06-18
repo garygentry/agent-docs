@@ -109,7 +109,10 @@ export function loadOverrides(roots: ResolvedRoots, targets: Target[]): Override
 
     for (const absPath of walkFiles(targetRoot, overridesDir)) {
       // Bundle-relative POSIX path (relative to overrides/<target>/).
-      const relpath = absPath.slice(targetRoot.length + 1).split(sep).join("/");
+      const relpath = absPath
+        .slice(targetRoot.length + 1)
+        .split(sep)
+        .join("/");
       const adapterRelpath = `${target}/${relpath}`;
       byAdapterPath.set(adapterRelpath, {
         target,

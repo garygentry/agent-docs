@@ -211,3 +211,26 @@
 - A target with no aggregate present (e.g. skill-only emit → no codex openai.yaml)
   is a legitimate no-op, NOT an error. claude/copilot/cursor are always no-ops.
 - Re-exported from src/index.ts barrel for item 024's schema.test.ts.
+
+## 025 — gate lint+format fix
+
+- `src/emit.ts`: dropped the unused `Target` import; its only use was a JSDoc
+  `{@link Target}` (now plain "target"). `src/schema-gen.ts`: removed the 3 unused
+  `// eslint-disable-next-line no-console` directives (no-console isn't enabled).
+- Added a **`.prettierignore`** (repo had none) — load-bearing change.
+  `prettier --write .` mangles GENERATED/STATE artifacts that have their own
+  determinism guards, so they MUST be excluded from `format:check`:
+  - `schemas/` — byte-stable via `schema:gen`/`schema:check`; prettier reflow
+    diverges from `JSON.stringify` output → would fight schema:check.
+  - `adapters/`, `.claude-plugin/` — emitter output, guarded by `build:check`.
+    (prettier reflowed GENERATION-REPORT.md → had to `bun run build` to restore
+    canonical bytes.)
+  - `.rauf/`, `**/backlog.json`, `specs/**/.pipeline-state.json`,
+    `specs/**/.verification/` — runner/forge-pipeline state; backlog.json must
+    never be modified by an iteration.
+  - `dist/`, `bun.lock`.
+- prettier reflowed `backlog.json` (collapsed to printWidth 100). Restored the
+  runner's canonical format with `JSON.stringify(obj, null, 2) + "\n"` so the diff
+  is just the runner-added item 025 (17/0), no reflow churn.
+- Source/content/docs (src/, skills/, adapters verbatim style-guide, specs *.md,
+  README, package.json, eslint.config.mjs) ARE prettier-formatted — that's the fix.

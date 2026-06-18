@@ -1,0 +1,16 @@
+# Generated artifacts — byte-stability is enforced by their own guards
+# (schema:check, build:check), not Prettier. Reformatting them would fight
+# the deterministic emitters.
+schemas/
+adapters/
+.claude-plugin/
+dist/
+bun.lock
+
+# Runner / pipeline state — owned by the rauf loop runner and the forge
+# pipeline, not hand-formatted. Reformatting them fights the tools that write
+# them (and backlog.json must never be modified by an iteration).
+.rauf/
+**/backlog.json
+specs/**/.pipeline-state.json
+specs/**/.verification/

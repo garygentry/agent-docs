@@ -12,11 +12,11 @@ hand-edited in the common case.
 
 A tool's canonical (Claude-native) source lives under one of three roots, by type:
 
-| Type      | Canonical location              | Form                                   |
-|-----------|---------------------------------|----------------------------------------|
-| `skill`   | `skills/<name>/SKILL.md`        | a directory containing `SKILL.md`      |
-| `agent`   | `agents/<name>.md`              | a single markdown file                 |
-| `command` | `commands/<name>.md`            | a single markdown file                 |
+| Type      | Canonical location       | Form                              |
+| --------- | ------------------------ | --------------------------------- |
+| `skill`   | `skills/<name>/SKILL.md` | a directory containing `SKILL.md` |
+| `agent`   | `agents/<name>.md`       | a single markdown file            |
+| `command` | `commands/<name>.md`     | a single markdown file            |
 
 Two kinds of shared, tool-agnostic assets are copied verbatim to every target:
 
@@ -86,12 +86,12 @@ The repo ships one sample skill, `docs-helper`, demonstrating the full flow:
 
 ## How to run a build
 
-| Command                | What it does                                                      |
-|------------------------|-------------------------------------------------------------------|
-| `bun run build`        | Emit all adapters, the coverage report, and `.claude-plugin/`.    |
-| `bun run build:check`  | Re-emit in memory and fail if the committed tree has drifted.     |
-| `bun run schema:gen`   | Regenerate `schemas/tools.manifest.schema.json`.                  |
-| `bun run schema:check` | Fail if the committed schema has drifted.                         |
+| Command                | What it does                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `bun run build`        | Emit all adapters, the coverage report, and `.claude-plugin/`.                  |
+| `bun run build:check`  | Re-emit in memory and fail if the committed tree has drifted.                   |
+| `bun run schema:gen`   | Regenerate `schemas/tools.manifest.schema.json`.                                |
+| `bun run schema:check` | Fail if the committed schema has drifted.                                       |
 | `bun run gate`         | Full CI bar: compile, schema check, typecheck, lint, format, test, drift check. |
 
 `bun run build` is the canonical local build. Every paths-and-targets value is

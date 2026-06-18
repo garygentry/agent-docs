@@ -1,9 +1,4 @@
-import {
-  dropAllClaudeKeys,
-  hintValue,
-  orderFrontmatter,
-  renderFrontmatter,
-} from "./_shared.js";
+import { dropAllClaudeKeys, hintValue, orderFrontmatter, renderFrontmatter } from "./_shared.js";
 import type { TargetTransform } from "./_shared.js";
 
 /**

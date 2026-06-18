@@ -60,10 +60,7 @@ export function loadManifest(manifestPath: string, repoRoot?: string): Manifest 
   try {
     raw = readFileSync(absManifest, "utf-8");
   } catch {
-    throw new ManifestValidationError(
-      `tools.manifest.json not found at ${absManifest}`,
-      [],
-    );
+    throw new ManifestValidationError(`tools.manifest.json not found at ${absManifest}`, []);
   }
 
   let parsed: unknown;

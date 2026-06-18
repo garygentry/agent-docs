@@ -63,11 +63,11 @@ describe("claudeTransform (04 §6) — canonical, no drops", () => {
     expect(file.relpath).toBe("skills/docs-helper/SKILL.md");
     expect(file.mode).toBe(0o644);
     // Form A: provenance is the first line INSIDE the `---` fences.
-    expect(file.content.startsWith(`---\n${PROVENANCE.yamlComment("skills/docs-helper/SKILL.md")}\n`)).toBe(
-      true,
-    );
+    expect(
+      file.content.startsWith(`---\n${PROVENANCE.yamlComment("skills/docs-helper/SKILL.md")}\n`),
+    ).toBe(true);
     // argument-hint surfaced to top level; metadata mapping retained; body preserved.
-    expect(file.content).toContain("argument-hint: \"[topic]\"");
+    expect(file.content).toContain('argument-hint: "[topic]"');
     expect(file.content).toContain("metadata:");
     expect(file.content).toContain("allowed-tools:");
     expect(file.content.endsWith("Skill body line.\n")).toBe(true);
@@ -85,7 +85,7 @@ describe("claudeTransform (04 §6) — canonical, no drops", () => {
     const out = claudeTransform.transformCommand(makeCommand());
     expect(out.drops).toEqual([]);
     expect(out.files[0]!.relpath).toBe("commands/summarize.md");
-    expect(out.files[0]!.content).toContain("argument-hint: \"[path]\"");
+    expect(out.files[0]!.content).toContain('argument-hint: "[path]"');
   });
 
   it("produces zero DropRecords across skill/agent/command (REQ-EMIT-07, CON-03)", () => {
@@ -123,11 +123,17 @@ describe("_shared helpers", () => {
   it("skillVerbatimRecords maps ownRefs to the per-target skill dir", () => {
     const skill = makeSkill();
     expect(skillVerbatimRecords(skill, "claude")).toEqual([
-      { relpath: "skills/docs-helper/references/style.md", sourcePath: "skills/docs-helper/references/style.md" },
+      {
+        relpath: "skills/docs-helper/references/style.md",
+        sourcePath: "skills/docs-helper/references/style.md",
+      },
     ]);
     // cursor uses the flattened sibling dir rules/<n>/<ref-subpath> (04 §4.6).
     expect(skillVerbatimRecords(skill, "cursor")).toEqual([
-      { relpath: "rules/docs-helper/references/style.md", sourcePath: "skills/docs-helper/references/style.md" },
+      {
+        relpath: "rules/docs-helper/references/style.md",
+        sourcePath: "skills/docs-helper/references/style.md",
+      },
     ]);
     expect(skillVerbatimRecords(skill, "copilot")[0]!.relpath).toBe(
       "instructions/docs-helper/references/style.md",

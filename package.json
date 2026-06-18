@@ -5,7 +5,9 @@
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": { "agent-docs-build": "dist/cli.js" },
+  "bin": {
+    "agent-docs-build": "dist/cli.js"
+  },
   "scripts": {
     "build": "bun run src/cli.ts build",
     "build:check": "bun run src/cli.ts build --check",

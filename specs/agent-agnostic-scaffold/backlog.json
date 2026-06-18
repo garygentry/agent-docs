@@ -663,6 +663,23 @@
         "specs/agent-agnostic-scaffold/08-testing-strategy.md"
       ],
       "provider": "claude-cli"
+    },
+    {
+      "id": "025",
+      "type": "bug",
+      "priority": 2,
+      "title": "Fix: lint and format failures break `bun run gate`",
+      "description": "The full verification gate (`bun run gate`, item 001 CON-05) fails on two of its stages even though compile/typecheck/schema:check/test/build:check all pass.\n\n1. LINT: `src/emit.ts:11` imports `Target` but only references it inside a JSDoc `{@link Target}` comment, which `@typescript-eslint/no-unused-vars` flags as an unused import (1 error). Fix by removing `Target` from the import and changing the JSDoc reference (e.g. to plain text `Target` or `{@link TARGET_ORDER}`), or by importing it as a type used elsewhere. Also remove the 3 unused `eslint-disable` directives in `src/schema-gen.ts` (lines 71/78/85) flagged as warnings.\n\n2. FORMAT: `bun run format:check` reports 58 files with Prettier style issues, including source files (src/overrides.ts, src/targets/*.ts, src/validate-manifests.ts, src/test/*.ts, etc.). Prettier was apparently never run across the codebase. Fix by running `bun run prettier --write .` and committing the result, then confirm `bun run format:check` is clean.\n\nAfter both fixes, `bun run gate` must pass end-to-end (and re-run `bun run build:check` afterward to ensure formatting changes to emitted/source files didn't introduce drift).",
+      "acceptanceCriteria": [
+        "`bun run lint` exits 0 with no errors or warnings",
+        "`bun run format:check` exits 0 (no files need reformatting)",
+        "`bun run gate` passes end-to-end (compile, schema:check, typecheck, lint, format:check, test, build:check)",
+        "`bun run build:check` still reports no drift after reformatting"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:31:23.521Z",
+      "source": "review",
+      "reviewBatch": "2026-06-18T20:25:31.260Z"
     }
   ]
 }

@@ -45,7 +45,12 @@ function walkRelposix(dir: string, baseRoot: string): string[] {
     if (entry.isDirectory()) {
       out.push(...walkRelposix(childAbs, baseRoot));
     } else if (entry.isFile()) {
-      out.push(childAbs.slice(baseRoot.length + 1).split(sep).join("/"));
+      out.push(
+        childAbs
+          .slice(baseRoot.length + 1)
+          .split(sep)
+          .join("/"),
+      );
     }
   }
   return out;

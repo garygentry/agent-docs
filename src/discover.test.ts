@@ -143,12 +143,8 @@ describe("discover", () => {
     });
     const second = discover(shuffled, roots);
 
-    expect(second.skills.map((s) => s.sourcePath)).toEqual(
-      first.skills.map((s) => s.sourcePath),
-    );
-    expect(second.agents.map((a) => a.sourcePath)).toEqual(
-      first.agents.map((a) => a.sourcePath),
-    );
+    expect(second.skills.map((s) => s.sourcePath)).toEqual(first.skills.map((s) => s.sourcePath));
+    expect(second.agents.map((a) => a.sourcePath)).toEqual(first.agents.map((a) => a.sourcePath));
     expect(second.commands.map((c) => c.sourcePath)).toEqual(
       first.commands.map((c) => c.sourcePath),
     );

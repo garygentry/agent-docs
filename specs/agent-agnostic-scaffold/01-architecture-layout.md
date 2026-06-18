@@ -9,17 +9,17 @@ topologically (tech-spec §3.1).
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-|--------|-------------|---------|
-| REQ-STRUCT-01 | Canonical layout separating source / adapters / scripts | 2 |
-| REQ-STRUCT-02 | Adapters in committed in-repo adapters/<target>/ | 2 |
-| REQ-STRUCT-03 | Claude artifacts are canonical source of truth | 2 |
-| REQ-STRUCT-04 | Authoring conventions documented | 2.3 |
-| CON-01 | Bun + TypeScript | 3, 4 |
-| CON-02 | Adapters committed in-repo | 2 |
-| REQ-EMIT-01 | Local build command | 5 |
-| REQ-DISC-03 | Manifest JSON Schema | 2, 5 |
-| REQ-REUSE-01 | Config-driven, path-agnostic | 4 |
+| REQ ID        | Requirement                                             | Section |
+| ------------- | ------------------------------------------------------- | ------- |
+| REQ-STRUCT-01 | Canonical layout separating source / adapters / scripts | 2       |
+| REQ-STRUCT-02 | Adapters in committed in-repo adapters/<target>/        | 2       |
+| REQ-STRUCT-03 | Claude artifacts are canonical source of truth          | 2       |
+| REQ-STRUCT-04 | Authoring conventions documented                        | 2.3     |
+| CON-01        | Bun + TypeScript                                        | 3, 4    |
+| CON-02        | Adapters committed in-repo                              | 2       |
+| REQ-EMIT-01   | Local build command                                     | 5       |
+| REQ-DISC-03   | Manifest JSON Schema                                    | 2, 5    |
+| REQ-REUSE-01  | Config-driven, path-agnostic                            | 4       |
 
 ## 2. Directory tree
 
@@ -193,13 +193,13 @@ top-level entry functions and the packaging export, enabling programmatic reuse
 in other repos (REQ-REUSE-01):
 
 ```typescript
-export * from "./errors.js";        // 00 §4 error hierarchy
-export * from "./model.js";         // 00 §2–3 types + Zod schemas + constants
-export { loadManifest } from "./manifest.js";      // (manifestPath) => Manifest
-export { emit } from "./emit.js";                  // (Manifest, roots) => EmitResult
-export { driftCheck } from "./driftguard.js";      // (Manifest, roots) => DriftEntry[]
-export { emitPlugin } from "./plugin.js";          // (07) emit .claude-plugin/ manifests
-export type { PluginMeta } from "./plugin.js";     // (07) plugin manifest metadata
+export * from "./errors.js"; // 00 §4 error hierarchy
+export * from "./model.js"; // 00 §2–3 types + Zod schemas + constants
+export { loadManifest } from "./manifest.js"; // (manifestPath) => Manifest
+export { emit } from "./emit.js"; // (Manifest, roots) => EmitResult
+export { driftCheck } from "./driftguard.js"; // (Manifest, roots) => DriftEntry[]
+export { emitPlugin } from "./plugin.js"; // (07) emit .claude-plugin/ manifests
+export type { PluginMeta } from "./plugin.js"; // (07) plugin manifest metadata
 ```
 
 The CLI (`src/cli.ts`) is the only place that reads `process.argv`/exit codes;
@@ -219,7 +219,7 @@ the library functions are pure(ish) and throw the `00 §4` errors.
 - [ ] `src/index.ts` re-exports every public type from `00`, the three entry
       functions, and the `emitPlugin` packaging export — importable from another
       repo via the package `main`/`types`.
-- [ ] No emitter module hardcodes an adapter or canonical *root* path or the
+- [ ] No emitter module hardcodes an adapter or canonical _root_ path or the
       target list — all roots come from `EmitterConfig` (REQ-REUSE-01). (The
       committed JSON-Schema output path `schemas/…` and the build-output `dist/`
       are intentional fixed build-tooling paths, not part of the reuse config

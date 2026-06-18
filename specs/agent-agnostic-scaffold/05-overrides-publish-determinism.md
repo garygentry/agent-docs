@@ -16,26 +16,26 @@ This document owns three emitter modules from `01-architecture-layout.md`:
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-|--------|-------------|---------|
-| REQ-EMIT-04 | Per-target override slots, deterministically distinguishable (V-005) | 2, 3 |
-| REQ-EMIT-05 | Idempotent, safe rebuild; no manual cleanup; overrides preserved | 4, 6 |
-| REQ-EMIT-06 | Byte-stable over canonical input **and** override contents | 6 |
-| REQ-EMIT-08 | Stale adapter files auto-removed on rebuild (no orphans) | 5 |
-| REQ-REL-01 | Determinism + idempotency as reliability backbone | 6 |
-| REQ-SEC-01 | Read/write confinement; no writes outside adapter/build roots | 7 |
-| REQ-OBS-01 / REQ-VALID-05 | `overridden` + `staleOverrides` feed the coverage report | 3 |
+| REQ ID                    | Requirement                                                          | Section |
+| ------------------------- | -------------------------------------------------------------------- | ------- |
+| REQ-EMIT-04               | Per-target override slots, deterministically distinguishable (V-005) | 2, 3    |
+| REQ-EMIT-05               | Idempotent, safe rebuild; no manual cleanup; overrides preserved     | 4, 6    |
+| REQ-EMIT-06               | Byte-stable over canonical input **and** override contents           | 6       |
+| REQ-EMIT-08               | Stale adapter files auto-removed on rebuild (no orphans)             | 5       |
+| REQ-REL-01                | Determinism + idempotency as reliability backbone                    | 6       |
+| REQ-SEC-01                | Read/write confinement; no writes outside adapter/build roots        | 7       |
+| REQ-OBS-01 / REQ-VALID-05 | `overridden` + `staleOverrides` feed the coverage report             | 3       |
 
 Cross-cutting decisions traced to tech-spec §3.4 (overrides), §3.6 (determinism /
 publish / stale cleanup / write confinement), and §7 (stale-override = non-fatal).
 
 ## 1. Module responsibilities
 
-| Module | Responsibility | Section |
-|--------|----------------|---------|
-| `src/paths.ts` | `confinePath` containment guard; resolve roots | 7 |
-| `src/overrides.ts` | Load `overrides/<target>/` tree; overlay onto emitted files; compute `overridden` + `staleOverrides` | 2, 3 |
-| `src/publish.ts` | Stage the full file set; atomic swap into `adapters/`; stale cleanup; fail-intact | 4, 5 |
+| Module             | Responsibility                                                                                       | Section |
+| ------------------ | ---------------------------------------------------------------------------------------------------- | ------- |
+| `src/paths.ts`     | `confinePath` containment guard; resolve roots                                                       | 7       |
+| `src/overrides.ts` | Load `overrides/<target>/` tree; overlay onto emitted files; compute `overridden` + `staleOverrides` | 2, 3    |
+| `src/publish.ts`   | Stage the full file set; atomic swap into `adapters/`; stale cleanup; fail-intact                    | 4, 5    |
 
 Orchestration order inside `emit.ts` (`04-transforms.md`) is:
 `discover → transform → loadOverrides → applyOverrides → publish`. `applyOverrides`
@@ -209,7 +209,7 @@ This is symmetric with two sibling guarantees and is justified by them:
 
 - **REQ-EMIT-08 (auto orphan cleanup):** emitted orphan files are removed
   automatically on rebuild (§5) rather than requiring the author to delete them.
-  Treating a *stale override* as fatal would force exactly the manual cleanup that
+  Treating a _stale override_ as fatal would force exactly the manual cleanup that
   REQ-EMIT-08 abolishes for emitted output — the author would have to delete the
   override file before any build could succeed. Warn-and-continue keeps the two
   cleanup postures consistent.
@@ -219,9 +219,9 @@ This is symmetric with two sibling guarantees and is justified by them:
 
 The author still gets a loud signal (the warning + the `staleOverrides` section of
 `GENERATION-REPORT.md`) and can delete the override at leisure. Note the
-asymmetry with hand-edits to *emitted* files: those still fail the drift guard
+asymmetry with hand-edits to _emitted_ files: those still fail the drift guard
 (SC-04) because they are not in an override slot. The sanctioned escape hatch is
-declaring an override (SC-05), and a *correctly placed* override never reads as
+declaring an override (SC-05), and a _correctly placed_ override never reads as
 drift.
 
 ## 4. Atomic publish (REQ-EMIT-05)
@@ -350,7 +350,7 @@ caught in CI — that orphan detection lives in `06-validation-and-drift-guard.m
 ## 6. Determinism & idempotency (REQ-EMIT-06, REQ-EMIT-05, REQ-REL-01)
 
 The emitter is byte-stable over **both** inputs — canonical source and override
-contents (REQ-EMIT-06, post-fix). The override slots are a *second* input alongside
+contents (REQ-EMIT-06, post-fix). The override slots are a _second_ input alongside
 the canonical source; the guarantee covers the combination. Determinism rules
 this document is responsible for:
 
@@ -360,7 +360,7 @@ this document is responsible for:
    filesystem `readdir` order or `Map` insertion order for externally observable
    results.
 2. **No timestamps, no pid, no host data in any file content.** The only place a
-   pid appears is the *staging directory name* (`.tmp-<pid>`), which is never
+   pid appears is the _staging directory name_ (`.tmp-<pid>`), which is never
    published — it is always renamed onto `adapters/`. Published file bytes contain
    no run-specific data.
 3. **Verbatim override bytes.** An override is copied exactly as authored: no
@@ -460,15 +460,15 @@ staging dir + `adapters/` (REQ-SEC-01).
 
 ### 7.2 Confinement matrix
 
-| Operation | Allowed root | Module |
-|-----------|--------------|--------|
-| Read canonical file/dir | `skillsDir`/`agentsDir`/`commandsDir`/`referencesDir`/`scriptsDir` | `03` discover |
-| Read override file | `overridesDir` | `loadOverrides` (this doc §3.1) |
-| Write staged file | staging dir `<adaptersDir>.tmp-<pid>` | `publish` (§4.2) |
-| Final published path | `adaptersDir` | `publish` swap (§4.3) |
+| Operation               | Allowed root                                                       | Module                          |
+| ----------------------- | ------------------------------------------------------------------ | ------------------------------- |
+| Read canonical file/dir | `skillsDir`/`agentsDir`/`commandsDir`/`referencesDir`/`scriptsDir` | `03` discover                   |
+| Read override file      | `overridesDir`                                                     | `loadOverrides` (this doc §3.1) |
+| Write staged file       | staging dir `<adaptersDir>.tmp-<pid>`                              | `publish` (§4.2)                |
+| Final published path    | `adaptersDir`                                                      | `publish` swap (§4.3)           |
 
 Any path resolving outside its column-2 root → `PathEscapeError`, fatal, no write
-(`00` §4; tech-spec §7). Because it is thrown *before* the publish swap, a path
+(`00` §4; tech-spec §7). Because it is thrown _before_ the publish swap, a path
 escape leaves `adapters/` intact (§4).
 
 ## Dependencies
@@ -526,4 +526,7 @@ Consumed by:
       produces zero diff in `adapters/` (REQ-EMIT-05/06, SC-03).
 - [ ] A rebuild never writes to or deletes anything under `overridesDir`
       (overrides preserved, REQ-EMIT-05).
+
+```
+
 ```

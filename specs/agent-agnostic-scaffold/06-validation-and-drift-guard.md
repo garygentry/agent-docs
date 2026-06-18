@@ -16,31 +16,31 @@ redefined**: `DriftEntry`, `DriftError`, `ReportModel`, `TargetCoverage`,
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-|--------|-------------|---------|
-| REQ-VALID-01 | Drift guard re-emits from canonical (overrides merged) and fails on mismatch; runnable locally + CI | 2, 2.2, 2.3 |
-| REQ-VALID-02 | Drift guard fails the build on drift | 2.3, 2.5 |
-| REQ-VALID-03 | Per-target schema validation of emitted aggregate manifests | 4 |
-| REQ-VALID-04 | Golden-file snapshot tests scoped to the sample skill | 5 |
-| REQ-VALID-05 | Per-target coverage / capability report | 3 |
-| REQ-EMIT-08 | Orphan committed adapters detected (no canonical source) | 2.2 (kind `orphan`), 2.4 |
-| REQ-OBS-01 | Human-readable per-run summary (targets/tools/fallbacks/skips) | 3 |
-| REQ-OBS-02 | Drift output identifies which files differ AND how | 2.2, 2.5 |
-| CON-05 | Drift guard runs in CI and gates the build | 2.3, 6 |
-| SC-03 | Emit twice → zero diff; `--check` clean | 2, Verification |
-| SC-04 | Hand-edit outside override slot → drift fail | 2.2, 2.4 |
-| SC-05a | Removing a tool → orphan detected, drift fail | 2.2, 2.4 |
-| SC-06 / SC-08 | Coverage report + schema/golden checks pass | 3, 4, 5 |
+| REQ ID        | Requirement                                                                                         | Section                  |
+| ------------- | --------------------------------------------------------------------------------------------------- | ------------------------ |
+| REQ-VALID-01  | Drift guard re-emits from canonical (overrides merged) and fails on mismatch; runnable locally + CI | 2, 2.2, 2.3              |
+| REQ-VALID-02  | Drift guard fails the build on drift                                                                | 2.3, 2.5                 |
+| REQ-VALID-03  | Per-target schema validation of emitted aggregate manifests                                         | 4                        |
+| REQ-VALID-04  | Golden-file snapshot tests scoped to the sample skill                                               | 5                        |
+| REQ-VALID-05  | Per-target coverage / capability report                                                             | 3                        |
+| REQ-EMIT-08   | Orphan committed adapters detected (no canonical source)                                            | 2.2 (kind `orphan`), 2.4 |
+| REQ-OBS-01    | Human-readable per-run summary (targets/tools/fallbacks/skips)                                      | 3                        |
+| REQ-OBS-02    | Drift output identifies which files differ AND how                                                  | 2.2, 2.5                 |
+| CON-05        | Drift guard runs in CI and gates the build                                                          | 2.3, 6                   |
+| SC-03         | Emit twice → zero diff; `--check` clean                                                             | 2, Verification          |
+| SC-04         | Hand-edit outside override slot → drift fail                                                        | 2.2, 2.4                 |
+| SC-05a        | Removing a tool → orphan detected, drift fail                                                       | 2.2, 2.4                 |
+| SC-06 / SC-08 | Coverage report + schema/golden checks pass                                                         | 3, 4, 5                  |
 
 ## 1. Module map
 
-| File | Responsibility | Section |
-|------|----------------|---------|
-| `src/driftguard.ts` | `driftCheck(manifest, roots)`: re-emit + set/content diff → `DriftEntry[]`; throw `DriftError` | 2 |
-| `src/report.ts` | `buildReport(result)` → `ReportModel`; `renderReport(model)` → `adapters/GENERATION-REPORT.md` body | 3 |
-| `src/targets/codex.ts`, `src/targets/gemini.ts` | own each aggregate manifest's emit (`04`); this doc adds the post-emit schema check | 4 |
-| `src/cli.ts` | `build --check` wiring: call `driftCheck`, catch `DriftError`, print, exit non-zero | 2.5 |
-| `src/test/__golden__/<target>/…` | checked-in expected sample-skill output (asserted by `08-testing-strategy.md`) | 5 |
+| File                                            | Responsibility                                                                                      | Section |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------- |
+| `src/driftguard.ts`                             | `driftCheck(manifest, roots)`: re-emit + set/content diff → `DriftEntry[]`; throw `DriftError`      | 2       |
+| `src/report.ts`                                 | `buildReport(result)` → `ReportModel`; `renderReport(model)` → `adapters/GENERATION-REPORT.md` body | 3       |
+| `src/targets/codex.ts`, `src/targets/gemini.ts` | own each aggregate manifest's emit (`04`); this doc adds the post-emit schema check                 | 4       |
+| `src/cli.ts`                                    | `build --check` wiring: call `driftCheck`, catch `DriftError`, print, exit non-zero                 | 2.5     |
+| `src/test/__golden__/<target>/…`                | checked-in expected sample-skill output (asserted by `08-testing-strategy.md`)                      | 5       |
 
 `driftCheck` and `buildReport`/`renderReport` are pure library functions; only
 `src/cli.ts` reads `process.exit`. `driftCheck` is re-exported from
@@ -67,11 +67,11 @@ committed bytes, compares in memory, and deletes the staging dir.
 The comparison produces one `DriftEntry` per offending file. `DriftEntry.kind`
 (`00-core-definitions.md` §3.6) is the structured "how" REQ-OBS-02 requires:
 
-| `kind` | Meaning | Detection | Maps to |
-|--------|---------|-----------|---------|
-| `content` | path exists in both trees, bytes differ | byte-compare `Buffer`s | SC-04 (hand-edit outside override) |
-| `orphan` | committed in `adapters/` but absent from the fresh emit | set difference `committed \ emitted` | REQ-EMIT-08, SC-05a (tool removed/renamed) |
-| `missing` | emitted by a fresh build but absent from committed `adapters/` | set difference `emitted \ committed` | a never-committed / deleted adapter file |
+| `kind`    | Meaning                                                        | Detection                            | Maps to                                    |
+| --------- | -------------------------------------------------------------- | ------------------------------------ | ------------------------------------------ |
+| `content` | path exists in both trees, bytes differ                        | byte-compare `Buffer`s               | SC-04 (hand-edit outside override)         |
+| `orphan`  | committed in `adapters/` but absent from the fresh emit        | set difference `committed \ emitted` | REQ-EMIT-08, SC-05a (tool removed/renamed) |
+| `missing` | emitted by a fresh build but absent from committed `adapters/` | set difference `emitted \ committed` | a never-committed / deleted adapter file   |
 
 The file set on the **emitted** side is the post-overlay set: `EmitResult.files`
 after `applyOverrides` (overridden paths included — they are real emitted bytes).
@@ -143,9 +143,9 @@ export function assertNoDrift(manifest: Manifest, roots: ResolvedRoots): void;
 ### 2.4 Implementation sketch
 
 ```typescript
-import { emit } from "./emit.js";                 // (manifest, roots) => EmitResult (05/04)
+import { emit } from "./emit.js"; // (manifest, roots) => EmitResult (05/04)
 import { applyOverrides, loadOverrides } from "./overrides.js"; // 05 §3
-import { newStagingDir } from "./publish.js";     // 05 §4.2 — fresh <adaptersDir>.tmp-<pid>
+import { newStagingDir } from "./publish.js"; // 05 §4.2 — fresh <adaptersDir>.tmp-<pid>
 import { walkFilesPosix, readBytes } from "./paths.js"; // 05 §7 confined helpers
 import { rmSync } from "node:fs";
 
@@ -200,7 +200,7 @@ export function assertNoDrift(manifest: Manifest, roots: ResolvedRoots): void {
 > mirroring feature-forge's `diff -r` against a staging dir at
 > `/home/gary/workspace/feature-forge/scripts/build-adapters.py:1323` `check()`),
 > it MUST `newStagingDir` → write all files → walk both trees → `rmSync(staging,
-> { recursive: true, force: true })` in a `finally`, so the staging dir is removed
+{ recursive: true, force: true })` in a `finally`, so the staging dir is removed
 > on every path including the throw path. Either approach MUST produce the same
 > `DriftEntry[]`; the in-memory form is preferred because it has no `diff`
 > external-tool dependency (feature-forge's `check()` returns exit 2 when `diff`
@@ -220,7 +220,9 @@ line, so an author can fix the source quickly (REQ-OBS-02):
 function renderDriftMessage(entries: DriftEntry[]): string {
   const byKind = (k: DriftEntry["kind"]) =>
     entries.filter((e) => e.kind === k).map((e) => `  ${e.relpath}`);
-  const blocks: string[] = ["Adapter drift detected — committed adapters/ do not match a fresh build:"];
+  const blocks: string[] = [
+    "Adapter drift detected — committed adapters/ do not match a fresh build:",
+  ];
   const sections: Array<[DriftEntry["kind"], string]> = [
     ["content", "Content differs (hand-edited or stale emitted output):"],
     ["orphan", "Orphan files (no canonical source — remove or restore the tool):"],
@@ -241,18 +243,19 @@ function renderDriftMessage(entries: DriftEntry[]): string {
 ```typescript
 // inside cli.ts, command === "build" && flags.check
 try {
-  assertNoDrift(manifest, roots);          // §2.3
-  process.exit(0);                          // SC-03 clean tree
+  assertNoDrift(manifest, roots); // §2.3
+  process.exit(0); // SC-03 clean tree
 } catch (err) {
   if (err instanceof DriftError) {
-    console.error(err.message);             // §2.5 per-file + remediation (REQ-OBS-02)
-    process.exit(1);                        // drift verdict (REQ-VALID-02)
+    console.error(err.message); // §2.5 per-file + remediation (REQ-OBS-02)
+    process.exit(1); // drift verdict (REQ-VALID-02)
   }
-  if (err instanceof EmitterError) {        // build couldn't run — fatal, distinct
+  if (err instanceof EmitterError) {
+    // build couldn't run — fatal, distinct
     console.error(`${err.code}: ${err.message}`);
     process.exit(1);
   }
-  throw err;                                // generator bug → stack trace
+  throw err; // generator bug → stack trace
 }
 ```
 
@@ -349,7 +352,7 @@ artifact's provenance is discoverable even when it carries no inline header.
 ## Coverage by target
 
 | Target  | Emitted | Fallback | Skipped | Overridden | Verbatim |
-|---------|---------|----------|---------|------------|----------|
+| ------- | ------- | -------- | ------- | ---------- | -------- |
 | claude  | 7       | 0        | 0       | 0          | 2        |
 | codex   | 6       | 1        | 0       | 1          | 2        |
 | copilot | 5       | 1        | 1       | 0          | 2        |
@@ -360,15 +363,15 @@ artifact's provenance is discoverable even when it carries no inline header.
 
 ### codex
 
-| Source | Construct | Reason |
-|--------|-----------|--------|
+| Source                  | Construct       | Reason                                                         |
+| ----------------------- | --------------- | -------------------------------------------------------------- |
 | `commands/summarize.md` | `command:codex` | No native slash-command construct; emitted as instruction doc. |
 
 ### copilot
 
-| Source | Construct | Reason |
-|--------|-----------|--------|
-| `agents/triage.md` | `agent.model` | Structural agent key not representable on copilot (TQ-2). |
+| Source                  | Construct         | Reason                                                              |
+| ----------------------- | ----------------- | ------------------------------------------------------------------- |
+| `agents/triage.md`      | `agent.model`     | Structural agent key not representable on copilot (TQ-2).           |
 | `commands/summarize.md` | `command:copilot` | No native slash-command construct; skipped (no aggregate manifest). |
 
 ## Stale overrides
@@ -382,11 +385,11 @@ Each emitted **aggregate manifest** is validated against that target's expected
 shape **after emit, before publish**. Only two targets emit an aggregate manifest
 (tech-spec §3.7, §5.2 transform table):
 
-| Target | Aggregate manifest | Schema source | This-version behavior |
-|--------|--------------------|---------------|-----------------------|
-| codex | `agents/openai.yaml` | OpenAI/Codex agent-manifest YAML shape — **not published as a machine schema** by the vendor at spec time | Validate against a **local Zod shape** (`CodexManifestSchema`) derived from the `ManifestEntry` set: a YAML mapping of `agents` each with `{ name, description }`. WARNING: vendor schema unconfirmed; see note below. |
-| gemini | `gemini-extension.json` | Gemini extension reference (`docs/extensions/reference.md`) — has a defined JSON shape | Validate against a **local Zod shape** (`GeminiExtensionSchema`): `{ name, version, contextFileName?, … }` plus one entry per skill. |
-| claude / copilot / cursor | none | — | **Skip with note** — these targets emit per-file documents, no aggregate manifest, so there is no manifest schema to validate (recorded explicitly, not silently). |
+| Target                    | Aggregate manifest      | Schema source                                                                                             | This-version behavior                                                                                                                                                                                                  |
+| ------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| codex                     | `agents/openai.yaml`    | OpenAI/Codex agent-manifest YAML shape — **not published as a machine schema** by the vendor at spec time | Validate against a **local Zod shape** (`CodexManifestSchema`) derived from the `ManifestEntry` set: a YAML mapping of `agents` each with `{ name, description }`. WARNING: vendor schema unconfirmed; see note below. |
+| gemini                    | `gemini-extension.json` | Gemini extension reference (`docs/extensions/reference.md`) — has a defined JSON shape                    | Validate against a **local Zod shape** (`GeminiExtensionSchema`): `{ name, version, contextFileName?, … }` plus one entry per skill.                                                                                   |
+| claude / copilot / cursor | none                    | —                                                                                                         | **Skip with note** — these targets emit per-file documents, no aggregate manifest, so there is no manifest schema to validate (recorded explicitly, not silently).                                                     |
 
 ### 4.1 Signature
 
@@ -447,7 +450,7 @@ a large whole-tree drift.
   per-target surface (the user decision, tech-spec §3.7).
 - Ownership: the golden **fixtures, the sample-skill content, and the vitest
   assertion harness** are specified and owned by **`08-testing-strategy.md`**
-  (§ golden snapshot). This document only fixes the *role* of goldens within the
+  (§ golden snapshot). This document only fixes the _role_ of goldens within the
   validation stack (focused regression vs. whole-tree drift) and their byte-exact
   semantics. See `08-testing-strategy.md` for the fixture layout, the sample-skill
   definition, and the `vitest` cases.
@@ -457,12 +460,12 @@ a large whole-tree drift.
 
 ## 6. Where this runs
 
-| Trigger | Command | Stack pieces exercised |
-|---------|---------|------------------------|
-| Local author build | `bun run build` | schema validation (§4), report write (§3) |
-| Local drift check | `bun run build:check` | drift guard (§2) — re-emit + diff, schema (§4 implicitly) |
-| Unit/golden tests | `bun run test` (`vitest run`) | golden snapshots (§5, owned by `08`) |
-| CI gate (CON-05) | `bun run gate` | `… && build:check` last — drift guard gates the build |
+| Trigger            | Command                       | Stack pieces exercised                                    |
+| ------------------ | ----------------------------- | --------------------------------------------------------- |
+| Local author build | `bun run build`               | schema validation (§4), report write (§3)                 |
+| Local drift check  | `bun run build:check`         | drift guard (§2) — re-emit + diff, schema (§4 implicitly) |
+| Unit/golden tests  | `bun run test` (`vitest run`) | golden snapshots (§5, owned by `08`)                      |
+| CI gate (CON-05)   | `bun run gate`                | `… && build:check` last — drift guard gates the build     |
 
 The `gate` script (`01-architecture-layout.md` §3) is the CI bar; its terminal
 `build:check` step is the CON-05 mandate that the drift guard runs in CI and fails

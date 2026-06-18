@@ -10,28 +10,29 @@ All code targets **TypeScript on Bun (CON-01)** and uses **vitest** (`vitest run
 co-located as `src/**/*.test.ts` with fixtures/goldens under `src/test/`. This
 matches rauf (the project standard, tech-spec §3.1) — **not** `bun:test`. The
 canonical rauf precedent for this exact pattern (vitest + `__fixtures__/` factories
-+ co-located tests) is `/home/gary/workspace/rauf/scripts/release/lib.test.ts` and
-its `__fixtures__/` directory.
+
+- co-located tests) is `/home/gary/workspace/rauf/scripts/release/lib.test.ts` and
+  its `__fixtures__/` directory.
 
 ## Requirement Coverage
 
-| REQ / SC ID | Requirement | Section |
-|-------------|-------------|---------|
-| SC-01 | Add tool via canonical form + manifest + build, no adapter hand-edit | 9 (traceability), 4 |
-| SC-02 | Sample tool emits correctly to all four targets + Claude | 6 (golden), 9 |
-| SC-03 | Build twice → zero diff; drift guard passes (idempotent, byte-stable) | 5 |
-| SC-04 | Hand-edit a committed adapter → drift guard fails; revert → passes | 5.2 |
-| SC-05 | Declared override survives rebuild and is present in output | 5.3 |
-| SC-05a | Removing a tool removes its adapters; orphan → drift guard fails | 5.2 |
-| SC-06 | Each build produces a coverage report (mapped/fallback/skipped) | 4.5 |
-| SC-07 | Claude side installable as a plugin | 6.4 |
-| SC-08 | Golden-snapshot + schema-validation checks pass for all targets | 6, 7 |
-| REQ-VALID-03 | Each emitted target validatable against its schema | 7 |
-| REQ-VALID-04 | Golden-file snapshot tests | 6 |
-| REQ-VALID-05 / REQ-OBS-01 | Coverage/capability report | 4.5 |
-| REQ-VALID-01/02 / CON-05 | Drift guard runs locally + in CI, gates build | 5.2, 8 |
-| REQ-DISC-03 | Manifest JSON Schema generated + drift-guarded | 7.2 |
-| REQ-EMIT-05/06 / REQ-REL-01 | Idempotent, byte-stable emit | 5 |
+| REQ / SC ID                 | Requirement                                                           | Section             |
+| --------------------------- | --------------------------------------------------------------------- | ------------------- |
+| SC-01                       | Add tool via canonical form + manifest + build, no adapter hand-edit  | 9 (traceability), 4 |
+| SC-02                       | Sample tool emits correctly to all four targets + Claude              | 6 (golden), 9       |
+| SC-03                       | Build twice → zero diff; drift guard passes (idempotent, byte-stable) | 5                   |
+| SC-04                       | Hand-edit a committed adapter → drift guard fails; revert → passes    | 5.2                 |
+| SC-05                       | Declared override survives rebuild and is present in output           | 5.3                 |
+| SC-05a                      | Removing a tool removes its adapters; orphan → drift guard fails      | 5.2                 |
+| SC-06                       | Each build produces a coverage report (mapped/fallback/skipped)       | 4.5                 |
+| SC-07                       | Claude side installable as a plugin                                   | 6.4                 |
+| SC-08                       | Golden-snapshot + schema-validation checks pass for all targets       | 6, 7                |
+| REQ-VALID-03                | Each emitted target validatable against its schema                    | 7                   |
+| REQ-VALID-04                | Golden-file snapshot tests                                            | 6                   |
+| REQ-VALID-05 / REQ-OBS-01   | Coverage/capability report                                            | 4.5                 |
+| REQ-VALID-01/02 / CON-05    | Drift guard runs locally + in CI, gates build                         | 5.2, 8              |
+| REQ-DISC-03                 | Manifest JSON Schema generated + drift-guarded                        | 7.2                 |
+| REQ-EMIT-05/06 / REQ-REL-01 | Idempotent, byte-stable emit                                          | 5                   |
 
 ## 1. Framework, layout & conventions
 
@@ -55,20 +56,20 @@ All shared types referenced below (`Manifest`, `ToolEntry`, `EmitResult`,
 
 ## 2. Test taxonomy
 
-| Suite | Location | Proves | Spec under test |
-|-------|----------|--------|-----------------|
-| Manifest validation | `src/manifest.test.ts` | REQ-DISC-03 | `02-manifest-and-config.md` |
-| Frontmatter parse/serialize | `src/frontmatter.test.ts` | byte-stable round-trip | `03-discovery-and-canonical-model.md` |
-| Discovery | `src/discover.test.ts` | source → records | `03-discovery-and-canonical-model.md` |
-| Per-target transforms | `src/targets/<t>.test.ts` | REQ-EMIT-02/03 | `04-transforms.md` |
-| Override merge | `src/overrides.test.ts` | REQ-EMIT-04, SC-05 | `05-overrides-publish-determinism.md` |
-| Determinism / idempotency | `src/test/determinism.test.ts` | SC-03, REQ-EMIT-05/06 | `05-overrides-publish-determinism.md` |
-| Drift / orphan guard | `src/test/driftguard.test.ts` | SC-04/05a, REQ-VALID-01 | `06-validation-and-drift-guard.md` |
-| Coverage report | `src/report.test.ts` | SC-06, REQ-VALID-05 | `06-validation-and-drift-guard.md` |
-| Schema validation | `src/test/schema.test.ts` | SC-08, REQ-VALID-03 | `06`, `07-packaging-and-sample-tool.md` |
-| Golden snapshot | `src/test/golden.test.ts` | SC-02/08, REQ-VALID-04 | `07-packaging-and-sample-tool.md` |
-| Plugin packaging | `src/plugin.test.ts` | SC-07, REQ-PKG-01 | `07-packaging-and-sample-tool.md` |
-| JSON-Schema drift | `src/schema-gen.test.ts` | REQ-DISC-03 | `02-manifest-and-config.md` |
+| Suite                       | Location                       | Proves                  | Spec under test                         |
+| --------------------------- | ------------------------------ | ----------------------- | --------------------------------------- |
+| Manifest validation         | `src/manifest.test.ts`         | REQ-DISC-03             | `02-manifest-and-config.md`             |
+| Frontmatter parse/serialize | `src/frontmatter.test.ts`      | byte-stable round-trip  | `03-discovery-and-canonical-model.md`   |
+| Discovery                   | `src/discover.test.ts`         | source → records        | `03-discovery-and-canonical-model.md`   |
+| Per-target transforms       | `src/targets/<t>.test.ts`      | REQ-EMIT-02/03          | `04-transforms.md`                      |
+| Override merge              | `src/overrides.test.ts`        | REQ-EMIT-04, SC-05      | `05-overrides-publish-determinism.md`   |
+| Determinism / idempotency   | `src/test/determinism.test.ts` | SC-03, REQ-EMIT-05/06   | `05-overrides-publish-determinism.md`   |
+| Drift / orphan guard        | `src/test/driftguard.test.ts`  | SC-04/05a, REQ-VALID-01 | `06-validation-and-drift-guard.md`      |
+| Coverage report             | `src/report.test.ts`           | SC-06, REQ-VALID-05     | `06-validation-and-drift-guard.md`      |
+| Schema validation           | `src/test/schema.test.ts`      | SC-08, REQ-VALID-03     | `06`, `07-packaging-and-sample-tool.md` |
+| Golden snapshot             | `src/test/golden.test.ts`      | SC-02/08, REQ-VALID-04  | `07-packaging-and-sample-tool.md`       |
+| Plugin packaging            | `src/plugin.test.ts`           | SC-07, REQ-PKG-01       | `07-packaging-and-sample-tool.md`       |
+| JSON-Schema drift           | `src/schema-gen.test.ts`       | REQ-DISC-03             | `02-manifest-and-config.md`             |
 
 ## 3. Fixtures & factories
 
@@ -249,7 +250,10 @@ import { TARGET_ORDER } from "../model.js"; // 00 §5: authoritative default tar
 describe("manifest validation", () => {
   it("accepts a minimal valid manifest and applies config defaults", () => {
     const m = loadManifestFromString(
-      JSON.stringify({ version: 1, tools: [{ name: "x", type: "skill", source: "skills/x/SKILL.md" }] }),
+      JSON.stringify({
+        version: 1,
+        tools: [{ name: "x", type: "skill", source: "skills/x/SKILL.md" }],
+      }),
     );
     expect(m.config.adaptersDir).toBe("adapters");
     // `config.targets` defaults to the authoritative TARGET_ORDER (00 §5; the
@@ -376,9 +380,7 @@ const skill: SkillRecord = {
   // Map(1){ "metadata" => Map{...} }): every extra key nests under a single
   // "metadata" key whose value is an ordered Map. `hintValue` (04 §4.1) reads
   // skill.metadata.get("metadata").get("argument-hint").
-  metadata: new Map<string, unknown>([
-    ["metadata", new Map([["argument-hint", "<topic>"]])],
-  ]),
+  metadata: new Map<string, unknown>([["metadata", new Map([["argument-hint", "<topic>"]])]]),
   body: "# sample\n\nBody.\n",
   ownRefs: [],
   sourcePath: "skills/sample/SKILL.md",
@@ -398,7 +400,11 @@ describe("cursor transform", () => {
   it("records a fallback DropRecord for the dropped argument-hint", () => {
     const out = transformCursor.skill(skill);
     expect(out.drops).toContainEqual(
-      expect.objectContaining({ target: "cursor", kind: "fallback", construct: expect.stringContaining("argument-hint") }),
+      expect.objectContaining({
+        target: "cursor",
+        kind: "fallback",
+        construct: expect.stringContaining("argument-hint"),
+      }),
     );
   });
 
@@ -406,7 +412,10 @@ describe("cursor transform", () => {
     const agent: AgentRecord = {
       name: "a",
       description: "d",
-      claudeKeys: new Map([["tools", ["Read"]], ["model", "opus"]]),
+      claudeKeys: new Map([
+        ["tools", ["Read"]],
+        ["model", "opus"],
+      ]),
       body: "x",
       sourcePath: "agents/a.md",
     };
@@ -452,7 +461,15 @@ const model: ReportModel = {
     cursor: { emitted: 1, fallback: 1, skipped: 0, overridden: 1, verbatim: 0 },
     gemini: { emitted: 1, fallback: 1, skipped: 0, overridden: 0, verbatim: 0 },
   },
-  drops: [{ target: "codex", source: "commands/sample.md", construct: "command:codex", kind: "fallback", reason: "no native slash command" }],
+  drops: [
+    {
+      target: "codex",
+      source: "commands/sample.md",
+      construct: "command:codex",
+      kind: "fallback",
+      reason: "no native slash command",
+    },
+  ],
   staleOverrides: ["cursor/skills/removed/removed.mdc"],
 };
 
@@ -565,9 +582,9 @@ afterEach(() => {
 function anyAdapterFile(adaptersDir: string, target: string): string {
   const base = path.join(adaptersDir, target);
   const walk = (d: string): string[] =>
-    fs.readdirSync(d, { withFileTypes: true }).flatMap((e) =>
-      e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)],
-    );
+    fs
+      .readdirSync(d, { withFileTypes: true })
+      .flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
   return walk(base)[0]!;
 }
 
@@ -604,9 +621,7 @@ describe("orphan detection (SC-05a)", () => {
     const drift = driftCheck(repo.manifest, repo.roots);
     // Derive the expectation from the doomed tool, not a hardcoded cursor path:
     // some orphan entry's relpath must reference the removed "doomed" tool.
-    expect(
-      drift.some((d) => d.kind === "orphan" && d.relpath.includes("doomed")),
-    ).toBe(true);
+    expect(drift.some((d) => d.kind === "orphan" && d.relpath.includes("doomed"))).toBe(true);
   });
 
   it("a rebuild removes the orphaned adapter files (stale cleanup, REQ-EMIT-08)", () => {
@@ -669,7 +684,10 @@ const OVERRIDE_BODY = "---\ndescription: hand authored\nalwaysApply: true\n---\n
 
 describe("override slots (SC-05)", () => {
   it("overlays author content into the target output and survives rebuild", () => {
-    const repo = makeFixtureRepo({ skills: ["sample"], overrides: { [OVERRIDE_REL]: OVERRIDE_BODY } });
+    const repo = makeFixtureRepo({
+      skills: ["sample"],
+      overrides: { [OVERRIDE_REL]: OVERRIDE_BODY },
+    });
     repos.push(repo);
     buildAndPublish(repo.manifest, repo.roots);
     buildAndPublish(repo.manifest, repo.roots); // rebuild must NOT clobber the override
@@ -681,14 +699,20 @@ describe("override slots (SC-05)", () => {
   });
 
   it("driftCheck passes — an override is not drift", () => {
-    const repo = makeFixtureRepo({ skills: ["sample"], overrides: { [OVERRIDE_REL]: OVERRIDE_BODY } });
+    const repo = makeFixtureRepo({
+      skills: ["sample"],
+      overrides: { [OVERRIDE_REL]: OVERRIDE_BODY },
+    });
     repos.push(repo);
     buildAndPublish(repo.manifest, repo.roots);
     expect(driftCheck(repo.manifest, repo.roots)).toEqual([]);
   });
 
   it("overridden files carry NO provenance header (author content, §3.4)", () => {
-    const repo = makeFixtureRepo({ skills: ["sample"], overrides: { [OVERRIDE_REL]: OVERRIDE_BODY } });
+    const repo = makeFixtureRepo({
+      skills: ["sample"],
+      overrides: { [OVERRIDE_REL]: OVERRIDE_BODY },
+    });
     repos.push(repo);
     // Read `overridden` from the OverlayResult (05 §3.2), not raw emit — emit
     // produces only the pre-overlay file set; applyOverrides computes `overridden`.
@@ -966,17 +990,17 @@ verified against.
 
 ## 9. Traceability: SC → tests
 
-| SC | Proven by |
-|----|-----------|
-| SC-01 (author once + build, no hand-edit) | §4.1 manifest accepts a new entry; §5.1 emit produces adapters with no manual step; whole-flow `gate` (§8) |
-| SC-02 (sample emits to all four + Claude) | §6 golden suite asserts byte-equal output per target |
-| SC-03 (build twice → zero diff; guard passes) | §5.1 determinism: two-emit equality + post-emit `driftCheck` clean |
-| SC-04 (hand-edit fails guard; revert passes) | §5.2 `kind:"content"` drift + revert-passes case |
-| SC-05 (override survives + present) | §5.3 override survival + driftCheck-passes cases |
-| SC-05a (removal cleans up; orphan fails guard) | §5.2 orphan detection + stale-cleanup cases |
-| SC-06 (coverage report per build) | §4.5 report suite; report emitted by every `emit` |
-| SC-07 (Claude installable as plugin) | §6.4 plugin manifest shape suite |
-| SC-08 (golden + schema checks pass) | §6 golden + §7 schema suites; enforced by `gate` |
+| SC                                             | Proven by                                                                                                  |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| SC-01 (author once + build, no hand-edit)      | §4.1 manifest accepts a new entry; §5.1 emit produces adapters with no manual step; whole-flow `gate` (§8) |
+| SC-02 (sample emits to all four + Claude)      | §6 golden suite asserts byte-equal output per target                                                       |
+| SC-03 (build twice → zero diff; guard passes)  | §5.1 determinism: two-emit equality + post-emit `driftCheck` clean                                         |
+| SC-04 (hand-edit fails guard; revert passes)   | §5.2 `kind:"content"` drift + revert-passes case                                                           |
+| SC-05 (override survives + present)            | §5.3 override survival + driftCheck-passes cases                                                           |
+| SC-05a (removal cleans up; orphan fails guard) | §5.2 orphan detection + stale-cleanup cases                                                                |
+| SC-06 (coverage report per build)              | §4.5 report suite; report emitted by every `emit`                                                          |
+| SC-07 (Claude installable as plugin)           | §6.4 plugin manifest shape suite                                                                           |
+| SC-08 (golden + schema checks pass)            | §6 golden + §7 schema suites; enforced by `gate`                                                           |
 
 ## Dependencies
 

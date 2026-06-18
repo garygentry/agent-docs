@@ -265,15 +265,15 @@ const ToolType = z.enum(["skill", "agent", "command", "script", "reference"]);
 const Target = z.enum(["claude", "codex", "copilot", "cursor", "gemini"]);
 
 const TargetToolFlags = z.object({
-  exclude: z.boolean().optional(),          // skip this tool for this target
+  exclude: z.boolean().optional(), // skip this tool for this target
   // file-level override declarations are discovered from overrides/<target>/,
   // not enumerated here; this slot is for per-target mapping flags
 });
 
 const ToolEntry = z.object({
-  name: z.string(),                         // kebab-case; matches source path
+  name: z.string(), // kebab-case; matches source path
   type: ToolType,
-  source: z.string(),                       // repo-relative path to canonical file/dir
+  source: z.string(), // repo-relative path to canonical file/dir
   description: z.string().optional(),
   targets: z.record(Target, TargetToolFlags).optional(), // per-target flags/exclusions (REQ-DISC-01)
 });
@@ -293,7 +293,7 @@ const EmitterConfig = z.object({
 
 const Manifest = z.object({
   version: z.literal(1),
-  config: EmitterConfig.default({}),       // paths + target list (REQ-REUSE-01)
+  config: EmitterConfig.default({}), // paths + target list (REQ-REUSE-01)
   tools: z.array(ToolEntry),
 });
 ```
@@ -327,13 +327,13 @@ emitter module hardcodes a root path or the target list.
 
 ### 5.2 Per-target transform table (ported, verified from feature-forge source)
 
-| Target | Skill file | Skill frontmatter | Agent file | Aggregate manifest | Dropped |
-|--------|-----------|-------------------|------------|--------------------|---------|
-| claude | `skills/<n>/SKILL.md` | `{name, description, argument-hint?}` | `agents/<n>.md` full claudeKeys | — | none |
-| cursor | `skills/<n>/<n>.mdc` | `{description, globs:[], alwaysApply:false}` | `agents/<n>.mdc` same shape | — | argument-hint, agent claudeKeys |
-| codex | `skills/<n>/<n>.md` | `{name, description}` | `agents/<n>.md` `{name,description}` | `agents/openai.yaml` | argument-hint, agent claudeKeys |
-| copilot | `skills/<n>/<n>.md` | `{name, description}` | `agents/<n>.md` `{name,description}` | — | argument-hint, agent claudeKeys |
-| gemini | `skills/<n>/<n>.md` | `{name, description}` | `agents/<n>.md` `{name,description}` | `gemini-extension.json` | argument-hint, agent claudeKeys |
+| Target  | Skill file            | Skill frontmatter                            | Agent file                           | Aggregate manifest      | Dropped                         |
+| ------- | --------------------- | -------------------------------------------- | ------------------------------------ | ----------------------- | ------------------------------- |
+| claude  | `skills/<n>/SKILL.md` | `{name, description, argument-hint?}`        | `agents/<n>.md` full claudeKeys      | —                       | none                            |
+| cursor  | `skills/<n>/<n>.mdc`  | `{description, globs:[], alwaysApply:false}` | `agents/<n>.mdc` same shape          | —                       | argument-hint, agent claudeKeys |
+| codex   | `skills/<n>/<n>.md`   | `{name, description}`                        | `agents/<n>.md` `{name,description}` | `agents/openai.yaml`    | argument-hint, agent claudeKeys |
+| copilot | `skills/<n>/<n>.md`   | `{name, description}`                        | `agents/<n>.md` `{name,description}` | —                       | argument-hint, agent claudeKeys |
+| gemini  | `skills/<n>/<n>.md`   | `{name, description}`                        | `agents/<n>.md` `{name,description}` | `gemini-extension.json` | argument-hint, agent claudeKeys |
 
 Slash-command rows are added per §3.5; exact target formats finalized in
 forge-3-specs (TQ-1). Fixed target emission order: `claude, codex, copilot,
@@ -351,7 +351,7 @@ cursor, gemini`.
 - **Form B** (frontmatter-less markdown, e.g. GENERATION-REPORT.md): HTML comment
   at top.
 - **Form C** (strict JSON, gemini-extension.json): top-level `_generated:
-  {source, regenerate}` first key.
+{source, regenerate}` first key.
 
 Overridden files carry no provenance header (author content; §3.4).
 

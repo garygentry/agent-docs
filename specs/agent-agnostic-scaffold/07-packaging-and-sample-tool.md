@@ -24,17 +24,17 @@ _what correct emission means_ per target; `08` asserts the bytes.
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-|--------|-------------|---------|
-| REQ-PKG-01 | Canonical Claude side packaged as installable plugin (plugin + marketplace manifest) | 3, 4 |
-| REQ-REUSE-01 | Canonical format + emitter reusable in other repos | 5 |
-| REQ-EMIT-06 / REQ-REL-01 | Plugin manifests byte-stable, deterministic | 3.4 |
-| REQ-VALID-01 (ref) | Plugin manifests are generated, committed, drift-guarded | 3.5 |
-| REQ-TOOLS-01 | Sample tool is a skill (SKILL.md + reference) | 6 |
-| REQ-EMIT-07 | Sample skill emits correctly to all four targets + claude | 7 |
-| REQ-EMIT-03 (ref) | Sample skill's per-target drops are recorded | 7 |
-| PRD OQ-04 | Which sample tool; its correct per-target output | 6, 7 |
-| PRD OQ-05 | Plugin/marketplace manifest specifics | 3 |
+| REQ ID                   | Requirement                                                                          | Section |
+| ------------------------ | ------------------------------------------------------------------------------------ | ------- |
+| REQ-PKG-01               | Canonical Claude side packaged as installable plugin (plugin + marketplace manifest) | 3, 4    |
+| REQ-REUSE-01             | Canonical format + emitter reusable in other repos                                   | 5       |
+| REQ-EMIT-06 / REQ-REL-01 | Plugin manifests byte-stable, deterministic                                          | 3.4     |
+| REQ-VALID-01 (ref)       | Plugin manifests are generated, committed, drift-guarded                             | 3.5     |
+| REQ-TOOLS-01             | Sample tool is a skill (SKILL.md + reference)                                        | 6       |
+| REQ-EMIT-07              | Sample skill emits correctly to all four targets + claude                            | 7       |
+| REQ-EMIT-03 (ref)        | Sample skill's per-target drops are recorded                                         | 7       |
+| PRD OQ-04                | Which sample tool; its correct per-target output                                     | 6, 7    |
+| PRD OQ-05                | Plugin/marketplace manifest specifics                                                | 3       |
 
 Resolved open questions: **OQ-04** (§6, §7) and **OQ-05** (§3).
 
@@ -133,14 +133,14 @@ export interface PluginMeta {
 `PluginMeta` SHOULD be sourced as follows (assembly happens in `emit.ts`, not in this
 pure module):
 
-| `PluginMeta` field | Source | Fallback |
-|--------------------|--------|----------|
-| `name` | `package.json.name` | required |
-| `version` | `package.json.version` | required |
-| `description` | optional `Manifest.config.plugin.description` | a fixed default string |
-| `author` | optional `Manifest.config.plugin.author` | `package.json.author?.name` |
-| `keywords` | optional `Manifest.config.plugin.keywords` | `[]` |
-| `marketplaceDescription` | optional `Manifest.config.plugin.marketplaceDescription` | `description` |
+| `PluginMeta` field       | Source                                                   | Fallback                    |
+| ------------------------ | -------------------------------------------------------- | --------------------------- |
+| `name`                   | `package.json.name`                                      | required                    |
+| `version`                | `package.json.version`                                   | required                    |
+| `description`            | optional `Manifest.config.plugin.description`            | a fixed default string      |
+| `author`                 | optional `Manifest.config.plugin.author`                 | `package.json.author?.name` |
+| `keywords`               | optional `Manifest.config.plugin.keywords`               | `[]`                        |
+| `marketplaceDescription` | optional `Manifest.config.plugin.marketplaceDescription` | `description`               |
 
 > NOTE: the optional `Manifest.config.plugin` block is a forward extension of the
 > `EmitterConfig` Zod schema in `00-core-definitions.md` §2.3. If `02-manifest-and-config.md`
@@ -179,7 +179,7 @@ export function emitPlugin(meta: PluginMeta): EmittedFile[];
   "version": "<meta.version>",
   "description": "<meta.description>",
   "author": { "name": "<meta.author>" },
-  "keywords": ["<...meta.keywords>"]
+  "keywords": ["<...meta.keywords>"],
 }
 ```
 
@@ -195,9 +195,9 @@ export function emitPlugin(meta: PluginMeta): EmittedFile[];
       "name": "<meta.name>",
       "source": ".",
       "description": "<meta.description>",
-      "version": "<meta.version>"
-    }
-  ]
+      "version": "<meta.version>",
+    },
+  ],
 }
 ```
 
@@ -239,12 +239,12 @@ plugin manifests).
 
 ### 3.6 Error handling
 
-| Condition | Behavior |
-|-----------|----------|
-| `meta.name` empty / not kebab-case | throw `EmitterError("...", "PLUGIN_META_INVALID")` |
-| `meta.version` empty / not SemVer-shaped | throw `EmitterError("...", "PLUGIN_META_INVALID")` |
-| `meta.author` empty | allowed; emit `{ "name": "" }`? **No** — throw `PLUGIN_META_INVALID`; an installable plugin needs an owner. |
-| `package.json` missing `name`/`version` (assembly side, in `emit.ts`) | surface as `EmitterError` `PLUGIN_META_INVALID` before calling `emitPlugin` |
+| Condition                                                             | Behavior                                                                                                    |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `meta.name` empty / not kebab-case                                    | throw `EmitterError("...", "PLUGIN_META_INVALID")`                                                          |
+| `meta.version` empty / not SemVer-shaped                              | throw `EmitterError("...", "PLUGIN_META_INVALID")`                                                          |
+| `meta.author` empty                                                   | allowed; emit `{ "name": "" }`? **No** — throw `PLUGIN_META_INVALID`; an installable plugin needs an owner. |
+| `package.json` missing `name`/`version` (assembly side, in `emit.ts`) | surface as `EmitterError` `PLUGIN_META_INVALID` before calling `emitPlugin`                                 |
 
 `emitPlugin` itself performs no filesystem reads, so it raises no
 `SourceNotFoundError`/`PathEscapeError`; those belong to discovery/publish. Failures
@@ -333,18 +333,16 @@ canonical sources live in non-default directories (e.g. `prompts/` instead of
    {
      "version": 1,
      "config": {
-       "skillsDir": "prompts",          // non-default canonical root
+       "skillsDir": "prompts", // non-default canonical root
        "agentsDir": "agents",
        "commandsDir": "commands",
        "referencesDir": "shared/refs",
        "scriptsDir": "shared/scripts",
        "overridesDir": "overrides",
        "adaptersDir": "adapters",
-       "targets": ["claude", "codex", "cursor"]   // a different/narrower target set
+       "targets": ["claude", "codex", "cursor"], // a different/narrower target set
      },
-     "tools": [
-       { "name": "my-tool", "type": "skill", "source": "prompts/my-tool/SKILL.md" }
-     ]
+     "tools": [{ "name": "my-tool", "type": "skill", "source": "prompts/my-tool/SKILL.md" }],
    }
    ```
 
@@ -441,16 +439,19 @@ verbatim to every target — a `VerbatimRecord`, `00-core-definitions.md` §3.4)
 # House style guide
 
 ## Prose
+
 - One sentence per line.
 - Wrap prose at roughly 90 columns.
 - Prefer active voice.
 
 ## Structure
+
 - Sentence-case headings.
 - A single H1 per document.
 - Reference sections link to the canonical source.
 
 ## Code
+
 - Every fenced block declares a language.
 - Show realistic, runnable examples.
 ```
@@ -465,7 +466,7 @@ The sample skill is registered in `tools.manifest.json` (schema owned by
   "name": "docs-helper",
   "type": "skill",
   "source": "skills/docs-helper/SKILL.md",
-  "description": "Helps write and review project documentation following the repo's house style."
+  "description": "Helps write and review project documentation following the repo's house style.",
 }
 ```
 

@@ -50,16 +50,17 @@ function makeEmitResult(): EmitResult {
     manifestEntries: [],
     overridden: ["codex/agents/triage.toml"],
     verbatim: [
-      { relpath: "claude/skills/pr-helper/references/x.md", sourcePath: "skills/pr-helper/references/x.md" },
+      {
+        relpath: "claude/skills/pr-helper/references/x.md",
+        sourcePath: "skills/pr-helper/references/x.md",
+      },
     ],
   };
 }
 
 describe("buildReportModel", () => {
   it("computes per-target tallies, drops, and staleOverrides", () => {
-    const model = buildReportModel(makeEmitResult(), makeManifest(), [
-      "cursor/rules/gone.mdc",
-    ]);
+    const model = buildReportModel(makeEmitResult(), makeManifest(), ["cursor/rules/gone.mdc"]);
 
     expect(model.toolsProcessed).toEqual([
       { name: "pr-helper", type: "skill" },
@@ -99,9 +100,7 @@ describe("buildReportModel", () => {
 
 describe("renderReport", () => {
   it("renders the Summary/Coverage/Drops/Stale sections with no timestamps", () => {
-    const model = buildReportModel(makeEmitResult(), makeManifest(), [
-      "cursor/rules/gone.mdc",
-    ]);
+    const model = buildReportModel(makeEmitResult(), makeManifest(), ["cursor/rules/gone.mdc"]);
     const out = renderReport(model);
 
     expect(out).toContain("<!-- GENERATED — DO NOT EDIT. Regenerate: bun run build -->");
@@ -135,9 +134,7 @@ describe("renderReport", () => {
   });
 
   it("is byte-identical across two renders", () => {
-    const model = buildReportModel(makeEmitResult(), makeManifest(), [
-      "cursor/rules/gone.mdc",
-    ]);
+    const model = buildReportModel(makeEmitResult(), makeManifest(), ["cursor/rules/gone.mdc"]);
     expect(renderReport(model)).toBe(renderReport(model));
   });
 });

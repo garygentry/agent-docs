@@ -20,7 +20,8 @@ afterEach(() => {
 const META: PluginMeta = {
   name: "agent-docs",
   version: "0.1.0",
-  description: "Author once in Claude-native form, emit adapters for Codex, Copilot, Cursor, and Gemini.",
+  description:
+    "Author once in Claude-native form, emit adapters for Codex, Copilot, Cursor, and Gemini.",
   author: "Gary Gentry",
   keywords: ["documentation", "skills", "agents"],
 };

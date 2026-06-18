@@ -11,10 +11,7 @@ function makeSkill(): SkillRecord {
     name: "docs-helper",
     description: "Help with docs.",
     metadata: new Map<string, unknown>([
-      [
-        "metadata",
-        new Map<string, unknown>([["allowed-tools", ["Read", "Grep"]]]),
-      ],
+      ["metadata", new Map<string, unknown>([["allowed-tools", ["Read", "Grep"]]])],
     ]),
     body: "Skill body line.\n",
     ownRefs: [],
@@ -54,9 +51,7 @@ describe("codexTransform (04 §7)", () => {
   it("transformSkill emits skills/<n>/SKILL.md and drops metadata", () => {
     const out = codexTransform.transformSkill(makeSkill());
     expect(out.files[0]!.relpath).toBe("skills/docs-helper/SKILL.md");
-    expect(out.files[0]!.content).toContain(
-      PROVENANCE.yamlComment("skills/docs-helper/SKILL.md"),
-    );
+    expect(out.files[0]!.content).toContain(PROVENANCE.yamlComment("skills/docs-helper/SKILL.md"));
     expect(out.drops.map((d) => d.construct)).toEqual(["skill.metadata"]);
     expect(out.drops[0]!.kind).toBe("fallback");
   });
@@ -71,16 +66,10 @@ describe("codexTransform (04 §7)", () => {
     );
     // Parses to the expected TOML shape (name, description, developer_instructions).
     const parsed = parseToml(file.content) as Record<string, unknown>;
-    expect(Object.keys(parsed).sort()).toEqual([
-      "description",
-      "developer_instructions",
-      "name",
-    ]);
+    expect(Object.keys(parsed).sort()).toEqual(["description", "developer_instructions", "name"]);
     expect(parsed.name).toBe("doc-reviewer");
     expect(parsed.description).toBe("Reviews documentation for clarity.");
-    expect(parsed.developer_instructions).toBe(
-      "You review docs for clarity and accuracy...\n",
-    );
+    expect(parsed.developer_instructions).toBe("You review docs for clarity and accuracy...\n");
     // Multiline body uses a TOML triple-quoted literal.
     expect(file.content).toContain("developer_instructions = '''");
     // Every structural claudeKey is dropped (empty keep-set).

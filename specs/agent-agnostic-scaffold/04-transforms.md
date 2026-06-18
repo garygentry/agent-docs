@@ -28,19 +28,19 @@ All shared types (`SkillRecord`, `AgentRecord`, `CommandRecord`, `EmittedFile`,
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-|--------|-------------|---------|
-| REQ-EMIT-02 | Defined per-target transform rule set, one per target | 3, 6, 7, 8, 9, 10 |
-| REQ-EMIT-03 | Every unrepresentable construct → DropRecord (fallback/skipped) + warning; no silent drops | 4, 5, 6–10 |
-| REQ-EMIT-03a | Nearest representable equivalent (design goal) | 5, 6–10 |
-| REQ-EMIT-06 / REQ-REL-01 | Byte-stable: KEY_ORDER frontmatter, TARGET_ORDER emission | 4.2, 4.3, 11 |
-| REQ-EMIT-07 | Emit adapters for all four targets + canonical claude | 3, 6–10 |
-| REQ-TOOLS-01 | Transform skills | 6–10 (`transformSkill`) |
-| REQ-TOOLS-02 | Transform agents/subagents | 6–10 (`transformAgent`) |
-| REQ-TOOLS-03 | Transform slash commands | 6–10 (`transformCommand`) |
-| REQ-VALID-03 | Emitted aggregate manifests are schema-shaped | 6.4, 9.4, 12 |
-| TQ-1 | Native command formats per target | 12 |
-| TQ-2 | Codex agent structural keys | 7.3, 12 |
+| REQ ID                   | Requirement                                                                                | Section                   |
+| ------------------------ | ------------------------------------------------------------------------------------------ | ------------------------- |
+| REQ-EMIT-02              | Defined per-target transform rule set, one per target                                      | 3, 6, 7, 8, 9, 10         |
+| REQ-EMIT-03              | Every unrepresentable construct → DropRecord (fallback/skipped) + warning; no silent drops | 4, 5, 6–10                |
+| REQ-EMIT-03a             | Nearest representable equivalent (design goal)                                             | 5, 6–10                   |
+| REQ-EMIT-06 / REQ-REL-01 | Byte-stable: KEY_ORDER frontmatter, TARGET_ORDER emission                                  | 4.2, 4.3, 11              |
+| REQ-EMIT-07              | Emit adapters for all four targets + canonical claude                                      | 3, 6–10                   |
+| REQ-TOOLS-01             | Transform skills                                                                           | 6–10 (`transformSkill`)   |
+| REQ-TOOLS-02             | Transform agents/subagents                                                                 | 6–10 (`transformAgent`)   |
+| REQ-TOOLS-03             | Transform slash commands                                                                   | 6–10 (`transformCommand`) |
+| REQ-VALID-03             | Emitted aggregate manifests are schema-shaped                                              | 6.4, 9.4, 12              |
+| TQ-1                     | Native command formats per target                                                          | 12                        |
+| TQ-2                     | Codex agent structural keys                                                                | 7.3, 12                   |
 
 ## 1. Dependencies
 
@@ -342,13 +342,13 @@ per-target transform only declares the intended destination relpath.
 directory, the refs land **under that skill directory**, preserving the subtree
 relative to the skill root:
 
-| Target | Skill artifact | Verbatim refs destination (adapter-relative) |
-|--------|---------------|-----------------------------------------------|
-| claude | `skills/<n>/SKILL.md` | `skills/<n>/<ref-subpath>` |
-| codex | `skills/<n>/SKILL.md` | `skills/<n>/<ref-subpath>` |
-| gemini | `skills/<n>/<n>.md` | `skills/<n>/<ref-subpath>` |
-| copilot | `instructions/<n>.instructions.md` (flat) | `instructions/<n>/<ref-subpath>` |
-| **cursor** | `rules/<n>.mdc` (**flattened**, no skill dir) | `rules/<n>/<ref-subpath>` |
+| Target     | Skill artifact                                | Verbatim refs destination (adapter-relative) |
+| ---------- | --------------------------------------------- | -------------------------------------------- |
+| claude     | `skills/<n>/SKILL.md`                         | `skills/<n>/<ref-subpath>`                   |
+| codex      | `skills/<n>/SKILL.md`                         | `skills/<n>/<ref-subpath>`                   |
+| gemini     | `skills/<n>/<n>.md`                           | `skills/<n>/<ref-subpath>`                   |
+| copilot    | `instructions/<n>.instructions.md` (flat)     | `instructions/<n>/<ref-subpath>`             |
+| **cursor** | `rules/<n>.mdc` (**flattened**, no skill dir) | `rules/<n>/<ref-subpath>`                    |
 
 `<ref-subpath>` is the `ownRefs` entry rebased to its position relative to the
 skill's canonical root (e.g. a canonical `skills/foo/references/bar.md` → adapter
@@ -399,11 +399,11 @@ the installable plugin bundle (`07-packaging-and-sample-tool.md`).
 
 ### 6.1 Rules table
 
-| Construct | Emitted file | Frontmatter (KEY_ORDER) | Drops |
-|-----------|-------------|--------------------------|-------|
-| skill | `skills/<n>/SKILL.md` | `name, description, argument-hint?` + full `metadata` (incl. `allowed-tools`) | none |
-| agent | `agents/<n>.md` | `name, description` + **all** `claudeKeys` | none |
-| command | `commands/<n>.md` | `name, description, argument-hint?` | none |
+| Construct | Emitted file          | Frontmatter (KEY_ORDER)                                                       | Drops |
+| --------- | --------------------- | ----------------------------------------------------------------------------- | ----- |
+| skill     | `skills/<n>/SKILL.md` | `name, description, argument-hint?` + full `metadata` (incl. `allowed-tools`) | none  |
+| agent     | `agents/<n>.md`       | `name, description` + **all** `claudeKeys`                                    | none  |
+| command   | `commands/<n>.md`     | `name, description, argument-hint?`                                           | none  |
 
 ### 6.2 `transformSkill`
 
@@ -487,6 +487,7 @@ name: summarize
 description: Summarize the current document.
 argument-hint: "[path]"
 ---
+
 Summarize the document at the given path...
 ```
 
@@ -499,6 +500,7 @@ name: summarize
 description: Summarize the current document.
 argument-hint: "[path]"
 ---
+
 Summarize the document at the given path...
 ```
 
@@ -514,12 +516,12 @@ of skills** — we still emit but warn.
 
 ### 7.1 Rules table
 
-| Construct | Emitted file | Format | Frontmatter / fields | Drops |
-|-----------|-------------|--------|----------------------|-------|
-| skill | `skills/<n>/SKILL.md` | md+YAML | `{name, description}` | `metadata` (incl. `argument-hint`, `allowed-tools`) → fallback |
-| agent | `agents/<n>.toml` | TOML | `name, description, developer_instructions` (body→instructions) | every `claudeKey` (`tools`, `model`, …) → fallback (TQ-2) |
-| command | `prompts/<n>.md` | md+YAML | `{description, argument-hint}` | DEPRECATION warning; argument-hint kept (Codex supports `$1`-`$9`/`$ARGUMENTS`) |
-| aggregate | `agents/openai.yaml` | YAML | `{_generated, agents: [{name, description}]}` | — |
+| Construct | Emitted file          | Format  | Frontmatter / fields                                            | Drops                                                                           |
+| --------- | --------------------- | ------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| skill     | `skills/<n>/SKILL.md` | md+YAML | `{name, description}`                                           | `metadata` (incl. `argument-hint`, `allowed-tools`) → fallback                  |
+| agent     | `agents/<n>.toml`     | TOML    | `name, description, developer_instructions` (body→instructions) | every `claudeKey` (`tools`, `model`, …) → fallback (TQ-2)                       |
+| command   | `prompts/<n>.md`      | md+YAML | `{description, argument-hint}`                                  | DEPRECATION warning; argument-hint kept (Codex supports `$1`-`$9`/`$ARGUMENTS`) |
+| aggregate | `agents/openai.yaml`  | YAML    | `{_generated, agents: [{name, description}]}`                   | —                                                                               |
 
 ### 7.2 `transformSkill`
 
@@ -529,7 +531,10 @@ export const codexTransform: TargetTransform = {
 
   transformSkill(skill) {
     const fields = orderFrontmatter(
-      new Map<string, unknown>([["name", skill.name], ["description", skill.description]]),
+      new Map<string, unknown>([
+        ["name", skill.name],
+        ["description", skill.description],
+      ]),
     );
     const content = renderFrontmatter(fields, skill.body, skill.sourcePath);
     const drops: DropRecord[] = [];
@@ -539,7 +544,8 @@ export const codexTransform: TargetTransform = {
         source: skill.sourcePath,
         construct: "skill.metadata",
         kind: "fallback",
-        reason: "Codex skill frontmatter reads only {name, description}; metadata (argument-hint, allowed-tools) dropped",
+        reason:
+          "Codex skill frontmatter reads only {name, description}; metadata (argument-hint, allowed-tools) dropped",
       });
     }
     return {
@@ -656,6 +662,7 @@ description: Reviews documentation for clarity.
 tools: [Read, Grep]
 model: opus
 ---
+
 You review docs for clarity and accuracy...
 ```
 
@@ -693,11 +700,11 @@ commands are `.cursor/commands/<n>.md` (filename = command name, body = prompt) 
 
 ### 8.1 Rules table
 
-| Construct | Emitted file | Format | Frontmatter / fields | Drops |
-|-----------|-------------|--------|----------------------|-------|
-| skill | `rules/<n>.mdc` | mdc+YAML | `{description, globs: [], alwaysApply: false}` | `name` (in filename), `metadata`, `argument-hint`, `allowed-tools` → fallback |
-| agent | `agents/<n>.md` | md+YAML | `{name, description}` | every `claudeKey` (no tools allowlist; `readonly` bool only) → fallback |
-| command | `commands/<n>.md` | md (body only) | none (filename = name) | `argument-hint` → fallback (no structured args, MEDIUM-LOW) |
+| Construct | Emitted file      | Format         | Frontmatter / fields                           | Drops                                                                         |
+| --------- | ----------------- | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------- |
+| skill     | `rules/<n>.mdc`   | mdc+YAML       | `{description, globs: [], alwaysApply: false}` | `name` (in filename), `metadata`, `argument-hint`, `allowed-tools` → fallback |
+| agent     | `agents/<n>.md`   | md+YAML        | `{name, description}`                          | every `claudeKey` (no tools allowlist; `readonly` bool only) → fallback       |
+| command   | `commands/<n>.md` | md (body only) | none (filename = name)                         | `argument-hint` → fallback (no structured args, MEDIUM-LOW)                   |
 
 ### 8.2 Transforms
 
@@ -709,42 +716,77 @@ export const cursorTransform: TargetTransform = {
     const fields = orderFrontmatter(
       new Map<string, unknown>([
         ["description", skill.description],
-        ["globs", []],            // deterministic default (REQ-EMIT-06)
+        ["globs", []], // deterministic default (REQ-EMIT-06)
         ["alwaysApply", false],
       ]),
     );
     const content = renderFrontmatter(fields, skill.body, skill.sourcePath);
     const drops: DropRecord[] = [];
     if (hintValue(skill) !== undefined) {
-      drops.push({ target: "cursor", source: skill.sourcePath, construct: "skill.argument-hint",
-        kind: "fallback", reason: "no Cursor .mdc invocation-hint field" });
+      drops.push({
+        target: "cursor",
+        source: skill.sourcePath,
+        construct: "skill.argument-hint",
+        kind: "fallback",
+        reason: "no Cursor .mdc invocation-hint field",
+      });
     }
     if (skill.metadata.size > 0) {
-      drops.push({ target: "cursor", source: skill.sourcePath, construct: "skill.metadata",
-        kind: "fallback", reason: "Cursor rules carry only {description, globs, alwaysApply}" });
+      drops.push({
+        target: "cursor",
+        source: skill.sourcePath,
+        construct: "skill.metadata",
+        kind: "fallback",
+        reason: "Cursor rules carry only {description, globs, alwaysApply}",
+      });
     }
-    return { files: [{ relpath: `rules/${skill.name}.mdc`, content, mode: 0o644 }], drops, manifestEntries: [] };
+    return {
+      files: [{ relpath: `rules/${skill.name}.mdc`, content, mode: 0o644 }],
+      drops,
+      manifestEntries: [],
+    };
   },
 
   transformAgent(agent) {
     const fields = orderFrontmatter(
-      new Map<string, unknown>([["name", agent.name], ["description", agent.description]]),
+      new Map<string, unknown>([
+        ["name", agent.name],
+        ["description", agent.description],
+      ]),
     );
     const content = renderFrontmatter(fields, agent.body, agent.sourcePath);
-    const drops = dropAllClaudeKeys(agent, "cursor",
-      "Cursor agents have no tools allowlist (readonly bool only); structural keys dropped");
-    return { files: [{ relpath: `agents/${agent.name}.md`, content, mode: 0o644 }], drops, manifestEntries: [] };
+    const drops = dropAllClaudeKeys(
+      agent,
+      "cursor",
+      "Cursor agents have no tools allowlist (readonly bool only); structural keys dropped",
+    );
+    return {
+      files: [{ relpath: `agents/${agent.name}.md`, content, mode: 0o644 }],
+      drops,
+      manifestEntries: [],
+    };
   },
 
   transformCommand(command) {
     // Body-only prompt file; argument-hint flattened to prose is OUT OF SCOPE — dropped with record.
     const body = command.body;
-    const drops: DropRecord[] = [{ target: "cursor", source: command.sourcePath,
-      construct: "command.argument-hint", kind: "fallback",
-      reason: "no confirmed Cursor structured argument syntax (MEDIUM-LOW); argument-hint dropped" }];
+    const drops: DropRecord[] = [
+      {
+        target: "cursor",
+        source: command.sourcePath,
+        construct: "command.argument-hint",
+        kind: "fallback",
+        reason:
+          "no confirmed Cursor structured argument syntax (MEDIUM-LOW); argument-hint dropped",
+      },
+    ];
     // Provenance Form B (no frontmatter): HTML comment atop the body.
     const content = PROVENANCE.htmlComment() + "\n\n" + body;
-    return { files: [{ relpath: `commands/${command.name}.md`, content, mode: 0o644 }], drops, manifestEntries: [] };
+    return {
+      files: [{ relpath: `commands/${command.name}.md`, content, mode: 0o644 }],
+      drops,
+      manifestEntries: [],
+    };
   },
 
   aggregateManifest: () => null,
@@ -786,12 +828,12 @@ v1** — see §9.2 note.
 
 ### 9.1 Rules table
 
-| Construct | Emitted file | Format | Frontmatter / fields | Drops |
-|-----------|-------------|--------|----------------------|-------|
-| skill | `skills/<n>/<n>.md` | md+YAML | `{name, description}` | `metadata`, `argument-hint`, `allowed-tools` → fallback; **+ aggregate entry** |
-| agent | `agents/<n>.md` | md+YAML | `{name, description}` | every `claudeKey` → fallback |
-| command | `commands/<n>.toml` | TOML | `prompt` (= body), `description` | `argument-hint` → fallback (note added into prompt as prose) |
-| aggregate | `gemini-extension.json` | JSON | `{_generated, name, version, skills: [{name, description}]}` | — |
+| Construct | Emitted file            | Format  | Frontmatter / fields                                         | Drops                                                                          |
+| --------- | ----------------------- | ------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| skill     | `skills/<n>/<n>.md`     | md+YAML | `{name, description}`                                        | `metadata`, `argument-hint`, `allowed-tools` → fallback; **+ aggregate entry** |
+| agent     | `agents/<n>.md`         | md+YAML | `{name, description}`                                        | every `claudeKey` → fallback                                                   |
+| command   | `commands/<n>.toml`     | TOML    | `prompt` (= body), `description`                             | `argument-hint` → fallback (note added into prompt as prose)                   |
+| aggregate | `gemini-extension.json` | JSON    | `{_generated, name, version, skills: [{name, description}]}` | —                                                                              |
 
 ### 9.2 Transforms
 
@@ -801,13 +843,21 @@ export const geminiTransform: TargetTransform = {
 
   transformSkill(skill) {
     const fields = orderFrontmatter(
-      new Map<string, unknown>([["name", skill.name], ["description", skill.description]]),
+      new Map<string, unknown>([
+        ["name", skill.name],
+        ["description", skill.description],
+      ]),
     );
     const content = renderFrontmatter(fields, skill.body, skill.sourcePath);
     const drops: DropRecord[] = [];
     if (skill.metadata.size > 0) {
-      drops.push({ target: "gemini", source: skill.sourcePath, construct: "skill.metadata",
-        kind: "fallback", reason: "Gemini skill carries only {name, description}; metadata dropped" });
+      drops.push({
+        target: "gemini",
+        source: skill.sourcePath,
+        construct: "skill.metadata",
+        kind: "fallback",
+        reason: "Gemini skill carries only {name, description}; metadata dropped",
+      });
     }
     return {
       files: [{ relpath: `skills/${skill.name}/${skill.name}.md`, content, mode: 0o644 }],
@@ -818,27 +868,52 @@ export const geminiTransform: TargetTransform = {
 
   transformAgent(agent) {
     const fields = orderFrontmatter(
-      new Map<string, unknown>([["name", agent.name], ["description", agent.description]]),
+      new Map<string, unknown>([
+        ["name", agent.name],
+        ["description", agent.description],
+      ]),
     );
     const content = renderFrontmatter(fields, agent.body, agent.sourcePath);
-    const drops = dropAllClaudeKeys(agent, "gemini",
-      "Gemini agent frontmatter carries only {name, description}; structural keys dropped");
-    return { files: [{ relpath: `agents/${agent.name}.md`, content, mode: 0o644 }], drops, manifestEntries: [] };
+    const drops = dropAllClaudeKeys(
+      agent,
+      "gemini",
+      "Gemini agent frontmatter carries only {name, description}; structural keys dropped",
+    );
+    return {
+      files: [{ relpath: `agents/${agent.name}.md`, content, mode: 0o644 }],
+      drops,
+      manifestEntries: [],
+    };
   },
 
   transformCommand(command) {
     // Map body → prompt, description → description. argument-hint has no native field:
     // appended into the prompt as a prose note, AND drop-recorded (REQ-EMIT-03/03a).
-    const prompt = command.argumentHint !== undefined
-      ? `${command.body}\n\nArguments: ${command.argumentHint}`
-      : command.body;
-    const content = renderGeminiCommandToml(command.name, command.description, prompt, command.sourcePath);
+    const prompt =
+      command.argumentHint !== undefined
+        ? `${command.body}\n\nArguments: ${command.argumentHint}`
+        : command.body;
+    const content = renderGeminiCommandToml(
+      command.name,
+      command.description,
+      prompt,
+      command.sourcePath,
+    );
     const drops: DropRecord[] = [];
     if (command.argumentHint !== undefined) {
-      drops.push({ target: "gemini", source: command.sourcePath, construct: "command.argument-hint",
-        kind: "fallback", reason: "Gemini commands have no argument-hint field; flattened into prompt prose" });
+      drops.push({
+        target: "gemini",
+        source: command.sourcePath,
+        construct: "command.argument-hint",
+        kind: "fallback",
+        reason: "Gemini commands have no argument-hint field; flattened into prompt prose",
+      });
     }
-    return { files: [{ relpath: `commands/${command.name}.toml`, content, mode: 0o644 }], drops, manifestEntries: [] };
+    return {
+      files: [{ relpath: `commands/${command.name}.toml`, content, mode: 0o644 }],
+      drops,
+      manifestEntries: [],
+    };
   },
 
   // identity = { name, version } threaded from the resolved PluginMeta (07 §3.2,
@@ -849,8 +924,8 @@ export const geminiTransform: TargetTransform = {
     // Form C: _generated FIRST key in strict JSON. entries pre-sorted by name (05).
     const doc = {
       _generated: { source: "skills/*", regenerate: REGEN_CMD },
-      name: identity.name,        // from resolved PluginMeta (07 §3.2), not a literal
-      version: identity.version,  // from resolved PluginMeta (07 §3.2), not a literal
+      name: identity.name, // from resolved PluginMeta (07 §3.2), not a literal
+      version: identity.version, // from resolved PluginMeta (07 §3.2), not a literal
       skills: entries.map((e) => ({ name: e.name, description: e.description })),
     };
     const content = JSON.stringify(doc, null, 2) + "\n"; // strict JSON, 2-space, trailing \n (REQ-EMIT-06)
@@ -883,9 +958,7 @@ hardcoded by the transform.
   "_generated": { "source": "skills/*", "regenerate": "bun run build" },
   "name": "agent-docs",
   "version": "0.1.0",
-  "skills": [
-    { "name": "graphify", "description": "Turn any input into a knowledge graph." }
-  ]
+  "skills": [{ "name": "graphify", "description": "Turn any input into a knowledge graph." }]
 }
 ```
 
@@ -907,11 +980,11 @@ emitted aggregate against that schema. This document guarantees the **shape**
 
 ### 10.1 Rules table
 
-| Construct | Emitted file | Format | Frontmatter / fields | Drops |
-|-----------|-------------|--------|----------------------|-------|
-| skill | `instructions/<n>.instructions.md` | md+YAML | `{description, applyTo: "**"}` | `name` (in filename), `metadata`, `argument-hint`, `allowed-tools` → fallback |
-| agent | `agents/<n>.agent.md` | md+YAML | `{name, description}` (+ `tools` only if present & representable) | structural `claudeKeys` minus represented → fallback |
-| command | `prompts/<n>.prompt.md` | md+YAML | `{name, description, argument-hint?}` | none (argument-hint maps cleanly, HIGH) |
+| Construct | Emitted file                       | Format  | Frontmatter / fields                                              | Drops                                                                         |
+| --------- | ---------------------------------- | ------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| skill     | `instructions/<n>.instructions.md` | md+YAML | `{description, applyTo: "**"}`                                    | `name` (in filename), `metadata`, `argument-hint`, `allowed-tools` → fallback |
+| agent     | `agents/<n>.agent.md`              | md+YAML | `{name, description}` (+ `tools` only if present & representable) | structural `claudeKeys` minus represented → fallback                          |
+| command   | `prompts/<n>.prompt.md`            | md+YAML | `{name, description, argument-hint?}`                             | none (argument-hint maps cleanly, HIGH)                                       |
 
 ### 10.2 Transforms
 
@@ -923,18 +996,28 @@ export const copilotTransform: TargetTransform = {
     const fields = orderFrontmatter(
       new Map<string, unknown>([
         ["description", skill.description],
-        ["applyTo", "**"],     // repo-wide default (deterministic, REQ-EMIT-06)
+        ["applyTo", "**"], // repo-wide default (deterministic, REQ-EMIT-06)
       ]),
     );
     const content = renderFrontmatter(fields, skill.body, skill.sourcePath);
     const drops: DropRecord[] = [];
     if (hintValue(skill) !== undefined) {
-      drops.push({ target: "copilot", source: skill.sourcePath, construct: "skill.argument-hint",
-        kind: "fallback", reason: "Copilot instructions carry no invocation hint" });
+      drops.push({
+        target: "copilot",
+        source: skill.sourcePath,
+        construct: "skill.argument-hint",
+        kind: "fallback",
+        reason: "Copilot instructions carry no invocation hint",
+      });
     }
     if (skill.metadata.size > 0) {
-      drops.push({ target: "copilot", source: skill.sourcePath, construct: "skill.metadata",
-        kind: "fallback", reason: "Copilot instructions carry only {description, applyTo}" });
+      drops.push({
+        target: "copilot",
+        source: skill.sourcePath,
+        construct: "skill.metadata",
+        kind: "fallback",
+        reason: "Copilot instructions carry only {description, applyTo}",
+      });
     }
     return {
       files: [{ relpath: `instructions/${skill.name}.instructions.md`, content, mode: 0o644 }],
@@ -946,16 +1029,30 @@ export const copilotTransform: TargetTransform = {
   transformAgent(agent) {
     // Copilot .agent.md DOES support a tools array → keep `tools` if present, drop the rest.
     const KEEP: ReadonlySet<string> = new Set(["tools", "model"]); // §12: confirm tools/model shape
-    const fields = new Map<string, unknown>([["name", agent.name], ["description", agent.description]]);
+    const fields = new Map<string, unknown>([
+      ["name", agent.name],
+      ["description", agent.description],
+    ]);
     for (const k of KEEP) if (agent.claudeKeys.has(k)) fields.set(k, agent.claudeKeys.get(k));
     const content = renderFrontmatter(orderFrontmatter(fields), agent.body, agent.sourcePath);
-    const drops = dropAllClaudeKeys(agent, "copilot",
-      "not representable in Copilot .agent.md frontmatter", KEEP);
-    return { files: [{ relpath: `agents/${agent.name}.agent.md`, content, mode: 0o644 }], drops, manifestEntries: [] };
+    const drops = dropAllClaudeKeys(
+      agent,
+      "copilot",
+      "not representable in Copilot .agent.md frontmatter",
+      KEEP,
+    );
+    return {
+      files: [{ relpath: `agents/${agent.name}.agent.md`, content, mode: 0o644 }],
+      drops,
+      manifestEntries: [],
+    };
   },
 
   transformCommand(command) {
-    const fields = new Map<string, unknown>([["name", command.name], ["description", command.description]]);
+    const fields = new Map<string, unknown>([
+      ["name", command.name],
+      ["description", command.description],
+    ]);
     if (command.argumentHint !== undefined) fields.set("argument-hint", command.argumentHint);
     const content = renderFrontmatter(orderFrontmatter(fields), command.body, command.sourcePath);
     return {
@@ -988,6 +1085,7 @@ name: summarize
 description: Summarize the current document.
 argument-hint: "[path]"
 ---
+
 Summarize the document at the given path...
 ```
 
@@ -1014,13 +1112,13 @@ Re-running a transform on the same record yields a byte-identical `TransformOutp
 
 ### TQ-1 — native slash-command formats per target (RESOLVED)
 
-| Target | Command form | Confidence | Disposition |
-|--------|-------------|-----------|-------------|
-| claude | `commands/<n>.md` full frontmatter incl. `argument-hint` | HIGH (native) | clean, no drops |
-| copilot | `prompts/<n>.prompt.md` `{name, description, argument-hint?}` | HIGH | clean map, argument-hint preserved |
-| gemini | `commands/<n>.toml` `{prompt, description}`, `{{args}}` | MEDIUM | map body→prompt; argument-hint → prose note + drop record |
-| codex | `prompts/<n>.md` `{description, argument-hint}` | MEDIUM, **DEPRECATED** | emit + DEPRECATION fallback record |
-| cursor | `commands/<n>.md` body-only prompt | MEDIUM-LOW (args unconfirmed) | emit body; argument-hint dropped with record |
+| Target  | Command form                                                  | Confidence                    | Disposition                                               |
+| ------- | ------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
+| claude  | `commands/<n>.md` full frontmatter incl. `argument-hint`      | HIGH (native)                 | clean, no drops                                           |
+| copilot | `prompts/<n>.prompt.md` `{name, description, argument-hint?}` | HIGH                          | clean map, argument-hint preserved                        |
+| gemini  | `commands/<n>.toml` `{prompt, description}`, `{{args}}`       | MEDIUM                        | map body→prompt; argument-hint → prose note + drop record |
+| codex   | `prompts/<n>.md` `{description, argument-hint}`               | MEDIUM, **DEPRECATED**        | emit + DEPRECATION fallback record                        |
+| cursor  | `commands/<n>.md` body-only prompt                            | MEDIUM-LOW (args unconfirmed) | emit body; argument-hint dropped with record              |
 
 ### TQ-2 — Codex agent structural keys (RESOLVED: drop-with-record default)
 

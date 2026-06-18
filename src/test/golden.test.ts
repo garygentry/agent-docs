@@ -35,7 +35,8 @@ function readGolden(target: Target): Map<string, string> {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const abs = path.join(dir, e.name);
       if (e.isDirectory()) walk(abs);
-      else out.set(path.relative(base, abs).split(path.sep).join("/"), fs.readFileSync(abs, "utf8"));
+      else
+        out.set(path.relative(base, abs).split(path.sep).join("/"), fs.readFileSync(abs, "utf8"));
     }
   };
   walk(base);

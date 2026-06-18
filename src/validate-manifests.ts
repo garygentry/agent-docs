@@ -92,10 +92,7 @@ function findAggregate(files: EmittedFile[], relpath: string): EmittedFile | und
  * @param files  That target's emitted files (bundle-relative or `<target>/`-prefixed).
  * @throws {ManifestValidationError} on a missing, unparseable, or invalid manifest.
  */
-export function validateTargetManifest(
-  target: z.infer<typeof Target>,
-  files: EmittedFile[],
-): void {
+export function validateTargetManifest(target: z.infer<typeof Target>, files: EmittedFile[]): void {
   const spec = AGGREGATE_SPECS[target];
   if (!spec) return; // claude/copilot/cursor — no aggregate manifest (skip with note).
 

@@ -7,18 +7,18 @@ here.** All code is TypeScript targeting Bun (CON-01); types are exported throug
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-|--------|-------------|---------|
-| REQ-DISC-01 | Explicit tool manifest enumerating tools | 2.1, 2.2 |
-| REQ-DISC-03 | Manifest has a defined, validatable schema | 2.1, 2.2 |
-| REQ-REUSE-01 | Config-driven, path-agnostic | 2.3 |
-| REQ-EMIT-07 | Emit for all four targets | 2.4 |
-| REQ-TOOLS-01..04 | Skills, agents, commands, scripts/references | 2.4, 3 |
-| REQ-EMIT-03/03a | Coverage-report entry + warning for fallbacks | 3.4, 4 |
-| REQ-VALID-05 / REQ-OBS-01 | Coverage/capability report data | 3.5 |
-| REQ-OBS-02 | Drift output identifies which files differ and how | 3.6 |
-| REQ-EMIT-06 / REQ-REL-01 | Byte-stable, deterministic constants | 5 |
-| REQ-SEC-01 | Path-confinement error | 4 |
+| REQ ID                    | Requirement                                        | Section  |
+| ------------------------- | -------------------------------------------------- | -------- |
+| REQ-DISC-01               | Explicit tool manifest enumerating tools           | 2.1, 2.2 |
+| REQ-DISC-03               | Manifest has a defined, validatable schema         | 2.1, 2.2 |
+| REQ-REUSE-01              | Config-driven, path-agnostic                       | 2.3      |
+| REQ-EMIT-07               | Emit for all four targets                          | 2.4      |
+| REQ-TOOLS-01..04          | Skills, agents, commands, scripts/references       | 2.4, 3   |
+| REQ-EMIT-03/03a           | Coverage-report entry + warning for fallbacks      | 3.4, 4   |
+| REQ-VALID-05 / REQ-OBS-01 | Coverage/capability report data                    | 3.5      |
+| REQ-OBS-02                | Drift output identifies which files differ and how | 3.6      |
+| REQ-EMIT-06 / REQ-REL-01  | Byte-stable, deterministic constants               | 5        |
+| REQ-SEC-01                | Path-confinement error                             | 4        |
 
 ## 1. Conventions
 
@@ -280,7 +280,10 @@ All errors extend a single base carrying a stable `code`. Mirrors feature-forge'
 ```typescript
 /** Base for every emitter error. `code` is stable and machine-checkable. */
 export class EmitterError extends Error {
-  constructor(message: string, readonly code: string) {
+  constructor(
+    message: string,
+    readonly code: string,
+  ) {
     super(message);
     this.name = new.target.name;
   }
@@ -288,35 +291,50 @@ export class EmitterError extends Error {
 
 /** tools.manifest.json failed Zod validation. Carries the formatted issue list. */
 export class ManifestValidationError extends EmitterError {
-  constructor(message: string, readonly issues: string[]) {
+  constructor(
+    message: string,
+    readonly issues: string[],
+  ) {
     super(message, "MANIFEST_INVALID");
   }
 }
 
 /** A canonical file has unparseable or schema-invalid frontmatter. */
 export class MalformedFrontmatterError extends EmitterError {
-  constructor(message: string, readonly sourcePath: string) {
+  constructor(
+    message: string,
+    readonly sourcePath: string,
+  ) {
     super(message, "FRONTMATTER_MALFORMED");
   }
 }
 
 /** A manifest entry's `source` path does not exist on disk. */
 export class SourceNotFoundError extends EmitterError {
-  constructor(message: string, readonly sourcePath: string) {
+  constructor(
+    message: string,
+    readonly sourcePath: string,
+  ) {
     super(message, "SOURCE_NOT_FOUND");
   }
 }
 
 /** A source/override path resolves outside the allowed roots (REQ-SEC-01). Fatal. */
 export class PathEscapeError extends EmitterError {
-  constructor(message: string, readonly attemptedPath: string) {
+  constructor(
+    message: string,
+    readonly attemptedPath: string,
+  ) {
     super(message, "PATH_ESCAPE");
   }
 }
 
 /** `build --check` found drift. Carries typed per-file entries (REQ-OBS-02). */
 export class DriftError extends EmitterError {
-  constructor(message: string, readonly entries: DriftEntry[]) {
+  constructor(
+    message: string,
+    readonly entries: DriftEntry[],
+  ) {
     super(message, "DRIFT_DETECTED");
   }
 }

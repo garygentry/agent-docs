@@ -7,9 +7,7 @@ const ROOT = "/repo/adapters";
 
 describe("confinePath", () => {
   it("returns the resolved absolute path for an in-root relative candidate", () => {
-    expect(confinePath(ROOT, "codex/skills/foo/foo.md")).toBe(
-      `${ROOT}/codex/skills/foo/foo.md`,
-    );
+    expect(confinePath(ROOT, "codex/skills/foo/foo.md")).toBe(`${ROOT}/codex/skills/foo/foo.md`);
   });
 
   it("allows the root itself", () => {
@@ -43,9 +41,7 @@ describe("confinePath", () => {
   });
 
   it("does not treat a sibling sharing a name prefix as in-root", () => {
-    expect(() => confinePath("/repo/adapters", "/repo/adapters-evil/x")).toThrow(
-      PathEscapeError,
-    );
+    expect(() => confinePath("/repo/adapters", "/repo/adapters-evil/x")).toThrow(PathEscapeError);
   });
 
   it("resolveWithin is an alias with identical semantics", () => {

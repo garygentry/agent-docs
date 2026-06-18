@@ -44,9 +44,7 @@ export const copilotTransform: TargetTransform = {
       });
     }
     return {
-      files: [
-        { relpath: `instructions/${skill.name}.instructions.md`, content, mode: 0o644 },
-      ],
+      files: [{ relpath: `instructions/${skill.name}.instructions.md`, content, mode: 0o644 }],
       drops,
       manifestEntries: [],
     };

@@ -1,10 +1,6 @@
 import { stringify as stringifyToml } from "smol-toml";
 import { stringify as stringifyYaml } from "yaml";
-import {
-  dropAllClaudeKeys,
-  orderFrontmatter,
-  renderFrontmatter,
-} from "./_shared.js";
+import { dropAllClaudeKeys, orderFrontmatter, renderFrontmatter } from "./_shared.js";
 import type { TargetTransform } from "./_shared.js";
 import { PROVENANCE, REGEN_CMD, YAML_OPTS } from "../model.js";
 import type { AgentRecord, DropRecord } from "../model.js";
@@ -45,13 +41,7 @@ export function renderCodexAgentToml(agent: AgentRecord): string {
   // Scalar header keys via smol-toml in a fixed, pre-sorted order (REQ-EMIT-06).
   const header = stringifyToml({ name: agent.name, description: agent.description });
   const instructions = renderDeveloperInstructions(agent.body);
-  return (
-    PROVENANCE.yamlComment(agent.sourcePath) +
-    "\n" +
-    header +
-    "\n" +
-    instructions
-  );
+  return PROVENANCE.yamlComment(agent.sourcePath) + "\n" + header + "\n" + instructions;
 }
 
 /**

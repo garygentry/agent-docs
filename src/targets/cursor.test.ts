@@ -71,10 +71,7 @@ describe("cursorTransform (04 §8)", () => {
 
   it("drops argument-hint (resolved from nested metadata) and metadata for a skill", () => {
     const out = cursorTransform.transformSkill(makeSkill());
-    expect(out.drops.map((d) => d.construct)).toEqual([
-      "skill.argument-hint",
-      "skill.metadata",
-    ]);
+    expect(out.drops.map((d) => d.construct)).toEqual(["skill.argument-hint", "skill.metadata"]);
     expect(out.drops.every((d) => d.kind === "fallback")).toBe(true);
   });
 

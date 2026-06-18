@@ -33,10 +33,7 @@ export const SCHEMA_OUTPUT_PATH = "schemas/tools.manifest.schema.json" as const;
  * @returns The JSON Schema as a plain object.
  */
 export function buildManifestSchema(): Record<string, unknown> {
-  const schema = zodToJsonSchema(Manifest, { $refStrategy: "none" }) as Record<
-    string,
-    unknown
-  >;
+  const schema = zodToJsonSchema(Manifest, { $refStrategy: "none" }) as Record<string, unknown>;
   schema["$schema"] = "http://json-schema.org/draft-07/schema#";
   schema["$id"] = "tools.manifest.schema.json";
   schema["title"] = "Agent-Docs Tool Manifest";
@@ -68,20 +65,17 @@ if (import.meta.main) {
     // Drift guard: regenerate in memory, diff against the committed file.
     const current = existsSync(abs) ? readFileSync(abs, "utf-8") : "";
     if (current !== output) {
-      // eslint-disable-next-line no-console
       console.error(
         `Manifest schema drift: ${SCHEMA_OUTPUT_PATH} differs from the Zod source.\n` +
           `Run: bun run schema:gen   (then commit the result)`,
       );
       process.exit(1);
     }
-    // eslint-disable-next-line no-console
     console.log("Manifest schema is in sync with the Zod source.");
     process.exit(0);
   }
 
   mkdirSync(dirname(abs), { recursive: true });
   writeFileSync(abs, output);
-  // eslint-disable-next-line no-console
   console.log(`Generated ${SCHEMA_OUTPUT_PATH}`);
 }

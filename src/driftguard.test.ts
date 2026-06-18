@@ -1,10 +1,4 @@
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -112,9 +106,7 @@ describe("driftCheck", () => {
     writeFileSync(target, readFileSync(target, "utf8") + "\nhand-edited\n");
 
     const entries = driftCheck(manifest, roots);
-    expect(entries).toEqual([
-      { relpath: "claude/skills/docs-helper/SKILL.md", kind: "content" },
-    ]);
+    expect(entries).toEqual([{ relpath: "claude/skills/docs-helper/SKILL.md", kind: "content" }]);
 
     expect(() => assertNoDrift(manifest, roots)).toThrow(DriftError);
   });
@@ -188,10 +180,7 @@ describe("renderDriftMessage via DriftError", () => {
   it("lists each file with its kind and a single remediation line (REQ-OBS-02)", () => {
     const { manifest, roots } = makeFixtureRepo();
     buildAndPublish(manifest, roots);
-    writeFileSync(
-      join(roots.adaptersDir, "claude/skills/docs-helper/SKILL.md"),
-      "mutated\n",
-    );
+    writeFileSync(join(roots.adaptersDir, "claude/skills/docs-helper/SKILL.md"), "mutated\n");
 
     try {
       assertNoDrift(manifest, roots);

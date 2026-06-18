@@ -57,7 +57,10 @@ describe("publish", () => {
     writeFileSync(join(roots.repoRoot, "skills/foo/references/ref.md"), refBody);
 
     const verbatim: VerbatimRecord[] = [
-      { relpath: "claude/skills/foo/references/ref.md", sourcePath: "skills/foo/references/ref.md" },
+      {
+        relpath: "claude/skills/foo/references/ref.md",
+        sourcePath: "skills/foo/references/ref.md",
+      },
     ];
 
     publish([], verbatim, roots);
@@ -73,7 +76,10 @@ describe("publish", () => {
     const roots = makeRoots();
     // First publish includes an old tool.
     publish(
-      [file("claude/skills/old/SKILL.md", "# old\n"), file("claude/skills/keep/SKILL.md", "# keep\n")],
+      [
+        file("claude/skills/old/SKILL.md", "# old\n"),
+        file("claude/skills/keep/SKILL.md", "# keep\n"),
+      ],
       [],
       roots,
     );

@@ -88,7 +88,8 @@ export const cursorTransform: TargetTransform = {
         source: command.sourcePath,
         construct: "command.argument-hint",
         kind: "fallback",
-        reason: "no confirmed Cursor structured argument syntax (MEDIUM-LOW); argument-hint dropped",
+        reason:
+          "no confirmed Cursor structured argument syntax (MEDIUM-LOW); argument-hint dropped",
       });
     }
     // Provenance Form B (no frontmatter): HTML comment atop the body.

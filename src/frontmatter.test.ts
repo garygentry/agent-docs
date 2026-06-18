@@ -10,7 +10,7 @@ describe("parseFrontmatter", () => {
       "---\n" +
       "name: summarize\n" +
       "description: Summarize the current document.\n" +
-      "argument-hint: \"[path]\"\n" +
+      'argument-hint: "[path]"\n' +
       "---\n" +
       "Body line one.\n\nBody line two with trailing spaces.   \n";
     const { frontmatter, body } = parseFrontmatter(content, SRC);
@@ -20,9 +20,7 @@ describe("parseFrontmatter", () => {
     expect(frontmatter.get("description")).toBe("Summarize the current document.");
     expect(frontmatter.get("argument-hint")).toBe("[path]");
     // Body preserved byte-for-byte, including the trailing spaces and blank line.
-    expect(body).toBe(
-      "Body line one.\n\nBody line two with trailing spaces.   \n",
-    );
+    expect(body).toBe("Body line one.\n\nBody line two with trailing spaces.   \n");
   });
 
   it("preserves arbitrary author key order, not alphabetical", () => {
@@ -32,9 +30,7 @@ describe("parseFrontmatter", () => {
   });
 
   it("throws MalformedFrontmatterError on a missing opening delimiter", () => {
-    expect(() => parseFrontmatter("no frontmatter here\n", SRC)).toThrow(
-      MalformedFrontmatterError,
-    );
+    expect(() => parseFrontmatter("no frontmatter here\n", SRC)).toThrow(MalformedFrontmatterError);
   });
 
   it("throws MalformedFrontmatterError on an unterminated block", () => {
@@ -73,7 +69,7 @@ describe("serializeFrontmatter", () => {
       "name: docs-helper\n" +
       "description: Helps with docs.\n" +
       "metadata:\n" +
-      "  argument-hint: \"[topic]\"\n" +
+      '  argument-hint: "[topic]"\n' +
       "  allowed-tools:\n" +
       "    - Read\n" +
       "    - Write\n" +

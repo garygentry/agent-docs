@@ -22,14 +22,14 @@ redefined**, here.
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-|--------|-------------|---------|
-| REQ-DISC-01 | Explicit tool manifest enumerating each tool, type, overrides | 2, 6 |
-| REQ-DISC-02 | Manifest is the single source feeding emitter AND drift guard | 2.1, 2.4 |
-| REQ-DISC-03 | Manifest has a defined, validatable schema (Zod → JSON Schema, drift-guarded) | 4 |
-| REQ-REUSE-01 | Every path read from config; nothing hardcoded | 3 |
-| REQ-SEC-01 | Configured roots must resolve inside the repo (sanity-check; enforcement in 05) | 3.2 |
-| TQ-4 (resolved) | Manifest↔on-disk source cross-check (existence + frontmatter agreement) | 2.3 |
+| REQ ID          | Requirement                                                                     | Section  |
+| --------------- | ------------------------------------------------------------------------------- | -------- |
+| REQ-DISC-01     | Explicit tool manifest enumerating each tool, type, overrides                   | 2, 6     |
+| REQ-DISC-02     | Manifest is the single source feeding emitter AND drift guard                   | 2.1, 2.4 |
+| REQ-DISC-03     | Manifest has a defined, validatable schema (Zod → JSON Schema, drift-guarded)   | 4        |
+| REQ-REUSE-01    | Every path read from config; nothing hardcoded                                  | 3        |
+| REQ-SEC-01      | Configured roots must resolve inside the repo (sanity-check; enforcement in 05) | 3.2      |
+| TQ-4 (resolved) | Manifest↔on-disk source cross-check (existence + frontmatter agreement)         | 2.3      |
 
 ## Dependencies
 
@@ -119,10 +119,7 @@ export interface LoadedManifest {
  * @throws {SourceNotFoundError} A tool's `source` path does not exist on disk.
  * @throws {PathEscapeError} A configured root resolves outside the repo (§3.2).
  */
-export function loadManifest(
-  manifestPath: string,
-  repoRoot?: string,
-): LoadedManifest;
+export function loadManifest(manifestPath: string, repoRoot?: string): LoadedManifest;
 ```
 
 ### 2.2 Validation detail
@@ -149,14 +146,14 @@ const manifest = result.data; // config defaults already applied by Zod
 
 **Error handling for every operation in `loadManifest`:**
 
-| Operation | Failure | Handling |
-|-----------|---------|----------|
-| `readFileSync` | `ENOENT` / unreadable | catch, throw `ManifestValidationError("tools.manifest.json not found at <path>", [])` |
-| `JSON.parse` | `SyntaxError` | catch, throw `ManifestValidationError("invalid JSON: <msg>", [])` |
-| `Manifest.safeParse` | Zod failure | throw `ManifestValidationError(summary, formatIssues(...))` |
-| `resolveConfig` | path escapes repo | propagate `PathEscapeError` (§3.2) |
-| `crossCheckSources` | missing source | propagate `SourceNotFoundError` (§2.3) |
-| `crossCheckSources` | frontmatter name/type mismatch | propagate `ManifestValidationError` (§2.3) |
+| Operation            | Failure                        | Handling                                                                              |
+| -------------------- | ------------------------------ | ------------------------------------------------------------------------------------- |
+| `readFileSync`       | `ENOENT` / unreadable          | catch, throw `ManifestValidationError("tools.manifest.json not found at <path>", [])` |
+| `JSON.parse`         | `SyntaxError`                  | catch, throw `ManifestValidationError("invalid JSON: <msg>", [])`                     |
+| `Manifest.safeParse` | Zod failure                    | throw `ManifestValidationError(summary, formatIssues(...))`                           |
+| `resolveConfig`      | path escapes repo              | propagate `PathEscapeError` (§3.2)                                                    |
+| `crossCheckSources`  | missing source                 | propagate `SourceNotFoundError` (§2.3)                                                |
+| `crossCheckSources`  | frontmatter name/type mismatch | propagate `ManifestValidationError` (§2.3)                                            |
 
 No operation is left unhandled; any thrown error exits the CLI non-zero **before** any
 adapter file is written (atomic publish, tech-spec §3.6 / `05`).
@@ -188,21 +185,18 @@ manifest's correctness contract beyond pure Zod shape-validation.
  *         type/shape mismatch (e.g. type:"skill" but source has no SKILL.md).
  * @throws {MalformedFrontmatterError} The source frontmatter is present but unparseable.
  */
-export function crossCheckSources(
-  manifest: Manifest,
-  config: ResolvedConfig,
-): void;
+export function crossCheckSources(manifest: Manifest, config: ResolvedConfig): void;
 ```
 
 Resolution rules per `type` (uses `ToolType` from `00 §2.1`):
 
-| `type` | Expected on-disk shape | `name` contract | Existence error |
-|--------|------------------------|-----------------|-----------------|
-| `skill` | directory `<source>/` containing `SKILL.md` | `SKILL.md` frontmatter `name` (if present) == entry `name` | `SourceNotFoundError` if dir or `SKILL.md` absent |
-| `agent` | single file `<source>` (`.md`) | frontmatter `name` (if present) == entry `name` | `SourceNotFoundError` if file absent |
-| `command` | single file `<source>` (`.md`) | frontmatter `name` (if present) == entry `name` | `SourceNotFoundError` if file absent |
-| `script` | file or directory `<source>` | none (no frontmatter contract) | `SourceNotFoundError` if absent |
-| `reference` | file or directory `<source>` | none | `SourceNotFoundError` if absent |
+| `type`      | Expected on-disk shape                      | `name` contract                                            | Existence error                                   |
+| ----------- | ------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------- |
+| `skill`     | directory `<source>/` containing `SKILL.md` | `SKILL.md` frontmatter `name` (if present) == entry `name` | `SourceNotFoundError` if dir or `SKILL.md` absent |
+| `agent`     | single file `<source>` (`.md`)              | frontmatter `name` (if present) == entry `name`            | `SourceNotFoundError` if file absent              |
+| `command`   | single file `<source>` (`.md`)              | frontmatter `name` (if present) == entry `name`            | `SourceNotFoundError` if file absent              |
+| `script`    | file or directory `<source>`                | none (no frontmatter contract)                             | `SourceNotFoundError` if absent                   |
+| `reference` | file or directory `<source>`                | none                                                       | `SourceNotFoundError` if absent                   |
 
 Notes:
 
@@ -281,10 +275,7 @@ export interface ResolvedConfig {
  * @throws {PathEscapeError} A configured directory resolves outside repoRoot
  *         (e.g. "../escape" or an absolute path pointing elsewhere).
  */
-export function resolveConfig(
-  config: EmitterConfig,
-  repoRoot: string,
-): ResolvedConfig;
+export function resolveConfig(config: EmitterConfig, repoRoot: string): ResolvedConfig;
 ```
 
 ### 3.2 Confinement sanity-check
@@ -308,7 +299,7 @@ function confineRoot(repoRoot: string, relDir: string, label: string): string {
 
 Scope boundary (do not over-reach into `05`):
 
-- This check is a **read-time sanity gate** on the seven configured *roots*. It guarantees
+- This check is a **read-time sanity gate** on the seven configured _roots_. It guarantees
   the emitter will not be pointed at, say, `overridesDir: "../../etc"`.
 - It does **not** enforce per-file write confinement of individual `source` values or
   override relpaths — that enforcement (resolving every emitted path and refusing writes
@@ -352,10 +343,7 @@ export const SCHEMA_OUTPUT_PATH = "schemas/tools.manifest.schema.json" as const;
  * @returns The pretty-printed JSON Schema text (2-space indent, trailing newline).
  */
 export function buildManifestSchemaJson(): string {
-  const schema = zodToJsonSchema(Manifest, { $refStrategy: "none" }) as Record<
-    string,
-    unknown
-  >;
+  const schema = zodToJsonSchema(Manifest, { $refStrategy: "none" }) as Record<string, unknown>;
   schema["$schema"] = "http://json-schema.org/draft-07/schema#";
   schema["$id"] = "tools.manifest.schema.json";
   schema["title"] = "Agent-Docs Tool Manifest";
@@ -418,9 +406,10 @@ import { loadManifest } from "./manifest.js";
 // Build / drift-check both start identically (REQ-DISC-02):
 const { manifest, config } = loadManifest("tools.manifest.json", process.cwd());
 
-console.log(config.targets);          // ["claude","codex","copilot","cursor","gemini"]
-console.log(config.skillsDir);        // /abs/repo/skills
-for (const tool of manifest.tools) {  // already cross-checked against disk (§2.3)
+console.log(config.targets); // ["claude","codex","copilot","cursor","gemini"]
+console.log(config.skillsDir); // /abs/repo/skills
+for (const tool of manifest.tools) {
+  // already cross-checked against disk (§2.3)
   console.log(tool.name, tool.type, tool.source);
 }
 ```

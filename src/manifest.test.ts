@@ -52,13 +52,7 @@ describe("loadManifest", () => {
     expect(manifest.tools).toHaveLength(1);
     // Zod defaults applied for the omitted config block.
     expect(manifest.config.skillsDir).toBe("skills");
-    expect(manifest.config.targets).toEqual([
-      "claude",
-      "codex",
-      "copilot",
-      "cursor",
-      "gemini",
-    ]);
+    expect(manifest.config.targets).toEqual(["claude", "codex", "copilot", "cursor", "gemini"]);
   });
 
   it("throws ManifestValidationError with formatted issues when version/tools are missing", () => {
@@ -97,11 +91,7 @@ describe("loadManifest", () => {
 
   it("throws ManifestValidationError when frontmatter name disagrees (TQ-4)", () => {
     const root = makeRepo();
-    write(
-      root,
-      "skills/docs-helper/SKILL.md",
-      "---\nname: wrong-name\n---\nBody.\n",
-    );
+    write(root, "skills/docs-helper/SKILL.md", "---\nname: wrong-name\n---\nBody.\n");
     write(
       root,
       "tools.manifest.json",
