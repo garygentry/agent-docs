@@ -123,8 +123,8 @@
         "src/schema-gen.test.ts proves determinism and the --check pass/fail behavior",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:37:17.988Z",
       "dependsOn": [
         "002"
       ],

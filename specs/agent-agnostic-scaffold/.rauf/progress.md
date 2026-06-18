@@ -28,3 +28,18 @@
 - `src/paths.ts` exports `confinePath(root, candidate)` (spec 05 §7 name, used by
   loadOverrides/publish 014/015) and `resolveWithin` as an **alias** of it (the
   item-spec name). Both are the same function — callers may use either.
+
+## 005 — JSON-Schema generation + --check drift guard
+
+- `src/schema-gen.ts` exports `buildManifestSchema()` (returns the JSON Schema
+  **object**, the item-spec name) AND `buildManifestSchemaJson()` (the byte-stable
+  pretty-printed **string** with trailing newline, the 02 §4 name) — the latter wraps
+  the former. Item 024's schema-gen drift test can use either. Also exports
+  `SCHEMA_OUTPUT_PATH = "schemas/tools.manifest.schema.json"`.
+- The CLI (`import.meta.main`) resolves `repoRoot` from `import.meta.dirname/..`, so its
+  output path is FIXED (not config-driven) per the item note — schemas/ is a build path.
+- `--check` test spawns `bun run src/schema-gen.ts` via `execFileSync` (vitest runs on
+  node, so `import.meta.main` won't fire in-process). The test snapshots any existing
+  committed schema and restores/removes it in `afterAll` so it leaves the tree clean.
+  The committed `schemas/tools.manifest.schema.json` is written/committed by item 021,
+  not this item — a fresh tree has no file and the test cleans up after itself.
