@@ -309,8 +309,8 @@
         "src/targets/copilot.test.ts covers the three file forms and the recorded drops",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:50:05.694Z",
       "dependsOn": [
         "008"
       ],
