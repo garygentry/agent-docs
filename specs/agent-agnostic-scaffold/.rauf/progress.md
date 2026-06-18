@@ -133,3 +133,26 @@
   picks up the umask (0o664), not 0o644 — chmod explicitly in tests if asserting mode.
 - Missing overridesDir or per-target subdir → empty overlay (statSync in try/catch),
   not an error (overrides optional, REQ-EMIT-05).
+
+## 016 — drift guard (src/driftguard.ts)
+
+- `driftCheck(manifest, roots, pluginFiles?, identity?)` re-emits in memory
+  (`emit` + `loadOverrides`/`applyOverrides`, no publish) and diffs against the
+  committed tree. Returns `DriftEntry[]` (content/orphan/missing), POSIX-sorted.
+  Also exports `assertNoDrift` (throws `DriftError` w/ `renderDriftMessage`) and
+  `renderDriftMessage`.
+- **Emitted side must include verbatim files**: publish writes both
+  `EmitResult.files` AND `verbatim` records to disk, so the emitted map reads each
+  verbatim file's source bytes (`readFileSync(confinePath(repoRoot, sourcePath))`)
+  under its `<target>/<relpath>` key — else every committed verbatim copy would
+  read as an `orphan`.
+- **`.claude-plugin/` is a second guarded root** (06 §2.2): committed side walks
+  `adaptersDir` (keyed adaptersDir-relative) AND `repoRoot/.claude-plugin/` (keyed
+  `.claude-plugin/...`); key spaces don't collide. Emitted plugin files come from
+  item 019 (`emitPlugin`), NOT a dependency of 016 and not yet built — so they are
+  threaded in via the optional `pluginFiles` param (default `[]`). Item 020's CLI
+  passes the real plugin files; without them a committed `.claude-plugin/*` reads
+  as orphan (proven in test). Signature stays `(manifest, roots)`-compatible.
+- `walkRelposix` returns adaptersDir-relative POSIX paths and treats a missing dir
+  as `[]` (never-built tree = nothing committed, not an error). Staging dirs
+  (`adaptersDir.tmp-*`) are siblings of adaptersDir, so they're never walked.

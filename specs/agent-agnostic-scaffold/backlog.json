@@ -422,8 +422,8 @@
         "src/driftguard.test.ts covers clean, content-drift, orphan, and missing cases",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:59:41.320Z",
       "dependsOn": [
         "013",
         "014",
