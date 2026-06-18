@@ -78,3 +78,21 @@
   contributes one `ManifestEntry`.
 - `openai.yaml` aggregate: plain literal `doc` with `_generated` first, serialized
   via `yaml` `stringify(doc, YAML_OPTS)` (sortKeys:false preserves Form C order).
+
+## 011 — gemini target (TOML commands + gemini-extension.json)
+
+- `src/targets/gemini.ts` replaces the 008 throwing stub. `renderGeminiCommandToml`
+  is exported (tests/reuse). Mirrors codex's TOML strategy: scalar `description` via
+  `smol-toml` `stringify`, then `prompt` as a TOML triple-quoted literal
+  (`'''\n<prompt>'''`), with a fallback to a `smol-toml` basic string when the prompt
+  contains the `'''` delimiter. Provenance is the leading `# GENERATED …` TOML comment.
+- `transformCommand`: argument-hint has no native Gemini field → appended to the
+  prompt as `\n\nArguments: <hint>` prose AND drop-recorded (fallback). NOTE: the
+  canonical body already ends in `\n`, so body+`\n\n` = three newlines before
+  `Arguments:` — adjust golden/test expectations accordingly.
+- `':' subdir namespacing` is OUT of scope (V-021): commands emit flat at
+  `commands/<name>.toml`; no nested a:b mapping.
+- `aggregateManifest(entries, identity)`: identity `{name, version}` is threaded
+  from PluginMeta (07 §3.2), NOT hardcoded (V-020). Form C strict JSON via
+  `JSON.stringify(doc, null, 2) + "\n"`, `_generated` first, then name/version/skills.
+  Skills (not agents/commands) contribute aggregate entries.

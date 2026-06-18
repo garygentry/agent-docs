@@ -283,8 +283,8 @@
         "src/targets/gemini.test.ts proves identity threading, Form C ordering, and byte-stability",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:48:23.494Z",
       "dependsOn": [
         "008"
       ],
