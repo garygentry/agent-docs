@@ -176,8 +176,8 @@
         "src/discover.test.ts covers skill/agent/command parsing, TQ-3 nesting, shared refs/scripts, and determinism",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:40:12.632Z",
       "dependsOn": [
         "004",
         "006"
