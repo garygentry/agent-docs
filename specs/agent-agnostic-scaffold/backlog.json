@@ -565,8 +565,8 @@
         "A repo README documents where a tool lives, how it is named, how to add one, and how to run a build (REQ-STRUCT-04, 01 §2.3)",
         "`bun run build:check` reports no drift on the committed tree; vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T20:11:55.108Z",
       "dependsOn": [
         "020"
       ],

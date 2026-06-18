@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "config": {
+    "skillsDir": "skills",
+    "agentsDir": "agents",
+    "commandsDir": "commands",
+    "referencesDir": "references",
+    "scriptsDir": "scripts",
+    "overridesDir": "overrides",
+    "adaptersDir": "adapters",
+    "targets": ["claude", "codex", "copilot", "cursor", "gemini"]
+  },
+  "tools": [
+    {
+      "name": "docs-helper",
+      "type": "skill",
+      "source": "skills/docs-helper",
+      "description": "Helps write and review project documentation following the repo's house style."
+    }
+  ]
+}

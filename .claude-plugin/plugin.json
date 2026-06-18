@@ -1,0 +1,9 @@
+{
+  "name": "agent-docs-scaffold",
+  "version": "0.1.0",
+  "description": "Agent-agnostic tool adapters generated from canonical Claude-native sources.",
+  "author": {
+    "name": "agent-docs-scaffold"
+  },
+  "keywords": []
+}
