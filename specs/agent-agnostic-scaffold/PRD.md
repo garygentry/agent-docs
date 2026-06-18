@@ -87,30 +87,52 @@ products.
 - **REQ-EMIT-02** (P0): Adapter generation MUST use a **defined per-target transform
   rule set** — one mapping specification per target agent — applied programmatically
   to every tool.
-- **REQ-EMIT-03** (P0): When a target agent has no equivalent for a Claude construct
-  (e.g. hooks, interactive question prompts), the emitter MUST degrade to a
-  **best-effort fallback** (the nearest representable equivalent, e.g. inline
-  instructions) where possible, and MUST warn where no faithful representation exists.
+- **REQ-EMIT-03** (P0): For **every** Claude construct that has no faithful equivalent
+  on a target agent (e.g. hooks, interactive question prompts), the emitter MUST emit a
+  **coverage-report entry** classifying the construct as `fallback` or `skipped`, and
+  MUST emit a **warning** — there are no silent drops. (Acceptance-checkable; ties to
+  REQ-VALID-05 and REQ-OBS-01.)
+- **REQ-EMIT-03a** (design goal, non-acceptance-gating): Where a construct can be
+  represented, the fallback SHOULD be the **nearest representable equivalent** (e.g.
+  inline instructions). This is a quality goal guiding transform-rule design, not a
+  pass/fail acceptance criterion.
 - **REQ-EMIT-04** (P0): Adapter directories MUST be generated output, but the system
   MUST provide **per-target override slots** — explicit author-supplied files that
   the emitter merges into the generated output for that target — and these overrides
-  MUST NOT be overwritten or lost by a rebuild.
+  MUST NOT be overwritten or lost by a rebuild. Override slots MUST be declared/located
+  such that the drift guard can **deterministically distinguish** author-supplied
+  override content from emitted content, so that edits inside an override slot are
+  honored while edits to emitted output are flagged as drift (see SC-04/SC-05).
+  Concrete merge semantics are deferred to OQ-03.
 - **REQ-EMIT-05** (P0): Re-running the emitter MUST be **idempotent and safe**: a
   build against unchanged canonical input and unchanged overrides MUST produce no
   changes, MUST NOT clobber override slots, and MUST NOT require manual cleanup
   between runs.
 - **REQ-EMIT-06** (P0): The emitter MUST produce **byte-stable output** — the same
-  canonical input MUST yield byte-for-byte identical adapter files on every run
-  (stable ordering, formatting, and serialization) so that the drift guard is reliable.
+  canonical input **and the same override-slot contents** MUST yield byte-for-byte
+  identical adapter files on every run (stable ordering, formatting, and serialization)
+  so that the drift guard is reliable. The override slots (REQ-EMIT-04) are a second
+  input to the emit alongside the canonical source; the determinism guarantee covers
+  the combination of both.
 - **REQ-EMIT-07** (P0): The emitter MUST emit adapters for all four targets:
   **Codex, Cursor, Gemini, Copilot**.
+- **REQ-EMIT-08** (P0): When a tool is **removed or renamed** in the canonical
+  source/manifest, a rebuild MUST remove the corresponding stale adapter files for
+  every target, so that `adapters/` contains exactly the set of files the current
+  canonical source would emit (no orphans). Removal MUST NOT require manual cleanup.
 
 ### 3.5 Validation & Guards
 
 - **REQ-VALID-01** (P0): A **drift guard** MUST exist that re-emits from canonical and
   fails if committed adapters do not match the fresh emit. It MUST be runnable both
-  locally and in CI.
-- **REQ-VALID-02** (P0): The drift guard MUST run in **CI** and fail the build on drift.
+  locally and in CI. The drift guard MUST re-emit **with override slots merged in the
+  same way a normal build does** (REQ-EMIT-04/06) before diffing against committed
+  adapters, so legitimate override content is never flagged as drift. The drift guard
+  MUST also fail when committed adapters contain **orphan files** — files with no
+  corresponding canonical source (REQ-EMIT-08) — not only when file contents differ.
+- **REQ-VALID-02** (P0): The drift guard MUST fail the build when drift is detected.
+  (The mandate that this guard runs in CI is captured as a delivery constraint in §5,
+  CON-05.)
 - **REQ-VALID-03** (P1): Each emitted target MUST be validatable against that agent's
   expected file format / manifest **schema**.
 - **REQ-VALID-04** (P1): The emitter MUST support **golden-file snapshot tests** —
@@ -175,6 +197,9 @@ products.
   multi-agent but Claude-optimized.
 - **CON-04**: Target agents fixed for this version: **Codex, Cursor, Gemini, Copilot**
   (plus canonical Claude).
+- **CON-05**: The drift guard (REQ-VALID-01/02) MUST run in **CI** and gate the build,
+  in addition to being runnable locally. (Delivery mandate; the functional behavior —
+  failing the build on drift — lives in REQ-VALID-02.)
 
 ## 6. Out of Scope
 
@@ -208,14 +233,21 @@ products.
   of adapter files required for the common case.
 - **SC-02**: The MVP ships the repo structure, canonical format, working emitter, and
   **one real sample tool** that emits correctly to **all four targets** (Codex, Cursor,
-  Gemini, Copilot), plus the canonical Claude form.
+  Gemini, Copilot), plus the canonical Claude form. Evaluation depends on the sample
+  tool and per-target golden snapshots selected in OQ-04 (fixed in the tech spec); this
+  criterion becomes testable once those golden files are checked in.
 - **SC-03**: Running the build twice with no source changes produces **zero diffs**
   (idempotent, byte-stable), and the drift guard passes.
 - **SC-04**: Intentionally hand-editing a committed adapter (outside an override slot)
   causes the **CI drift guard to fail**; reverting to the emitted output makes it pass.
 - **SC-05**: A declared per-target override survives a rebuild (is not clobbered) and
   is present in that target's output.
+- **SC-05a**: Removing a tool from the canonical source/manifest and rebuilding
+  **removes** that tool's adapter files for every target; an orphaned committed adapter
+  (no corresponding canonical source) causes the drift guard to fail (REQ-EMIT-08).
 - **SC-06**: Each build produces a coverage report identifying mapped / fallback /
   skipped items per target.
 - **SC-07**: The canonical Claude side is installable as a Claude plugin.
-- **SC-08**: Golden-snapshot and schema-validation checks pass for all emitted targets.
+- **SC-08**: Golden-snapshot (REQ-VALID-04) and schema-validation (REQ-VALID-03) checks
+  pass for all emitted targets. Like SC-02, this becomes testable once the OQ-04 sample
+  tool and per-target golden snapshots are checked in.
