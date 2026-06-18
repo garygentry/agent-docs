@@ -368,8 +368,8 @@
         "src/overrides.test.ts covers replacement, the overridden[] list, verbatim bytes, and stale handling",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:55:11.208Z",
       "dependsOn": [
         "013"
       ],

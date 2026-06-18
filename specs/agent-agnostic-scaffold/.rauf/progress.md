@@ -118,3 +118,18 @@
   per-target entries (no target discriminator on ManifestEntry — duplicates across
   codex/gemini are expected).
 - Did NOT touch src/index.ts barrel — item 020 owns re-exporting emit/driftCheck/etc.
+
+## 014 — override loading + file-level overlay (src/overrides.ts)
+
+- Followed the **spec 05 §3.1** signature `loadOverrides(roots, targets)` (not the
+  item's looser `loadOverrides(overridesDir)`) — it confines reads to
+  `roots.overridesDir` via `confinePath` and skips targets not in the list. Returns
+  `OverrideSet { byAdapterPath: Map<"<target>/<relpath>", OverrideFile> }`.
+- `applyOverrides(files, overrides)` is the 05 §3.2 reference sketch verbatim:
+  whole-file replace (content+mode), `overridden[]` for hits, `staleOverrides[]` for
+  override paths with no emitted counterpart (non-fatal, never throws). Returns a NEW
+  array (input not mutated); files/overridden/staleOverrides all stable-POSIX-sorted.
+- Modes are read from disk (`mode & 0o777`). **Test gotcha**: a freshly written file
+  picks up the umask (0o664), not 0o644 — chmod explicitly in tests if asserting mode.
+- Missing overridesDir or per-target subdir → empty overlay (statSync in try/catch),
+  not an error (overrides optional, REQ-EMIT-05).
