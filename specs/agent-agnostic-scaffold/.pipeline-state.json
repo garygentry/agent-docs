@@ -83,6 +83,13 @@
         "backlog.json"
       ],
       "completedAt": "2026-06-18T00:00:00Z"
+    },
+    "forge-verify-backlog": {
+      "status": "findings-applied",
+      "findingsFile": ".verification/VERIFY-backlog-2026-06-18.md",
+      "findingsCount": 5,
+      "verifiedAt": "2026-06-18T00:00:00Z",
+      "fixedAt": "2026-06-18T00:00:00Z"
     }
   }
 }

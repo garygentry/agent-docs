@@ -13,6 +13,7 @@
         "tsconfig.json, vitest.config.ts, eslint.config.mjs, .prettierrc.json, .bun-version, .gitignore all exist with the specified content",
         ".gitignore excludes node_modules/, dist/, *.tmp-* and does NOT ignore adapters/",
         "Directory skeleton (skills/ agents/ commands/ references/ scripts/ overrides/ adapters/ schemas/ src/ src/targets/ src/test/) exists and is tracked",
+        "The `gate` script chains compile, schema:check, typecheck, lint, format:check, test, and build:check in that order (CON-05)",
         "bun install completes and produces bun.lock"
       ],
       "status": "pending",
@@ -181,8 +182,8 @@
       "status": "pending",
       "completedAt": null,
       "dependsOn": ["002", "006"],
-      "notes": "This item defines the contract the four other targets (009-012) implement against. orderFrontmatter must use KEY_ORDER and nothing else. Per-target target file forms are authoritative in 04 §7-§10 (supersede tech-spec §5.2).",
-      "estimatedIterations": 1,
+      "notes": "This item defines the contract the four other targets (009-012) implement against and is on their critical path. orderFrontmatter must use KEY_ORDER and nothing else. Per-target target file forms are authoritative in 04 §7-§10 (supersede tech-spec §5.2).",
+      "estimatedIterations": 2,
       "model": "opus",
       "specReferences": ["specs/agent-agnostic-scaffold/04-transforms.md"],
       "provider": "claude-cli"
@@ -362,8 +363,8 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["013", "015"],
-      "notes": "build --check (item 020) calls this. Derive orphan/golden relpaths from the emitted set, not hardcoded paths. Drift guard covers .claude-plugin/ as well as adapters/.",
+      "dependsOn": ["013", "014", "015"],
+      "notes": "build --check (item 020) calls this. driftCheck re-applies the override overlay (imports applyOverrides/loadOverrides from ./overrides.js, item 014) and uses the staging-dir helper from ./publish.js (item 015). Derive orphan/golden relpaths from the emitted set, not hardcoded paths. Drift guard covers .claude-plugin/ as well as adapters/.",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": ["specs/agent-agnostic-scaffold/06-validation-and-drift-guard.md"],
@@ -453,8 +454,8 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["005", "013", "014", "015", "016", "017", "019"],
-      "notes": "This is the integration item that connects every prior module. After it, `bun run build` is the canonical local build (REQ-EMIT-01).",
+      "dependsOn": ["003", "005", "013", "014", "015", "016", "017", "019"],
+      "notes": "This is the integration item that connects every prior module. It imports/re-exports loadManifest from ./manifest.js (item 003) and calls resolveConfig from ./config.js (item 004, transitively satisfied via 015). After it, `bun run build` is the canonical local build (REQ-EMIT-01).",
       "estimatedIterations": 2,
       "model": "opus",
       "specReferences": ["specs/agent-agnostic-scaffold/01-architecture-layout.md"],
@@ -465,12 +466,13 @@
       "type": "feature",
       "priority": 1,
       "title": "Author the docs-helper sample tool and concrete tools.manifest.json",
-      "description": "Create the MVP sample tool per spec 07 §6 and the concrete manifest per 02 §6. Author the canonical skill at skills/docs-helper/SKILL.md (07 §6.2 — frontmatter with name/description and the When-to-use / How-to-help / House-style sections shown in 07 §6.2) plus any skill-owned references/ files described there. Register it in a concrete tools.manifest.json at the repo root: a config block (defaults per 02 §6) and a tools registry entry for docs-helper (type skill, source skills/docs-helper). Then run `bun run build` to emit docs-helper to all five targets and `bun run schema:gen` to write schemas/tools.manifest.schema.json; commit the produced adapters/ and .claude-plugin/ output (CON-02). Verify the emitted output matches the per-target expectations in 07 §7 (claude no-drops; codex SKILL.md; cursor rules/docs-helper.mdc; gemini; copilot) and the coverage report (07 §7.6).",
+      "description": "Create the MVP sample tool per spec 07 §6 and the concrete manifest per 02 §6. Author the canonical skill at skills/docs-helper/SKILL.md (07 §6.2 — frontmatter with name/description and the When-to-use / How-to-help / House-style sections shown in 07 §6.2) plus any skill-owned references/ files described there. Register it in a concrete tools.manifest.json at the repo root: a config block (defaults per 02 §6) and a tools registry entry for docs-helper (type skill, source skills/docs-helper). Then run `bun run build` to emit docs-helper to all five targets and `bun run schema:gen` to write schemas/tools.manifest.schema.json; commit the produced adapters/ and .claude-plugin/ output (CON-02). Verify the emitted output matches the per-target expectations in 07 §7 (claude no-drops; codex SKILL.md; cursor rules/docs-helper.mdc; gemini; copilot) and the coverage report (07 §7.6). Also author a repo README documenting the authoring conventions per 01 §2.3 (REQ-STRUCT-04): where a tool lives (skills/agents/commands + shared references/scripts), how it is named (kebab-case == source basename), how to add one (author the canonical file, add a ToolEntry to tools.manifest.json, run `bun run build`), and how to run a build — using docs-helper as the worked example, so a new contributor can add a tool without reading the emitter source.",
       "acceptanceCriteria": [
         "skills/docs-helper/SKILL.md (+ any referenced files) exists per 07 §6.2",
         "tools.manifest.json registers docs-helper with a valid config block (02 §6)",
         "`bun run build` emits docs-helper to all five targets and writes GENERATION-REPORT.md + .claude-plugin/",
         "schemas/tools.manifest.schema.json is generated and committed",
+        "A repo README documents where a tool lives, how it is named, how to add one, and how to run a build (REQ-STRUCT-04, 01 §2.3)",
         "`bun run build:check` reports no drift on the committed tree; vitest run && tsc --noEmit passes"
       ],
       "status": "pending",
@@ -481,7 +483,8 @@
       "model": "opus",
       "specReferences": [
         "specs/agent-agnostic-scaffold/07-packaging-and-sample-tool.md",
-        "specs/agent-agnostic-scaffold/02-manifest-and-config.md"
+        "specs/agent-agnostic-scaffold/02-manifest-and-config.md",
+        "specs/agent-agnostic-scaffold/01-architecture-layout.md"
       ],
       "provider": "claude-cli"
     },
