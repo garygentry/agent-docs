@@ -1,13 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { basename, dirname, join, relative, sep } from "node:path";
 
-import type {
-  AgentRecord,
-  CommandRecord,
-  Manifest,
-  SkillRecord,
-  ToolEntry,
-} from "./model.js";
+import type { AgentRecord, CommandRecord, Manifest, SkillRecord, ToolEntry } from "./model.js";
 import type { ResolvedRoots } from "./config.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { confinePath } from "./paths.js";
@@ -125,7 +119,16 @@ function collectOwnedTree(skillDir: string, repoRoot: string): string[] {
 /** Parse a skill (03 §3.3): SKILL.md + TQ-3 metadata split + owned refs/scripts. */
 function parseSkill(entry: ToolEntry, roots: ResolvedRoots): SkillRecord {
   const sourcePath = entry.source;
-  const absPath = confinePath(roots.repoRoot, sourcePath);
+  const sourceAbs = confinePath(roots.repoRoot, sourcePath);
+  // The canonical skill `source` is the skill directory `<source>/` (02 §2.3 / item
+  // 021); the cross-check enforces that shape. For backward compatibility a source
+  // that already points at `SKILL.md` is accepted as-is.
+  const skillDir =
+    existsSync(sourceAbs) && statSync(sourceAbs).isDirectory() ? sourceAbs : dirname(sourceAbs);
+  const absPath =
+    existsSync(sourceAbs) && statSync(sourceAbs).isDirectory()
+      ? join(sourceAbs, "SKILL.md")
+      : sourceAbs;
   const { frontmatter, body } = parseFrontmatter(
     readCanonicalText(absPath, sourcePath),
     sourcePath,
@@ -134,12 +137,9 @@ function parseSkill(entry: ToolEntry, roots: ResolvedRoots): SkillRecord {
   // name: required, MUST equal the parent directory name and the manifest entry (TQ-4).
   const name = frontmatter.get("name");
   if (typeof name !== "string" || name.length === 0) {
-    throw new MalformedFrontmatterError(
-      `${sourcePath}: missing or non-string 'name'`,
-      sourcePath,
-    );
+    throw new MalformedFrontmatterError(`${sourcePath}: missing or non-string 'name'`, sourcePath);
   }
-  const dirName = basename(dirname(absPath)); // skills/<dirName>/SKILL.md
+  const dirName = basename(skillDir); // skills/<dirName>/SKILL.md
   if (name !== dirName) {
     throw new MalformedFrontmatterError(
       `${sourcePath}: name '${name}' != directory '${dirName}'`,
@@ -155,10 +155,7 @@ function parseSkill(entry: ToolEntry, roots: ResolvedRoots): SkillRecord {
 
   const description = frontmatter.get("description") ?? "";
   if (typeof description !== "string") {
-    throw new MalformedFrontmatterError(
-      `${sourcePath}: 'description' is not a string`,
-      sourcePath,
-    );
+    throw new MalformedFrontmatterError(`${sourcePath}: 'description' is not a string`, sourcePath);
   }
 
   // metadata = ALL remaining frontmatter beyond name/description, in source order (TQ-3, §4).
@@ -167,9 +164,19 @@ function parseSkill(entry: ToolEntry, roots: ResolvedRoots): SkillRecord {
     if (k !== "name" && k !== "description") metadata.set(k, v);
   }
 
-  const ownRefs = collectOwnedTree(dirname(absPath), roots.repoRoot);
+  const ownRefs = collectOwnedTree(skillDir, roots.repoRoot);
 
-  return { name, description, metadata, body, ownRefs, sourcePath };
+  // Internally a skill's sourcePath always names the SKILL.md file (even when the
+  // manifest entry points at the skill directory), so downstream consumers like
+  // skillVerbatimRecords can derive the skill root by stripping the filename.
+  return {
+    name,
+    description,
+    metadata,
+    body,
+    ownRefs,
+    sourcePath: toPosixRelative(roots.repoRoot, absPath),
+  };
 }
 
 /** Parse an agent (03 §3.4): system-prompt body + ordered claudeKeys. */
@@ -183,10 +190,7 @@ function parseAgent(entry: ToolEntry, roots: ResolvedRoots): AgentRecord {
 
   const name = frontmatter.get("name");
   if (typeof name !== "string" || name.length === 0) {
-    throw new MalformedFrontmatterError(
-      `${sourcePath}: missing or non-string 'name'`,
-      sourcePath,
-    );
+    throw new MalformedFrontmatterError(`${sourcePath}: missing or non-string 'name'`, sourcePath);
   }
   const stem = basename(absPath, ".md");
   if (name !== stem || name !== entry.name) {
@@ -198,10 +202,7 @@ function parseAgent(entry: ToolEntry, roots: ResolvedRoots): AgentRecord {
 
   const description = frontmatter.get("description") ?? "";
   if (typeof description !== "string") {
-    throw new MalformedFrontmatterError(
-      `${sourcePath}: 'description' is not a string`,
-      sourcePath,
-    );
+    throw new MalformedFrontmatterError(`${sourcePath}: 'description' is not a string`, sourcePath);
   }
 
   const claudeKeys = new Map<string, unknown>();
@@ -223,10 +224,7 @@ function parseCommand(entry: ToolEntry, roots: ResolvedRoots): CommandRecord {
 
   const name = frontmatter.get("name");
   if (typeof name !== "string" || name.length === 0) {
-    throw new MalformedFrontmatterError(
-      `${sourcePath}: missing or non-string 'name'`,
-      sourcePath,
-    );
+    throw new MalformedFrontmatterError(`${sourcePath}: missing or non-string 'name'`, sourcePath);
   }
   const stem = basename(absPath, ".md");
   if (name !== stem || name !== entry.name) {
@@ -238,10 +236,7 @@ function parseCommand(entry: ToolEntry, roots: ResolvedRoots): CommandRecord {
 
   const description = frontmatter.get("description") ?? "";
   if (typeof description !== "string") {
-    throw new MalformedFrontmatterError(
-      `${sourcePath}: 'description' is not a string`,
-      sourcePath,
-    );
+    throw new MalformedFrontmatterError(`${sourcePath}: 'description' is not a string`, sourcePath);
   }
 
   const rawHint = frontmatter.get("argument-hint");

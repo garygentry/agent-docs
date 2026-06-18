@@ -531,8 +531,8 @@
         "A smoke test exercises build + build --check over a temp fixture repo",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T20:09:46.666Z",
       "dependsOn": [
         "003",
         "005",
