@@ -503,8 +503,8 @@
         "A unit test asserts the mapped fields and byte-stable JSON across two calls",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T20:02:36.162Z",
       "dependsOn": [
         "002",
         "004"
