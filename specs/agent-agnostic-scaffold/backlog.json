@@ -231,8 +231,8 @@
         "src/targets/codex.test.ts covers the agent drops, TOML shape, aggregate ordering, and byte-stability",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:45:04.323Z",
       "dependsOn": [
         "008"
       ],

@@ -63,3 +63,18 @@
   placeholder stubs for those four so index.ts compiles now; items 009-012 OVERWRITE
   them with real logic. Stubs throw (loud), never silent-empty. claude.ts is the
   only real transform in this item.
+
+## 009 — codex target (TOML agents + openai.yaml aggregate)
+
+- `src/targets/codex.ts` replaces the 008 throwing stub. `renderCodexAgentToml` is
+  exported (for tests/reuse). Strategy for byte-stable TOML: serialize the scalar
+  header keys (`name`, `description`) via `smol-toml` `stringify` in a fixed object
+  order, then append `developer_instructions` as a TOML **triple-quoted literal**
+  (`'''\n<body>'''`) — smol-toml would otherwise escape `\n` into a single-line
+  basic string (confirmed). Leading newline after `'''` is trimmed by TOML, matching
+  the 04 §7.6 example. Guard: if the body contains the `'''` delimiter, fall back to
+  `smol-toml`-serialized basic string for that key (literal strings can't contain it).
+- TQ-2: `CODEX_AGENT_KEYS` empty → every claudeKey drops as `fallback`. Agent also
+  contributes one `ManifestEntry`.
+- `openai.yaml` aggregate: plain literal `doc` with `_generated` first, serialized
+  via `yaml` `stringify(doc, YAML_OPTS)` (sortKeys:false preserves Form C order).
