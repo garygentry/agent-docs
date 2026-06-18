@@ -15,9 +15,14 @@ Key architectural decisions:
   this exact pattern. We reimplement its design in TypeScript per CON-01 — the
   data models, fixed key-emission order, atomic publish, drop-records, provenance
   headers, and per-target manifests all carry over. (REQ-STRUCT-03, REQ-EMIT-02)
-- **Match rauf's stack.** Bun 1.3.10, TypeScript 5.7, **vitest**, **Zod +
-  zod-to-json-schema**, ESLint 9, Prettier — the conventions already in
-  `/home/gary/workspace/rauf`. (CON-01)
+- **Bun+TS is the CON-01 org mandate** (not a rauf-derived convention). Note that
+  rauf is itself a **pnpm workspace monorepo** (`packageManager: pnpm@9.15.0`,
+  `engines.node >=22`); it uses Bun only as a `.bun-version`/`bun.lock` script
+  runner. What we genuinely **adopt from rauf** are its per-tool TypeScript
+  conventions — TS 5.7 tsconfig, **vitest**, **Zod + zod-to-json-schema** with the
+  `generate-json-schemas.ts --check` schema-guard pattern, ESLint 9 +
+  typescript-eslint, Prettier — not its package manager or monorepo topology.
+  agent-docs is a single-package Bun project. (CON-01)
 - **Four additive capabilities over feature-forge:** an explicit schema-validated
   tool manifest (REQ-DISC), slash commands as a first-class tool type
   (REQ-TOOLS-03), per-target override slots in a separate tree (REQ-EMIT-04), and
@@ -40,7 +45,7 @@ agent-docs/
   eslint.config.mjs  .prettierrc  # rauf-matched lint/format
   bun.lock  .bun-version          # Bun 1.3.10
 
-  tools.manifest.json             # canonical tool registry (REQ-DISC-01)
+  tools.manifest.json             # config block + canonical tool registry (REQ-DISC-01, REQ-REUSE-01)
   schemas/
     tools.manifest.schema.json    # generated from Zod (committed; REQ-DISC-03)
 
@@ -85,10 +90,12 @@ Public API surface: the emitter is invoked via package scripts (`bun run build`,
 
 ## 3. Technical Decisions
 
-### 3.1 Stack & toolchain — port to Bun+TS, match rauf (CON-01, REQ-REL-01)
+### 3.1 Stack & toolchain — port to Bun+TS per CON-01, reuse rauf's TS conventions (CON-01, REQ-REL-01)
 
-Reimplement feature-forge's emitter design in TypeScript. Adopt rauf's settings
-verbatim:
+Reimplement feature-forge's emitter design in TypeScript. Bun+TS is mandated by
+CON-01 (an org/toolchain mandate). rauf is a **pnpm monorepo**, so we do not mirror
+its package-manager or workspace topology — agent-docs is a single-package Bun
+project. What we adopt from rauf are its per-tool TypeScript settings, verbatim:
 
 - **tsconfig**: target ES2022, module ESNext, moduleResolution bundler, `strict`,
   `noUncheckedIndexedAccess`, `resolveJsonModule`, `types: ["bun-types"]`.
@@ -150,6 +157,11 @@ overrides never read as drift.
   content); the coverage report lists them under an `Overridden` section.
 - A hand-edit to an emitted (non-overridden) `adapters/` file still fails the
   drift guard (SC-04); declaring an override is the sanctioned escape hatch (SC-05).
+- A **stale override** (one targeting a path the emitter no longer emits, e.g.
+  after a tool rename/removal) is a **non-fatal warning**, not a build failure: it
+  is listed under `staleOverrides` in GENERATION-REPORT.md and the build continues.
+  This mirrors the auto-cleanup posture for emitted orphans (REQ-EMIT-08) and
+  honors REQ-EMIT-05's no-manual-cleanup intent for author content (see §7).
 
 ### 3.5 Transform rules — adopt feature-forge table, best-effort for commands (REQ-EMIT-02/03)
 
@@ -188,6 +200,12 @@ Carry over feature-forge's determinism guarantees and extend them:
   drops its orphaned adapter files automatically. The drift guard additionally
   fails on orphans — committed adapter files with no corresponding emitted file
   (see §3.7).
+- **Write confinement** (REQ-SEC-01): `publish.ts` and `overrides.ts` resolve every
+  output path and **confine all writes** to the staging dir and the `adapters/`
+  tree; any path resolving outside those roots (e.g. a `../` in a manifest `source`
+  or override relpath) is refused with `PathEscapeError` (§7) rather than written.
+  This ports feature-forge's `allowed_root` containment guard. Reads are likewise
+  limited to the canonical source and declared override slots.
 
 ### 3.7 Validation stack — drift guard primary, goldens for the sample tool (REQ-VALID-01/04/05)
 
@@ -205,9 +223,11 @@ Carry over feature-forge's determinism guarantees and extend them:
   decision, goldens are the sample tool's surface, not the primary test for all
   tools.
 - **Coverage / capability report (REQ-VALID-05, REQ-OBS-01):** every build writes
-  `adapters/GENERATION-REPORT.md` listing per target what mapped cleanly, what fell
-  back, what was skipped, plus `Overridden` and `Copied verbatim` sections. It is
-  itself committed and drift-guarded.
+  `adapters/GENERATION-REPORT.md` from the `ReportModel` (§4.2): `toolsProcessed`,
+  per-target counts (emitted / fallback / skipped / overridden / verbatim), the
+  `drops` list, and `staleOverrides`. This surfaces exactly REQ-OBS-01's required
+  data (targets emitted, tools processed, fallbacks applied, items skipped). The
+  report is itself committed and drift-guarded.
 - **Per-target schema validation (REQ-VALID-03):** where a target defines a
   manifest schema (codex `openai.yaml`, gemini `gemini-extension.json`), validate
   the emitted manifest against it.
@@ -218,8 +238,16 @@ Carry over feature-forge's determinism guarantees and extend them:
   canonical Claude side is an installable plugin (REQ-PKG-01), following
   feature-forge's manifest shapes.
 - Keep the emitter **config-driven and path-agnostic** (no `agent-docs`
-  hardcoding — root paths and target list come from config/manifest) so it is
-  reusable in other repos (REQ-REUSE-01). It ships in-repo; **no** standalone
+  hardcoding) so it is reusable in other repos (REQ-REUSE-01). The concrete config
+  surface is a top-level **`config` block in `tools.manifest.json`** (single source
+  of truth, one Zod schema — see §4.1): it declares the canonical root dirs
+  (`skillsDir`, `agentsDir`, `commandsDir`, `referencesDir`, `scriptsDir`), the
+  `overridesDir` and `adaptersDir` paths, and the `targets` list. `cli.ts` and
+  `emit.ts` read all paths and the target set from this config rather than from
+  constants — so `adapters/claude/...`-style literals and the
+  `claude,codex,copilot,cursor,gemini` target list in §5.2 are config-sourced
+  defaults, not hardcoded. CON-04 fixes the target SET for v1, but it is expressed
+  as config so another repo can vary it. The emitter ships in-repo; **no** standalone
   published CLI this version (respects OOS-04). The user chose "design for reuse,
   don't extract."
 
@@ -247,11 +275,30 @@ const ToolEntry = z.object({
   targets: TargetOverrides.optional(),      // per-target overrides/exclusions (REQ-DISC-01)
 });
 
+const Target = z.enum(["claude", "codex", "copilot", "cursor", "gemini"]);
+
+// Emitter config surface — single source of truth for paths + targets (REQ-REUSE-01).
+// Defaults match the repo-root layout (§2); another repo overrides them here.
+const EmitterConfig = z.object({
+  skillsDir: z.string().default("skills"),
+  agentsDir: z.string().default("agents"),
+  commandsDir: z.string().default("commands"),
+  referencesDir: z.string().default("references"),
+  scriptsDir: z.string().default("scripts"),
+  overridesDir: z.string().default("overrides"),
+  adaptersDir: z.string().default("adapters"),
+  targets: z.array(Target).default(["claude", "codex", "copilot", "cursor", "gemini"]),
+});
+
 const Manifest = z.object({
   version: z.literal(1),
+  config: EmitterConfig.default({}),       // paths + target list (REQ-REUSE-01)
   tools: z.array(ToolEntry),
 });
 ```
+
+`cli.ts`/`emit.ts` source every path and the target set from `Manifest.config`; no
+emitter module hardcodes a root path or the target list.
 
 ### 4.2 Emitter records (ported from feature-forge)
 
@@ -261,7 +308,13 @@ const Manifest = z.object({
 - `EmittedFile { relpath, content, mode }`
 - `DropRecord { target, source, construct, reason }`
 - `ManifestEntry { name, description, extra }` (codex/gemini aggregate manifests)
-- `EmitResult { files: EmittedFile[], drops: DropRecord[], manifestEntries, overridden: string[] }`
+- `VerbatimRecord { relpath, sourcePath }` — files copied byte-identical (no provenance header)
+- `EmitResult { files: EmittedFile[], drops: DropRecord[], manifestEntries, overridden: string[], verbatim: VerbatimRecord[] }`
+- `ReportModel` (what GENERATION-REPORT.md renders, REQ-OBS-01/REQ-VALID-05):
+  `{ toolsProcessed: {name, type}[], perTarget: { target → { emitted, fallback, skipped, overridden, verbatim: number } }, drops: DropRecord[], staleOverrides: string[] }`
+- `DriftEntry { relpath, kind: "content" | "orphan" | "missing" }` — structures
+  REQ-OBS-02's "which files differ and **how**" (content = differs, orphan =
+  committed but not emitted, missing = emitted but not committed)
 
 ## 5. API Design
 
@@ -328,13 +381,25 @@ feature-forge's `CanonError`/`MalformedFrontmatterError` and rauf's `errors.ts`)
 - `ManifestValidationError` — manifest fails Zod validation (path + Zod issue list).
 - `MalformedFrontmatterError` — a canonical file has unparseable/invalid frontmatter.
 - `SourceNotFoundError` — a manifest entry's `source` path does not exist.
-- `DriftError` — `--check` found content drift or orphan files; message lists each
-  differing/orphaned file + remediation (`run bun run build`) (REQ-OBS-02).
-- `OverrideConflictError` — an override targets a path the emitter does not emit
-  (stale override), surfaced rather than silently applied.
+- `PathEscapeError` (fatal) — a `source` or override relpath resolves outside the
+  canonical/staging/`adapters/` roots; refused rather than written (REQ-SEC-01, §3.6).
+- `DriftError` — `--check` found drift; carries a `DriftEntry[]` (§4.2) so the
+  message identifies each file **and its kind** (`content` / `orphan` / `missing`)
+  plus remediation (`run bun run build`) (REQ-OBS-02).
 
-Emit warnings (non-fatal) for every fallback/skip (REQ-EMIT-03). Fatal errors
-exit non-zero without writing a partial `adapters/` tree (atomic publish, §3.6).
+**Stale overrides are NOT a fatal error.** When an override in `overrides/<target>/`
+targets a path the emitter no longer emits (e.g. after a tool rename/removal), the
+build **warns and continues**, listing the stale override under `staleOverrides` in
+GENERATION-REPORT.md (§4.2 `ReportModel`). This is deliberate: it keeps the
+emitted-orphan auto-cleanup posture (REQ-EMIT-08) and the "MUST NOT require manual
+cleanup between runs" intent (REQ-EMIT-05) symmetric for author content, and is
+consistent with REQ-EMIT-03's "warn, don't silently drop." (No `OverrideConflictError`
+is raised for this case.)
+
+Emit warnings (non-fatal) for every fallback/skip (REQ-EMIT-03) and stale override.
+Fatal errors (validation, malformed frontmatter, missing source, path escape, drift
+in `--check`) exit non-zero without writing a partial `adapters/` tree (atomic
+publish, §3.6).
 
 ## 8. Testing Approach
 

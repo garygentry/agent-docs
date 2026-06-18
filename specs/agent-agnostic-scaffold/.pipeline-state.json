@@ -24,8 +24,9 @@
       "fixedAt": "2026-06-18T00:00:00Z"
     },
     "forge-2-tech": {
-      "status": "in-progress",
+      "status": "complete",
       "version": 1,
+      "commitHash": "b785735",
       "basedOnVersions": {
         "forge-1-prd": 1
       },
@@ -33,6 +34,13 @@
         "tech-spec.md"
       ],
       "completedAt": "2026-06-18T00:00:00Z"
+    },
+    "forge-verify-tech": {
+      "status": "findings-applied",
+      "findingsFile": ".verification/VERIFY-tech-2026-06-18.md",
+      "findingsCount": 5,
+      "verifiedAt": "2026-06-18T00:00:00Z",
+      "fixedAt": "2026-06-18T00:00:00Z"
     }
   }
 }
