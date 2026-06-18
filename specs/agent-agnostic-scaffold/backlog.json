@@ -149,8 +149,8 @@
         "src/frontmatter.test.ts covers round-trip order/body preservation, malformed input, and byte-stability",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:38:30.314Z",
       "dependsOn": [
         "002"
       ],
