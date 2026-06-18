@@ -50,15 +50,22 @@ requirements that skill must satisfy.
   the diagram and infer its structure (nodes, edges, containers, grouping).
 - **REQ-IN-02** (P0): The skill MUST also accept a **structured specification**
   supplied directly by the user, for precise control, as an alternative to prose.
+  This specification is an **engine-neutral schema** (nodes, edges, containers,
+  grouping) whose concrete shape is defined in the tech spec — it is NOT the
+  underlying rendering engine's native DSL. This keeps the input decoupled from
+  the engine choice (OQ-2) and consistent with REQ-USE-01 (no DSL required).
 - **REQ-IN-03** (P0): The skill MUST NOT invent semantic content the user did not
   describe; it depicts what it is told, not an imagined architecture.
 
 ### 3.2 Diagram Coverage
 
 - **REQ-COV-01** (P0): The skill MUST generate **architecture / box-arrow-flow**
-  diagrams (components, containers, connections, legends) to a professional
-  quality bar (semantic component coloring, non-overlapping layout, readable
-  labels, correct arrow routing/z-order).
+  diagrams (components, containers, connections, legends). Emitted diagrams MUST
+  satisfy these inspectable properties: no overlapping component boxes; connection
+  arrows routed behind boxes (correct z-order); every label contained within its
+  box/boundary; and, when a legend is present, the legend placed outside all
+  boundary boxes. Semantic component coloring MUST be applied (component type maps
+  to a consistent color).
 - **REQ-COV-02** (P0): The skill MUST also generate common diagram types:
   **flowchart, sequence, entity-relationship, state, and data-flow** diagrams
   from the same text-input model.
@@ -71,8 +78,10 @@ requirements that skill must satisfy.
   LaTeX, and PDF pipelines.
 - **REQ-OUT-02** (P0): Every emitted SVG MUST declare an explicit `viewBox` plus
   width/height and use absolute, well-formed coordinates.
-- **REQ-OUT-03** (P0): The skill MUST optionally rasterize a **PNG** at build time
-  as a universal fallback, on request. PNG generation is opt-in, not default.
+- **REQ-OUT-03** (P0): The skill MUST also produce a **PNG** rasterization at build
+  time as a standard v1 artifact (a universal fallback for non-SVG destinations),
+  alongside the SVG. (The doc-site-plugin consumer path uses the SVG; PNG serves
+  destinations that cannot embed SVG.)
 - **REQ-OUT-04** (P0): The output MUST contain **no runtime renderer and no
   view-time network dependency** — no client-side rendering library, no CDN
   fonts or scripts. Fonts MUST be a system-stack or embedded/subsetted so the
@@ -102,10 +111,20 @@ requirements that skill must satisfy.
   invocation** that produces artifacts deterministically at caller-specified
   output paths, so build steps can call it. Both modes are required for v1.
 - **REQ-INV-03** (P0): The scriptable path MUST be **consumable by builds** —
-  notably `doc-site-plugin`'s prebuild diagram step (REQ-DIAG-02 / CON-05 of the
-  doc-site-plugin PRD). It MUST accept caller-specified output locations and
-  signal success/failure unambiguously. (The precise contract — argument shape,
-  naming, exit codes — is finalized in the tech spec; see OQ-2.)
+  notably `doc-site-plugin`'s prebuild diagram step (REQ-DIAG-02/03 / CON-05 of the
+  doc-site-plugin PRD). Its contract surface MUST cover all four dimensions the
+  consumer depends on: (a) the accepted **input** form(s) for non-interactive use,
+  (b) **caller-specified output paths** and the **artifact formats** produced
+  (SVG, and PNG per REQ-OUT-03), (c) which **diagram types** (REQ-COV-01/02) are
+  invocable non-interactively, and (d) unambiguous **exit / success-failure**
+  signaling. (The precise schema, argument shape, naming, and exit codes are
+  finalized in the tech spec; see OQ-3.)
+- **REQ-INV-04** (P0): The scriptable invocation contract (REQ-INV-03) MUST be a
+  **documented, stable interface** that downstream consumers may depend on. Its
+  input form, output-path semantics, artifact formats, and exit codes constitute a
+  published contract; a breaking change to any of them requires an explicit
+  version bump so consumers (e.g. `doc-site-plugin`) can pin against a known
+  release.
 
 ## 4. Non-Functional Requirements
 
@@ -167,9 +186,13 @@ requirements that skill must satisfy.
 - **OQ-2**: Generation strategy and engine (text-DSL-to-SVG vs direct-SVG;
   D2 / Graphviz / hand-built) and the resulting **build-time dependency
   footprint** are deferred to the tech spec. This decision determines portability
-  details and the consumer contract shape (REQ-INV-03).
-- **OQ-3**: Exact scriptable invocation contract (arguments, output naming, exit
-  codes) consumed by `doc-site-plugin` — finalized in the tech spec to close
+  details and the consumer contract shape (REQ-INV-03). Constraint on the decision:
+  the chosen engine MUST NOT force users to author in its native DSL — the
+  engine-neutral schema of REQ-IN-02 sits in front of it (REQ-USE-01).
+- **OQ-3**: Exact scriptable invocation contract finalized in the tech spec, across
+  the four dimensions of REQ-INV-03 — (a) input form, (b) output paths + artifact
+  formats, (c) invocable diagram types, (d) exit/success-failure codes — plus the
+  engine-neutral schema definition (REQ-IN-02). Resolving this closes
   doc-site-plugin's OQ-4.
 
 ## 8. Success Criteria
@@ -185,8 +208,12 @@ requirements that skill must satisfy.
   `<title>`/`<desc>`/`role="img"`.
 - Light and dark variants with a configured accent color both render correctly.
 - The scriptable path produces artifacts at caller-specified paths and is invoked
-  successfully by a `doc-site-plugin` prebuild step.
+  successfully by a `doc-site-plugin` prebuild step, against the documented stable
+  contract (REQ-INV-03/04) across all four contract dimensions.
 - A malformed/invalid generation is caught by validation and reported, not
   emitted.
-- The skill is authored once in this repo and emits cleanly to all five agent
-  targets via `bun run build`.
+- Regenerating from an unchanged structured (engine-neutral) spec produces a
+  stable, diff-clean artifact (REQ-REPRO-01).
+- The skill is authored once in this repo, emits to all five agent targets via
+  `bun run build`, and behaves equivalently regardless of which target invokes it
+  (REQ-PORT-02).

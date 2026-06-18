@@ -4,16 +4,23 @@
   "currentStage": "forge-2-tech",
   "createdAt": "2026-06-18T00:00:00Z",
   "updatedAt": "2026-06-18T00:00:00Z",
-  "notes": "Text-to-diagram skill authored in THIS repo (skills/diagram-generator/), registered in tools.manifest.json, emitted to all 5 agent targets via bun run build (CON-01). SHARED DEPENDENCY: consumed by doc-site-plugin's diagram component (doc-site-plugin REQ-DIAG-02 / CON-05); scriptable contract must be stable for that consumer (CON-02). DECISIONS: output = tier-2 portable SVG (plain <text>, no foreignObject, opens anywhere: browser/Inkscape/Office/LaTeX/PDF) + OPTIONAL build-time PNG; NO runtime renderer, NO view-time network (no CDN fonts/scripts), fonts system-stack or embedded (REQ-OUT-01..04, REQ-SEC-02). Input = natural-language OR structured spec (REQ-IN-01/02); never invents content (REQ-IN-03). Coverage = architecture/box-arrow-flow + flowchart/sequence/ER/state/data-flow (REQ-COV-01/02). Reliability = validate well-formed + fail loudly, NO auto-retry for v1 (REQ-REL-01/02, OQ-1). Theming = light+dark + configurable accent (REQ-THEME-01). A11y = title/desc/role=img REQUIRED (REQ-A11Y-01). Invocation = conversational AND scriptable both P0; scriptable consumable by builds w/ caller-specified output paths (REQ-INV-01..03). DEFERRED TO TECH SPEC: generation strategy + engine (text-DSL-to-SVG vs direct-SVG; D2/Graphviz/hand-built) and build-time dependency footprint (OQ-2); exact scriptable contract args/naming/exit codes that closes doc-site-plugin OQ-4 (OQ-3). OUT OF SCOPE: cloud-provider icon sets, interactive/animated diagrams, editing/round-tripping existing diagrams, authoring semantic content. Research of record: .reference/research.md (recommends text-DSL-to-SVG default: D2 for web, Graphviz for opens-anywhere; mine Cocoon-AI craft rules; svg-precision validate loop).",
+  "notes": "Text-to-diagram skill authored in THIS repo (skills/diagram-generator/), registered in tools.manifest.json, emitted to all 5 agent targets via bun run build (CON-01). SHARED DEPENDENCY: consumed by doc-site-plugin's diagram component (doc-site-plugin REQ-DIAG-02 / CON-05); scriptable contract must be stable for that consumer (CON-02). DECISIONS: output = tier-2 portable SVG (plain <text>, no foreignObject, opens anywhere: browser/Inkscape/Office/LaTeX/PDF) + PNG now a REQUIRED v1 artifact (V-003 resolved; doc-site consumes SVG, PNG for non-SVG destinations); NO runtime renderer, NO view-time network (no CDN fonts/scripts), fonts system-stack or embedded (REQ-OUT-01..04, REQ-SEC-02). Input = natural-language OR structured spec (REQ-IN-01/02); structured spec = ENGINE-NEUTRAL schema (nodes/edges/containers), NOT engine DSL, decoupled from OQ-2 (V-006 resolved); never invents content (REQ-IN-03). Coverage = architecture/box-arrow-flow + flowchart/sequence/ER/state/data-flow (REQ-COV-01/02). Reliability = validate well-formed + fail loudly, NO auto-retry for v1 (REQ-REL-01/02, OQ-1). Theming = light+dark + configurable accent (REQ-THEME-01). A11y = title/desc/role=img REQUIRED (REQ-A11Y-01). Invocation = conversational AND scriptable both P0; scriptable contract covers 4 dimensions (input, output paths+formats, invocable diagram types, exit codes) + is a documented STABLE/VERSIONED interface (REQ-INV-01..04; V-001/V-002 resolved). PRD v2 after forge-verify-prd: 6 findings applied (V-001..006), all 4 Step-A decisions resolved. DEFERRED TO TECH SPEC: generation strategy + engine (text-DSL-to-SVG vs direct-SVG; D2/Graphviz/hand-built) and build-time dependency footprint (OQ-2); exact scriptable contract args/naming/exit codes that closes doc-site-plugin OQ-4 (OQ-3). OUT OF SCOPE: cloud-provider icon sets, interactive/animated diagrams, editing/round-tripping existing diagrams, authoring semantic content. Research of record: .reference/research.md (recommends text-DSL-to-SVG default: D2 for web, Graphviz for opens-anywhere; mine Cocoon-AI craft rules; svg-precision validate loop).",
   "stages": {
     "forge-1-prd": {
       "status": "complete",
-      "version": 1,
+      "version": 2,
       "basedOnVersions": {},
       "artifacts": [
         "PRD.md"
       ],
       "completedAt": "2026-06-18T00:00:00Z"
+    },
+    "forge-verify-prd": {
+      "status": "findings-applied",
+      "findingsFile": ".verification/VERIFY-prd-2026-06-18.md",
+      "findingsCount": 6,
+      "verifiedAt": "2026-06-18T00:00:00Z",
+      "fixedAt": "2026-06-18T00:00:00Z"
     }
   }
 }
