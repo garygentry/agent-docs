@@ -1,4 +1,5 @@
 {
+  "schemaVersion": "1",
   "project": "agent-agnostic-scaffold",
   "description": "Greenfield Bun+TypeScript emitter that transforms canonical Claude-native tool definitions (skills/agents/commands/references/scripts) into per-target adapter bundles (claude/codex/cursor/gemini/copilot), with manifest validation, discovery, per-target transforms, overrides, atomic publish, drift guard, coverage report, plugin packaging, and a sample tool. Byte-stable, deterministic output (REQ-EMIT-06). Implementation specs live under specs/agent-agnostic-scaffold/ (00-08 + TRACEABILITY).",
   "items": [
@@ -16,13 +17,15 @@
         "The `gate` script chains compile, schema:check, typecheck, lint, format:check, test, and build:check in that order (CON-05)",
         "bun install completes and produces bun.lock"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:30:06.374Z",
       "dependsOn": [],
       "notes": "Pure scaffolding. No emitter logic. The gate script is the CI bar (CON-05) but most scripts reference files created by later items — that is expected; they need not run green yet.",
       "estimatedIterations": 1,
       "model": "sonnet",
-      "specReferences": ["specs/agent-agnostic-scaffold/01-architecture-layout.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/01-architecture-layout.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -41,11 +44,15 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001"],
+      "dependsOn": [
+        "001"
+      ],
       "notes": "This is the single source of truth every other module imports. KEY_ORDER and TARGET_ORDER must be the ONLY ordering literals — later items reference them, never re-spell target arrays.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/00-core-definitions.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/00-core-definitions.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -64,7 +71,9 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002"],
+      "dependsOn": [
+        "002"
+      ],
       "notes": "Cross-check resolution detail is in 02 §2.3. Use the Manifest schema and error classes from src/model.ts and src/errors.ts — do not redefine them.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -89,7 +98,9 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002"],
+      "dependsOn": [
+        "002"
+      ],
       "notes": "ResolvedRoots is consumed by discovery (007), emit (013), publish (015), and drift guard (016) — match the 05 §7.1 shape exactly so those items bind cleanly.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -114,11 +125,15 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002"],
+      "dependsOn": [
+        "002"
+      ],
       "notes": "Pre-sort object keys or otherwise guarantee stable ordering so the committed schema is byte-stable (REQ-DISC-03). schema:gen / schema:check scripts in package.json invoke this file.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/02-manifest-and-config.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/02-manifest-and-config.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -136,11 +151,15 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002"],
+      "dependsOn": [
+        "002"
+      ],
       "notes": "Order preservation is load-bearing for determinism (REQ-EMIT-06). Map insertion order is the canonical order; never sort keys here.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/03-discovery-and-canonical-model.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/03-discovery-and-canonical-model.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -159,11 +178,16 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["004", "006"],
+      "dependsOn": [
+        "004",
+        "006"
+      ],
       "notes": "TQ-3 nested metadata shape (03 §4/§5) is what the cursor/gemini transforms read — get the single-'metadata'-key nesting right. Use ResolvedRoots from 004 and frontmatter from 006.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/03-discovery-and-canonical-model.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/03-discovery-and-canonical-model.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -181,11 +205,16 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002", "006"],
+      "dependsOn": [
+        "002",
+        "006"
+      ],
       "notes": "This item defines the contract the four other targets (009-012) implement against and is on their critical path. orderFrontmatter must use KEY_ORDER and nothing else. Per-target target file forms are authoritative in 04 §7-§10 (supersede tech-spec §5.2).",
       "estimatedIterations": 2,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/04-transforms.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -204,11 +233,15 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["008"],
+      "dependsOn": [
+        "008"
+      ],
       "notes": "smol-toml key ordering is the determinism risk — pre-sort or force a fixed order before stringify. Carry-forward warnings (04 §12): Codex per-agent tool key, skills path, prompts deprecation.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/04-transforms.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -226,11 +259,15 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["008"],
+      "dependsOn": [
+        "008"
+      ],
       "notes": "Cursor command argument syntax is unconfirmed (carry-forward, 04 §12) — follow 04 §8 and record a drop/fallback if needed. The flattened rules/<n>.mdc layout is what golden/drift tests assert against.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/04-transforms.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -248,11 +285,15 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["008"],
+      "dependsOn": [
+        "008"
+      ],
       "notes": "Identity threading (V-020) and namespacing-out (V-021) were resolved decisions. GEMINI.md has no frontmatter (carry-forward, 04 §12). emit (013) must pass the identity through when invoking aggregateManifest.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/04-transforms.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -270,11 +311,15 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["008"],
+      "dependsOn": [
+        "008"
+      ],
       "notes": "Copilot mode-vs-agent (.agent.md vs legacy .chatmode.md) is a carry-forward (04 §12) — follow 04 §10's .agent.md decision.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/04-transforms.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -292,7 +337,14 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["007", "008", "009", "010", "011", "012"],
+      "dependsOn": [
+        "007",
+        "008",
+        "009",
+        "010",
+        "011",
+        "012"
+      ],
       "notes": "Keep emit pure/in-memory so determinism and override tests can assert on EmitResult.files directly. Overrides overlay and disk publish are downstream (014/015).",
       "estimatedIterations": 2,
       "model": "opus",
@@ -318,11 +370,15 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["013"],
+      "dependsOn": [
+        "013"
+      ],
       "notes": "Stale overrides are deliberately non-fatal (00 §4 note, 05 §3.3) — surfaced via ReportModel.staleOverrides, never thrown.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/05-overrides-publish-determinism.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/05-overrides-publish-determinism.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -341,11 +397,16 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["013", "004"],
+      "dependsOn": [
+        "013",
+        "004"
+      ],
       "notes": "Staging-dir name must not embed a timestamp/pid in committed content. Atomic rename gives crash-safety; the loop runner may interrupt mid-write.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/05-overrides-publish-determinism.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/05-overrides-publish-determinism.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -363,11 +424,17 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["013", "014", "015"],
+      "dependsOn": [
+        "013",
+        "014",
+        "015"
+      ],
       "notes": "build --check (item 020) calls this. driftCheck re-applies the override overlay (imports applyOverrides/loadOverrides from ./overrides.js, item 014) and uses the staging-dir helper from ./publish.js (item 015). Derive orphan/golden relpaths from the emitted set, not hardcoded paths. Drift guard covers .claude-plugin/ as well as adapters/.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/06-validation-and-drift-guard.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/06-validation-and-drift-guard.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -385,11 +452,15 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["013"],
+      "dependsOn": [
+        "013"
+      ],
       "notes": "The report is written into adapters/ and is therefore drift-guarded — it must be byte-stable.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/06-validation-and-drift-guard.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/06-validation-and-drift-guard.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -406,7 +477,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["011", "013"],
+      "dependsOn": [
+        "011",
+        "013"
+      ],
       "notes": "Depends on gemini (011) for the extension-json shape and emit (013) for the aggregate output. See 06 §4.1 for the validator signature.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -431,11 +505,16 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002", "004"],
+      "dependsOn": [
+        "002",
+        "004"
+      ],
       "notes": "PluginMeta.name/version feed the gemini aggregate identity (011) and the plugin manifests — single source of truth. Plugin manifests are Form C strict JSON, NOT the Form-A provenance markdown.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/07-packaging-and-sample-tool.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/07-packaging-and-sample-tool.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -454,11 +533,22 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["003", "005", "013", "014", "015", "016", "017", "019"],
+      "dependsOn": [
+        "003",
+        "005",
+        "013",
+        "014",
+        "015",
+        "016",
+        "017",
+        "019"
+      ],
       "notes": "This is the integration item that connects every prior module. It imports/re-exports loadManifest from ./manifest.js (item 003) and calls resolveConfig from ./config.js (item 004, transitively satisfied via 015). After it, `bun run build` is the canonical local build (REQ-EMIT-01).",
       "estimatedIterations": 2,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/01-architecture-layout.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/01-architecture-layout.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -477,7 +567,9 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["020"],
+      "dependsOn": [
+        "020"
+      ],
       "notes": "This is the SC-02 end-to-end proof: one canonical skill emitting correctly to all four non-Claude targets plus canonical. The committed adapters/ output becomes the golden baseline for item 023.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -504,11 +596,18 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["014", "015", "016", "020"],
+      "dependsOn": [
+        "014",
+        "015",
+        "016",
+        "020"
+      ],
       "notes": "08 §3 fixtures are shared by items 023/024 too. The determinism fixture MUST include a command tool so TOML serialization is actually exercised (byte-stable smol-toml).",
       "estimatedIterations": 2,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/08-testing-strategy.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/08-testing-strategy.md"
+      ],
       "provider": "claude-cli"
     },
     {
@@ -526,7 +625,9 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["021"],
+      "dependsOn": [
+        "021"
+      ],
       "notes": "Goldens are scoped to the docs-helper sample only (06 §5). The committed adapters/ output from item 021 is the source of truth for the golden fixtures.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -550,11 +651,17 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["005", "018", "021"],
+      "dependsOn": [
+        "005",
+        "018",
+        "021"
+      ],
       "notes": "Closes the validation traceability (SC-08). Reuses the validator (018) and the schema builder (005); fixtures from 08 §3.",
       "estimatedIterations": 1,
       "model": "opus",
-      "specReferences": ["specs/agent-agnostic-scaffold/08-testing-strategy.md"],
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/08-testing-strategy.md"
+      ],
       "provider": "claude-cli"
     }
   ]

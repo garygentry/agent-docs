@@ -1,0 +1,35 @@
+{
+  "name": "agent-docs-scaffold",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": { "agent-docs-build": "dist/cli.js" },
+  "scripts": {
+    "build": "bun run src/cli.ts build",
+    "build:check": "bun run src/cli.ts build --check",
+    "schema:gen": "bun run src/schema-gen.ts",
+    "schema:check": "bun run src/schema-gen.ts --check",
+    "compile": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "gate": "bun run compile && bun run schema:check && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build:check"
+  },
+  "dependencies": {
+    "zod": "^3.24.0",
+    "zod-to-json-schema": "^3.24.0",
+    "yaml": "^2.6.0",
+    "smol-toml": "^1.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "bun-types": "latest",
+    "vitest": "^3.0.0",
+    "eslint": "^9.0.0",
+    "typescript-eslint": "^8.0.0",
+    "prettier": "^3.4.0"
+  }
+}

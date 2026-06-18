@@ -1,3 +1,7 @@
+node_modules/
+dist/
+*.tmp-*
+
 # Rauf runtime — transient files that must never be tracked
 **/.rauf/.loop.lock
 **/.rauf/state.json
