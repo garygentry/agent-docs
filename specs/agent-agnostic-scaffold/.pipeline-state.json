@@ -1,10 +1,10 @@
 {
   "feature": "agent-agnostic-scaffold",
   "pipelineStatus": "active",
-  "currentStage": "forge-2-tech",
+  "currentStage": "forge-3-specs",
   "createdAt": "2026-06-18T00:00:00Z",
   "updatedAt": "2026-06-18T00:00:00Z",
-  "notes": "Canonical = Claude-native form; adapters are transforms OF Claude artifacts. Targets: Codex, Cursor, Gemini, Copilot. Tool types: skills, agents/subagents, slash commands, shared scripts/references. Emitter + scripts on Bun+TypeScript (CON-01; repo has no package.json yet). Adapters committed in-repo under adapters/<target>/ (CON-02), generated + per-target override slots that survive rebuild. Discovery via explicit tool manifest (single source feeding emitter + drift guard). Per-target transform rules; best-effort fallback for unsupported constructs. Idempotent re-run AND byte-stable output are P0 (REQ-EMIT-05/06) backing a local+CI drift guard. Validation: drift guard, schema validation, golden snapshots, coverage report. Canonical side packaged as installable Claude plugin (P1). Reusable across repos (P1). MVP = structure + emitter + 1 sample tool emitting to all 4 targets. OUT OF SCOPE: actual doc tools' content, doc-site generator feature, publishing/release automation, standalone CLI. Reference feature-forge's own adapters/ for transform rules.",
+  "notes": "Canonical = Claude-native form; adapters are transforms OF Claude artifacts. Targets: Codex, Cursor, Gemini, Copilot. Tool types: skills, agents/subagents, slash commands, shared scripts/references. Emitter + scripts on Bun+TypeScript (CON-01; repo has no package.json yet). Adapters committed in-repo under adapters/<target>/ (CON-02), generated + per-target override slots that survive rebuild. Discovery via explicit tool manifest (single source feeding emitter + drift guard). Per-target transform rules; best-effort fallback for unsupported constructs. Idempotent re-run AND byte-stable output are P0 (REQ-EMIT-05/06) backing a local+CI drift guard. Validation: drift guard, schema validation, golden snapshots, coverage report. Canonical side packaged as installable Claude plugin (P1). Reusable across repos (P1). MVP = structure + emitter + 1 sample tool emitting to all 4 targets. OUT OF SCOPE: actual doc tools' content, doc-site generator feature, publishing/release automation, standalone CLI. Reference feature-forge's own adapters/ for transform rules. TECH DECISIONS (v1): Port feature-forge's build-adapters.py design to Bun+TS matching rauf (vitest, Zod + zod-to-json-schema, ESLint9, Prettier). Canon at repo root (skills/agents/commands/references/scripts). Manifest = tools.manifest.json (JSON, Zod-validated, committed JSON Schema). Overrides = separate overrides/<target>/ tree, file-level replace (distinguishable from emitted; closes OQ-03 at file-level). Transforms: reuse feature-forge skill/agent table verbatim; slash commands native on Claude/Cursor, best-effort fallback elsewhere (exact formats = TQ-1 for specs). Validation: drift guard primary (re-emit+diff, overrides merged, orphan detection per REQ-EMIT-08); golden snapshots scoped to MVP sample SKILL; coverage report each build. MVP sample tool = one simple skill (resolves OQ-04). Reuse: config-driven/path-agnostic in-repo, no extracted CLI (OOS-04). Open: TQ-1 (per-target command formats + copilot manifest), TQ-2 (codex structural agent keys), TQ-3 (skill metadata/allowed-tools), TQ-4 (manifest<->source cross-check), OQ-05 (plugin manifest specifics).",
   "stages": {
     "forge-1-prd": {
       "status": "complete",
@@ -22,6 +22,17 @@
       "findingsCount": 6,
       "verifiedAt": "2026-06-18T00:00:00Z",
       "fixedAt": "2026-06-18T00:00:00Z"
+    },
+    "forge-2-tech": {
+      "status": "in-progress",
+      "version": 1,
+      "basedOnVersions": {
+        "forge-1-prd": 1
+      },
+      "artifacts": [
+        "tech-spec.md"
+      ],
+      "completedAt": "2026-06-18T00:00:00Z"
     }
   }
 }

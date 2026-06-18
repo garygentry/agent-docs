@@ -4,8 +4,8 @@
   "backlogDir": null,
   "gitCommitAfterStage": true,
   "commitPrefix": "forge",
-  "stack": null,
-  "typeCheckCommand": null,
-  "testCommand": null,
+  "stack": "bun-typescript",
+  "typeCheckCommand": "tsc --noEmit",
+  "testCommand": "vitest run",
   "loopIterationMultiplier": 1.5
 }
