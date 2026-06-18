@@ -96,3 +96,25 @@
   from PluginMeta (07 §3.2), NOT hardcoded (V-020). Form C strict JSON via
   `JSON.stringify(doc, null, 2) + "\n"`, `_generated` first, then name/version/skills.
   Skills (not agents/commands) contribute aggregate entries.
+
+## 013 — emit orchestration (src/emit.ts)
+
+- `emit(manifest, roots, identity?)` runs `discover()` then iterates `TARGET_ORDER`,
+  looking up each `TargetTransform` in `TRANSFORMS` (src/targets/index.ts). Pure,
+  in-memory, `overridden` always `[]` (overlay is item 014, publish 015).
+- **Relpath rebasing is the key contract**: transforms return *target-bundle-relative*
+  relpaths (e.g. `skills/x/SKILL.md`); emit prefixes `<target>/` to make them
+  *adapter-root-relative* (05 §2) for every EmittedFile, VerbatimRecord, and the
+  aggregate. Override overlay/publish address files by this `<target>/<relpath>` key.
+- **Identity**: signature in the item is `emit(manifest, roots)`, but gemini's
+  `aggregateManifest` needs `{name,version}`. Added an optional 3rd `identity` param
+  (default stub `agent-docs-scaffold/0.0.0`); item 020 CLI threads the real PluginMeta
+  (019) identity through. Not read from disk (keeps emit pure).
+- **Verbatim assembly** (engine-owned per 04 §4.6): per target, skill ownRefs via
+  `skillVerbatimRecords(skill, target)` PLUS shared refs+scripts (discovery.sharedRefs/
+  sharedScripts) copied flat under each adapter at their repo-relative subpath.
+- Aggregate entries are collected per-target then `.sort(byName)` before
+  `aggregateManifest` (REQ-EMIT-06). EmitResult.manifestEntries accumulates the sorted
+  per-target entries (no target discriminator on ManifestEntry — duplicates across
+  codex/gemini are expected).
+- Did NOT touch src/index.ts barrel — item 020 owns re-exporting emit/driftCheck/etc.

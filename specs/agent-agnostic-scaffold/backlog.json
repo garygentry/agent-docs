@@ -335,8 +335,8 @@
         "An integration test over a fixture repo asserts five-target output and expected drops",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:53:12.114Z",
       "dependsOn": [
         "007",
         "008",
