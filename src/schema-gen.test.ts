@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildManifestSchema, buildManifestSchemaJson, SCHEMA_OUTPUT_PATH } from "./schema-gen.js";
+import { TARGET_ORDER } from "./model.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
@@ -41,6 +42,29 @@ describe("buildManifestSchema", () => {
     const text = buildManifestSchemaJson();
     expect(text.endsWith("\n")).toBe(true);
     expect(text).toContain('\n  "');
+  });
+});
+
+describe("manifest JSON-Schema drift (08 §7.2, REQ-DISC-03, SC-08)", () => {
+  it("committed schema matches a fresh generation (schema:check)", () => {
+    // Item 021 commits schemas/tools.manifest.schema.json; it must equal a fresh
+    // build from the Zod Manifest, byte-for-byte (REQ-DISC-03).
+    const committed = readFileSync(schemaAbs, "utf-8");
+    expect(committed).toBe(buildManifestSchemaJson());
+  });
+
+  it("detects a mutated committed schema as drift", () => {
+    const committed = readFileSync(schemaAbs, "utf-8");
+    const mutated = committed.replace(/"title": "[^"]*"/, '"title": "Tampered"');
+    expect(mutated).not.toBe(buildManifestSchemaJson());
+  });
+
+  it("binds the default targets to TARGET_ORDER (not a re-spelled literal)", () => {
+    const schema = buildManifestSchema();
+    const props = schema["properties"] as Record<string, { properties?: unknown }>;
+    const config = props["config"]!;
+    const targets = (config.properties as Record<string, { default?: unknown }>)["targets"]!;
+    expect(targets.default).toEqual(TARGET_ORDER);
   });
 });
 
