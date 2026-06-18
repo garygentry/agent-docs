@@ -257,8 +257,8 @@
         "src/targets/cursor.test.ts covers the .mdc output, nested-metadata handling, verbatim refs, and drops",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:46:24.705Z",
       "dependsOn": [
         "008"
       ],
