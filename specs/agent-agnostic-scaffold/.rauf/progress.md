@@ -43,3 +43,23 @@
   committed schema and restores/removes it in `afterAll` so it leaves the tree clean.
   The committed `schemas/tools.manifest.schema.json` is written/committed by item 021,
   not this item — a fresh tree has no file and the test cleans up after itself.
+
+## 008 — transform foundation, _shared, registry, claude target
+
+- `src/targets/_shared.ts` exports the `TargetTransform`/`TransformOutput`
+  interfaces (04 §3) AND the shared helpers (hintValue, orderFrontmatter,
+  renderFrontmatter, dropAllClaudeKeys) + `skillVerbatimRecords(skill, target)`
+  for ownRefs→VerbatimRecord (04 §4.6; cursor=rules/<n>/, copilot=instructions/<n>/,
+  others=skills/<n>/). The interface lives in `_shared.ts` (not index.ts) because
+  every target module imports it without a cycle; index.ts re-exports it.
+- TQ-3 confirmed: discover.ts captures the author's single `metadata:` mapping
+  verbatim, so `skill.metadata.get("metadata")` IS the nested Map — spec 04's
+  hintValue works as written. No flat-vs-nested mismatch.
+- `renderFrontmatter` splices PROVENANCE.yamlComment after the opening `---\n`
+  (serializeFrontmatter returns `---\n<yaml>---\n<body>`); does NOT pre-order —
+  callers must orderFrontmatter first.
+- **Registry needs all 5 keys to satisfy `Record<Target, TargetTransform>`**, but
+  codex/copilot/cursor/gemini are owned by items 009-012. Created THROWING
+  placeholder stubs for those four so index.ts compiles now; items 009-012 OVERWRITE
+  them with real logic. Stubs throw (loud), never silent-empty. claude.ts is the
+  only real transform in this item.

@@ -203,8 +203,8 @@
         "src/targets/claude.test.ts covers skill/agent/command transforms and asserts no drops",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:43:12.987Z",
       "dependsOn": [
         "002",
         "006"
