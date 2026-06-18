@@ -623,8 +623,8 @@
         "Fixtures import path is standardized and temp repos are cleaned via afterEach",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T20:20:17.247Z",
       "dependsOn": [
         "021"
       ],

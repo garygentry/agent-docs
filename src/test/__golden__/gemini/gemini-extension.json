@@ -1,0 +1,14 @@
+{
+  "_generated": {
+    "source": "skills/*",
+    "regenerate": "bun run build"
+  },
+  "name": "agent-docs-scaffold",
+  "version": "0.1.0",
+  "skills": [
+    {
+      "name": "docs-helper",
+      "description": "Helps write and review project documentation following the repo's house style. Use when authoring or editing docs, READMEs, or reference pages."
+    }
+  ]
+}

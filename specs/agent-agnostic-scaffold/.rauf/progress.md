@@ -176,3 +176,24 @@
   derived from the removed tool name (`d.relpath.includes("doomed")`), not hardcoded.
 - Override cross-cutting cases appended to `src/overrides.test.ts` (kept the 014
   unit suite); `OVERRIDE_REL = "cursor/rules/sample.mdc"` (cursor flattens skills).
+
+## 023 — golden snapshots + plugin packaging test
+
+- Goldens for the docs-helper sample live at `src/test/__golden__/<target>/…`,
+  scoped to `EmitResult.files` only (NOT verbatim style-guide.md copies — those are
+  `result.verbatim`, separate from `result.files`). Pinned relpaths in
+  `src/test/golden.shared.ts` (`SAMPLE_RELPATHS`). The sample is skill-only so codex
+  emits NO `agents/openai.yaml` aggregate — only gemini contributes an aggregate.
+- **Identity gotcha**: the committed gemini-extension.json uses name
+  `agent-docs-scaffold` (from package.json), NOT `agent-docs`. `golden.shared.ts`
+  derives `GOLDEN_IDENTITY` via `assemblePluginMeta(REPO_ROOT)` (the same fn the CLI
+  uses) so the gemini golden matches byte-for-byte.
+- Regenerate goldens deliberately: `bun run src/test/regenerate-goldens.ts` (08 §6.3).
+  Never auto-updated on `vitest run`.
+- `golden.test.ts` uses bidirectional set equality (emitted keys === golden keys ===
+  pinned `wanted`), so a new unreviewed emitted file or a stray golden fails.
+- `plugin.test.ts` (SC-07): added fixtures import (`./test/__fixtures__/index.js`) +
+  `afterEach(() => repos.forEach(cleanupFixtureRepo))`; asserts emitPlugin's output
+  matches the committed `.claude-plugin/{plugin,marketplace}.json` byte-exact.
+- Pre-existing lint error in `src/emit.ts` (`Target` used only in JSDoc) is unrelated
+  to this item and not in the AC (`vitest run && tsc --noEmit`).

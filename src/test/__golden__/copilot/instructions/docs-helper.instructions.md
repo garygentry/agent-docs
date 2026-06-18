@@ -1,0 +1,29 @@
+---
+# GENERATED — DO NOT EDIT. Source: skills/docs-helper/SKILL.md. Regenerate: bun run build
+description: Helps write and review project documentation following the repo's house style. Use when authoring or editing docs, READMEs, or reference pages.
+applyTo: "**"
+---
+
+# docs-helper
+
+Assist with writing and reviewing documentation for this repository.
+
+## When to use
+
+Use when the user is authoring or editing documentation — READMEs, reference
+pages, or guides — and wants it to match the project's house style.
+
+## How to help
+
+1. Read the target document (and `references/style-guide.md` in this skill).
+2. Check it against the house-style checklist below.
+3. Propose concrete edits; do not rewrite wholesale without asking.
+
+## House-style checklist
+
+- One sentence per line for prose; wrap at ~90 columns.
+- Headings are sentence-case.
+- Every code block declares a language.
+- Link to the canonical source, not a copy.
+
+See `references/style-guide.md` for the full rules.
