@@ -81,6 +81,13 @@ dedicated `sequence-svg.ts` that lays out lifelines, messages, and activations
 directly as plain-`<text>` SVG. Both paths emit the same SVG shape and flow
 through the same post-processing and validation.
 
+**Determinism caveat (REQ-REPRO-01):** Graphviz-WASM output is not inherently
+byte-stable (float layout, coordinate rounding, generated-ID order), so the
+byte-identical-SVG test (§8) is not free. It requires (a) pinning `@viz-js/viz`,
+and (b) a **canonicalization pass** in `svg-postprocess.ts` — stable element/
+attribute ordering, fixed coordinate precision, and deterministic element IDs —
+applied before the determinism assertion. Exact canonicalization rules are OTQ-6 (§10).
+
 **Alternatives considered:** D2 (best aesthetics, rejected — `<foreignObject>`
 fails tier-2 portability); system `dot` binary (rejected — system prerequisite in
 every consuming repo); full direct-SVG for all six types (rejected — re-implements
@@ -95,13 +102,20 @@ The structured input is an **engine-neutral** `DiagramSpec` — `diagramType`,
 (`theme`, `accent`, `title`, `description`). It is **not** Graphviz DOT — DOT is an
 internal compilation target (`dot-emit.ts`), so users never author the engine's
 native DSL (preserves REQ-USE-01). Defined as a Zod schema in
-`src/diagram/schema.ts`, following the repo's `src/model.ts` convention; a
-committed JSON Schema is generated at `schemas/diagram-input.schema.json` via the
-existing `zod-to-json-schema` pattern (`src/schema-gen.ts`).
+`src/diagram/schema.ts`, following the repo's `src/model.ts` convention. A
+committed JSON Schema is generated at `schemas/diagram-input.schema.json`. Note:
+`src/schema-gen.ts` is **not** parameterized — it hardwires the `Manifest` object
+and a single output path — so emitting a second schema requires **new code**:
+either a parameterized refactor of `src/schema-gen.ts` over `(zodSchema,
+outputPath)`, or a sibling generator (e.g. `src/diagram/schema-gen.ts`), plus new
+`schema:gen`/`schema:check` scripts for the diagram schema wired into `gate`. Only
+the `zodToJsonSchema` import is reused as-is.
 
 **Natural-language mode (REQ-IN-01):** the SKILL.md instructs the agent to
 translate the user's prose into a `DiagramSpec` JSON, then invoke the same CLI —
-no separate NL code path.
+no separate NL code path. **REQ-IN-03** ("MUST NOT invent semantic content") is
+enforced here by SKILL.md authoring guidance (depict only what the user described);
+it is a prompt-discipline constraint, not machine-validatable in v1.
 
 ### 3.3 Pre-bundled single-file CLI (REQ-INV-01/02/03, OQ-2 dependency footprint)
 
@@ -124,14 +138,26 @@ bus/…), with light and dark token sets and an `accent` override. To obtain bot
 light and dark, callers invoke twice; deterministic output names keep both
 artifacts side by side (§5).
 
+**Fonts (REQ-OUT-04, REQ-PORT-01):** text uses a single bundled font that is
+**subset and embedded as a base64 data-URI** inside each SVG — never a CDN `<link>`
+(the Cocoon anti-pattern) and never a bare system-font-family reference (which
+renders differently across viewers). This is what makes "opens identically
+everywhere" hold in Inkscape/Office/PDF, not just browsers. The font asset is
+bundled into the CLI (§3.3); `svg-postprocess.ts` injects the data-URI `@font-face`
+into the SVG and rewrites `font-family` references to it. The subset font is part
+of the committed bundle and the determinism surface (§3.5).
+
 ### 3.5 Two-stage validation, fail loud (REQ-REL-01/02)
 
 1. **Input:** parse against the Zod `DiagramSpec`; on failure print a specific
    message to stderr and exit non-zero — emit nothing.
 2. **Output:** after render, assert the SVG is well-formed XML, **tier-2-clean**
-   (contains `<text>`, contains no `<foreignObject>`), and **a11y-complete**
-   (`<title>`, `<desc>`, `role="img"` present). Any failure → stderr + non-zero
-   exit, no partial artifact written.
+   (contains `<text>`, contains no `<foreignObject>`), **structurally valid**
+   (explicit `viewBox` + width/height present, coordinates well-formed —
+   REQ-OUT-02), **font-portable** (an embedded data-URI font face is present; no
+   external font URL — REQ-OUT-04), and **a11y-complete** (`<title>`, `<desc>`,
+   `role="img"` present). Any failure → stderr + non-zero exit, no partial artifact
+   written.
 
 No automatic retry/self-correction in v1 (PRD OQ-1).
 
@@ -175,17 +201,24 @@ diagram-render <input.json | -> [options]
   --theme <light|dark>   # default light; overrides spec
   --accent <#rrggbb>     # overrides spec
   --format <svg|png|both>   # default svg
-  --out-dir <dir>        # required unless writing to stdout
+  --out-file <path>      # explicit output path; with --format both, the extension
+                         #   is swapped per artifact (.svg/.png). Fully caller-controlled.
+  --out-name <name>      # explicit base name written into --out-dir (overrides slug)
+  --out-dir <dir>        # convenience: deterministic derived names <slug>.<theme>.<ext>
   --version              # print contract version, exit 0
-  -                      # read spec JSON from stdin; with no --out-dir, single
+  -                      # read spec JSON from stdin; with no output target, single
                          #   artifact streams to stdout
+# Output-path precedence: --out-file > (--out-dir + --out-name) > (--out-dir + slug) > stdout
 ```
 
 **The four contract dimensions** doc-site-plugin OQ-4 depends on:
 1. **Input** — JSON `DiagramSpec` via file path or `-` (stdin).
-2. **Output** — `--out-dir` with deterministic names `<title-slug>.<theme>.svg` /
-   `.png`; or single-artifact stdout. Formats: SVG always available, PNG on
-   `--format png|both`.
+2. **Output** — consumers get **fully predictable paths** via `--out-file`
+   (or `--out-dir` + `--out-name`), so they need no knowledge of slug rules;
+   `--out-dir` + derived `<slug>.<theme>.<ext>` is a convenience default, and bare
+   stdin→stdout is available for single artifacts. Formats: SVG always available,
+   PNG on `--format png|both`. (The slug used by the convenience default is a
+   non-load-bearing nicety — consumers pin via the explicit flags.)
 3. **Invocable diagram types** — all six of REQ-COV-01/02 via `--type`/spec.
 4. **Exit/signaling** — `0` success; non-zero on input-validation or
    output-validation failure, with a specific stderr message. No partial writes.
@@ -199,13 +232,23 @@ semantics require a bump so consumers pin against a known release.
 **Depends on (this repo):**
 - `tools.manifest.json` — append one `ToolEntry`:
   `{ "name": "diagram-generator", "type": "skill", "source": "skills/diagram-generator", "description": "Converts natural-language or an engine-neutral node/edge/container spec into portable tier-2 SVG and PNG diagrams." }`
-  (`config` block unchanged; verified shape from `src/model.ts`.)
-- `src/schema-gen.ts` pattern — reused to emit `schemas/diagram-input.schema.json`.
+  (ToolEntry shape `{name,type,source,description?,targets?}` verified from
+  `src/model.ts:37-48`; the Manifest's top-level `config` block is unchanged — only
+  `tools[]` gains one entry. `config` is a Manifest field, not part of a ToolEntry.)
+- **Diagram input schema generation** — NEW code (parameterized `schema-gen` refactor
+  or sibling generator) emitting `schemas/diagram-input.schema.json`, plus new
+  `schema:gen`/`schema:check` scripts; reuses only the `zodToJsonSchema` import (§3.2).
 - `package.json` scripts — add `build:diagram`, `build:diagram:check`,
   `schema:gen`/`schema:check` coverage for the diagram schema; extend `gate`.
 - `src/test/golden.shared.ts` `SAMPLE_RELPATHS` + `src/test/__golden__/<target>/`
-  — register the new skill's emitted relpaths (SKILL.md, references, scripts
-  bundle) per target, else `golden.test.ts` (bidirectional set equality) fails.
+  — register the new skill's emitted relpaths per target, else `golden.test.ts`
+  (three-way set equality, verified at `golden.test.ts:76-78`) fails. **Per-target
+  nuance:** each target transforms the skill differently — e.g. claude/codex
+  `skills/diagram-generator/SKILL.md`, gemini `skills/diagram-generator/diagram-generator.md`,
+  copilot `instructions/diagram-generator.instructions.md`, cursor
+  `rules/diagram-generator.mdc`, with owned `references/`+`scripts/` relocated under
+  each target's skill location. Register the full per-target relpath set, not just
+  the claude shape.
 
 **Consumed by:** `doc-site-plugin` (REQ-DIAG-02/03, CON-05) — its prebuild invokes
 the bundled `diagram-render` CLI per the §5 contract. doc-site-plugin's OQ-4 is
@@ -237,8 +280,10 @@ well-formedness parser (e.g. `@rgrove/parse-xml`). Current runtime deps (`zod`,
   `src/diagram/__golden__/`. Regenerated via an explicit script, mirroring
   `regenerate-goldens.ts`.
 - **Property assertions** — every emitted SVG: well-formed XML, contains `<text>`,
-  contains no `<foreignObject>` (tier-2, REQ-OUT-01), has `<title>`/`<desc>`/
-  `role="img"` (REQ-A11Y-01), and references no external URL (REQ-OUT-04/SEC-02).
+  contains no `<foreignObject>` (tier-2, REQ-OUT-01), declares explicit `viewBox` +
+  width/height (REQ-OUT-02), carries an embedded data-URI font face and references
+  no external font/URL (REQ-OUT-04/SEC-02), and has `<title>`/`<desc>`/`role="img"`
+  (REQ-A11Y-01).
 - **Determinism** — same `DiagramSpec` → **byte-identical SVG** across runs
   (REQ-REPRO-01).
 - **PNG** — smoke only: `--format png` yields a valid, non-empty PNG of expected
@@ -257,6 +302,7 @@ well-formedness parser (e.g. `@rgrove/parse-xml`). Current runtime deps (`zod`,
 | `@viz-js/viz` | devDep (bundled) | Graphviz-WASM layout/SVG for graph-shaped types (§3.1) |
 | `@resvg/resvg-js` | devDep (bundled), **pinned** | SVG→PNG, in-process (§3.4, REQ-OUT-03) |
 | `@rgrove/parse-xml` (or equiv) | devDep (bundled) | output XML well-formedness check (§3.5) |
+| subset font asset (e.g. a libre sans/mono) | bundled asset | embedded as base64 data-URI for portable text (§3.4, REQ-OUT-04) |
 | `zod` | existing runtime | `DiagramSpec` schema (reused) |
 | `zod-to-json-schema` | existing runtime | generate `diagram-input.schema.json` |
 | `bun build` | toolchain | produce the committed single-file bundle (§3.3/3.6) |
@@ -278,3 +324,7 @@ No system binaries; no headless browser; no network at build or view time.
   combinations as a caller convenience, or require two invocations.
 - **OTQ-5 (resvg pin policy):** exact pinned `@resvg/resvg-js` version and the
   PNG-dimension assertion tolerance for CI stability.
+- **OTQ-6 (SVG canonicalization for determinism):** exact rules for the
+  `svg-postprocess.ts` canonicalization pass that makes Graphviz-WASM output
+  byte-stable (element/attribute ordering, coordinate precision, deterministic ID
+  scheme) — specify in forge-3-specs (§3.1).
