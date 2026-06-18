@@ -450,8 +450,8 @@
         "src/report.test.ts covers tally correctness and byte-stable rendering",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T20:01:29.297Z",
       "dependsOn": [
         "013"
       ],
