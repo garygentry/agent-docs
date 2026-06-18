@@ -9,5 +9,6 @@ export * from "./model.js"; // 00 §2–3 types + Zod schemas + constants
 export { loadManifest } from "./manifest.js"; // (manifestPath) => Manifest
 export { emit } from "./emit.js"; // (Manifest, roots) => EmitResult
 export { driftCheck } from "./driftguard.js"; // (Manifest, roots) => DriftEntry[]
+export { validateTargetManifest } from "./validate-manifests.js"; // (06 §4) per-target aggregate schema check
 export { emitPlugin } from "./plugin.js"; // (07) emit .claude-plugin/ manifests
 export type { PluginMeta } from "./plugin.js"; // (07) plugin manifest metadata

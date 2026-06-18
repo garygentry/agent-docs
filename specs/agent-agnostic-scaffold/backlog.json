@@ -475,8 +475,8 @@
         "Co-located tests cover a valid and a malformed emitted manifest for both targets",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T20:22:25.011Z",
       "dependsOn": [
         "011",
         "013"

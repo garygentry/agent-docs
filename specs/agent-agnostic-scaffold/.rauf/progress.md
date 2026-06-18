@@ -197,3 +197,17 @@
   matches the committed `.claude-plugin/{plugin,marketplace}.json` byte-exact.
 - Pre-existing lint error in `src/emit.ts` (`Target` used only in JSDoc) is unrelated
   to this item and not in the AC (`vitest run && tsc --noEmit`).
+
+## 018 — per-target emitted-manifest schema validation
+
+- `src/validate-manifests.ts` exports `validateTargetManifest(target, files)` plus
+  the local Zod shapes `CodexManifestSchema` (`_generated`+`agents[]`) and
+  `GeminiExtensionSchema` (`_generated`+name/version+`skills[]`). codex parses YAML,
+  gemini parses JSON. Failures throw `ManifestValidationError` (code MANIFEST_INVALID,
+  formatted issues[]) — the typed, non-silent result (06 §4.1).
+- File lookup accepts BOTH bundle-relative (`agents/openai.yaml`) and the emit
+  pipeline's `<target>/`-prefixed (`codex/agents/openai.yaml`) relpath forms, so the
+  validator works on raw transform output and on EmitResult.files alike.
+- A target with no aggregate present (e.g. skill-only emit → no codex openai.yaml)
+  is a legitimate no-op, NOT an error. claude/copilot/cursor are always no-ops.
+- Re-exported from src/index.ts barrel for item 024's schema.test.ts.
