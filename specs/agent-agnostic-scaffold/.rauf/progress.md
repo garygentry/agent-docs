@@ -156,3 +156,23 @@
 - `walkRelposix` returns adaptersDir-relative POSIX paths and treats a missing dir
   as `[]` (never-built tree = nothing committed, not an error). Staging dirs
   (`adaptersDir.tmp-*`) are siblings of adaptersDir, so they're never walked.
+
+## 022 — cross-cutting determinism / drift / override suites
+
+- Shared fixtures live at `src/test/__fixtures__/index.ts`: `makeFixtureRepo`
+  (returns `{ root, roots: ResolvedRoots, manifestPath, manifest }`),
+  `cleanupFixtureRepo`, `buildAndPublish`, plus `skillDoc/agentDoc/commandDoc`.
+- **API drift from spec 08 §3 sketch** (bound to the real implementation):
+  - `resolveConfig(config, repoRoot)` — NOT `resolveRoots` (spec name).
+  - `publish(files, verbatim, roots)` — 3 args; `buildAndPublish` passes
+    `result.verbatim` and the full `roots` (not `roots.adaptersDir`).
+  - skill `source` is the skill **dir** (`skills/<name>`), matching item 021's
+    cross-check; discover also accepts the SKILL.md form. The skill dir basename
+    MUST equal the tool name (discover enforces name==dirname).
+- `src/test/determinism.test.ts` — two-emit byte equality (incl. a TOML construct:
+  agent→codex `.toml`, command→gemini `.toml`) + publish idempotency via
+  buildAndPublish×2 then driftCheck === [].
+- `src/test/driftguard.test.ts` — clean/content/orphan/revert; orphan relpath
+  derived from the removed tool name (`d.relpath.includes("doomed")`), not hardcoded.
+- Override cross-cutting cases appended to `src/overrides.test.ts` (kept the 014
+  unit suite); `OVERRIDE_REL = "cursor/rules/sample.mdc"` (cursor flattens skills).

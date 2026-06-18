@@ -33,7 +33,12 @@ function makeRoots(): ResolvedRoots {
 }
 
 /** Write an override file at overrides/<target>/<relpath>. */
-function writeOverride(roots: ResolvedRoots, target: string, relpath: string, content: string): void {
+function writeOverride(
+  roots: ResolvedRoots,
+  target: string,
+  relpath: string,
+  content: string,
+): void {
   const full = join(roots.overridesDir, target, relpath);
   mkdirSync(join(full, ".."), { recursive: true });
   writeFileSync(full, content, "utf8");
@@ -137,8 +142,94 @@ describe("applyOverrides", () => {
     const roots = makeRoots();
     writeOverride(roots, "cursor", "rules/foo.mdc", "new\n");
     const overrides = loadOverrides(roots, ["cursor"]);
-    const input: EmittedFile[] = [{ relpath: "cursor/rules/foo.mdc", content: "old\n", mode: 0o644 }];
+    const input: EmittedFile[] = [
+      { relpath: "cursor/rules/foo.mdc", content: "old\n", mode: 0o644 },
+    ];
     applyOverrides(input, overrides);
     expect(input[0]!.content).toBe("old\n");
+  });
+});
+
+// --- Cross-cutting override survival & distinguishability (08 §5.3, SC-05) -------
+// These exercise the full build pipeline (emit -> overlay -> publish) over a real
+// fixture repo, proving an override survives a rebuild byte-for-byte and that the
+// overridden file is distinguishable as author-sourced (no provenance header).
+
+import { readFileSync } from "node:fs";
+import { join as pathJoin } from "node:path";
+import { driftCheck } from "./driftguard.js";
+import { emit } from "./emit.js";
+import {
+  buildAndPublish,
+  cleanupFixtureRepo,
+  makeFixtureRepo,
+  type FixtureRepo,
+} from "./test/__fixtures__/index.js";
+
+// Cursor emits a skill as `rules/<n>.mdc` (04 §8.1), so the override slot that
+// replaces the sample skill's cursor output is `cursor/rules/sample.mdc` — the
+// EmittedFile.relpath it shadows (05 §2). It must match an emitted relpath exactly.
+const OVERRIDE_REL = "cursor/rules/sample.mdc";
+const OVERRIDE_BODY = "---\ndescription: hand authored\nalwaysApply: true\n---\nCustom.\n";
+
+describe("override slots (SC-05, cross-cutting)", () => {
+  let repos: FixtureRepo[] = [];
+  afterEach(() => {
+    repos.forEach(cleanupFixtureRepo);
+    repos = [];
+  });
+
+  it("overlays author content into the target output and survives rebuild byte-for-byte", () => {
+    const repo = makeFixtureRepo({
+      skills: ["sample"],
+      overrides: { [OVERRIDE_REL]: OVERRIDE_BODY },
+    });
+    repos.push(repo);
+    buildAndPublish(repo.manifest, repo.roots);
+    buildAndPublish(repo.manifest, repo.roots); // rebuild must NOT clobber the override
+    const onDisk = readFileSync(
+      pathJoin(repo.roots.adaptersDir, "cursor", "rules", "sample.mdc"),
+      "utf8",
+    );
+    expect(onDisk).toBe(OVERRIDE_BODY);
+  });
+
+  it("driftCheck passes — an override is not drift", () => {
+    const repo = makeFixtureRepo({
+      skills: ["sample"],
+      overrides: { [OVERRIDE_REL]: OVERRIDE_BODY },
+    });
+    repos.push(repo);
+    buildAndPublish(repo.manifest, repo.roots);
+    expect(driftCheck(repo.manifest, repo.roots)).toEqual([]);
+  });
+
+  it("overridden file is distinguishable as author-sourced (no provenance header)", () => {
+    const repo = makeFixtureRepo({
+      skills: ["sample"],
+      overrides: { [OVERRIDE_REL]: OVERRIDE_BODY },
+    });
+    repos.push(repo);
+    // Read `overridden` from the OverlayResult (05 §3.2) — applyOverrides computes it.
+    const overlay = buildAndPublish(repo.manifest, repo.roots);
+    expect(overlay.overridden).toContain(OVERRIDE_REL);
+    const file = overlay.files.find((f) => f.relpath === OVERRIDE_REL)!;
+    expect(file.content).toBe(OVERRIDE_BODY);
+    expect(file.content).not.toMatch(/GENERATED — DO NOT EDIT/);
+  });
+
+  it("a stale override is a non-fatal warning, not a throw", () => {
+    const repo = makeFixtureRepo({
+      skills: ["sample"],
+      overrides: { "cursor/rules/gone.mdc": "x" }, // no canonical 'gone'
+    });
+    repos.push(repo);
+    let overlay!: ReturnType<typeof applyOverrides>;
+    expect(() => {
+      const result = emit(repo.manifest, repo.roots);
+      const overrides = loadOverrides(repo.roots, repo.manifest.config.targets);
+      overlay = applyOverrides(result.files, overrides);
+    }).not.toThrow();
+    expect(overlay.staleOverrides).toContain("cursor/rules/gone.mdc");
   });
 });
