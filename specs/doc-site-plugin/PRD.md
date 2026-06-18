@@ -104,6 +104,10 @@ target. A docs-site generator is a natural, high-value tool to author here.
   generation MUST delegate to the separate `diagram-generator` skill (the canonical
   text-to-diagram tool authored in this repo) rather than embedding a bespoke,
   repo-specific generation script. The emitted prebuild wiring invokes that skill.
+- **REQ-DIAG-03** (P0): The emitted prebuild wiring MUST conform to the released
+  `diagram-generator` scriptable invocation contract, and the build smoke test
+  (REQ-VERIFY-01) MUST exercise real diagram generation end-to-end — confirming
+  the wiring actually produces diagram artifacts, not merely that hooks are present.
 
 ### 3.5 Deploy Targets
 
@@ -200,7 +204,11 @@ target. A docs-site generator is a natural, high-value tool to author here.
   the **`diagram-generator`** skill (a canonical text-to-diagram tool authored in
   this repo, used by any feature that needs custom diagrams from text). The
   doc-site generator consumes it rather than reimplementing diagram generation.
-  This dependency is tracked as its own forge feature.
+  This dependency is a **hard prerequisite**: `diagram-generator` is implemented
+  before doc-site-plugin, and doc-site-plugin's diagram component builds against
+  the **released** `diagram-generator` skill and its scriptable contract. The
+  doc-site build smoke test (REQ-VERIFY-01) therefore exercises real
+  diagram generation end-to-end (REQ-DIAG-03).
 
 ## 6. Out of Scope
 
@@ -223,10 +231,12 @@ target. A docs-site generator is a natural, high-value tool to author here.
 - **OQ-3**: Re-run divergence (REQ-RERUN-02) — finalize the skip-vs-prompt policy
   and how the generator distinguishes "plumbing" from "authored content" at
   re-run time.
-- **OQ-4**: `diagram-generator` interface (REQ-DIAG-02 / CON-05) — the exact
-  invocation contract (inputs, output paths, supported diagram syntaxes) is
-  defined by that sibling feature's PRD; this generator's prebuild wiring must
-  conform to it once it lands.
+- **OQ-4** (RESOLVED): `diagram-generator` interface (REQ-DIAG-02/03 / CON-05) —
+  no longer open. `diagram-generator` is implemented before this feature, so its
+  scriptable invocation contract (inputs, caller-specified output paths, exit
+  behavior, supported diagram types) is a concrete, released artifact. This
+  generator's prebuild wiring conforms to that shipped contract; see the
+  `diagram-generator` spec for the authoritative interface.
 
 ## 8. Success Criteria
 
