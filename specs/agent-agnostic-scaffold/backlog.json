@@ -395,8 +395,8 @@
         "Confined writes throw PathEscapeError on escape",
         "src/publish.test.ts covers write, idempotency, stale cleanup, and confinement; vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:56:49.423Z",
       "dependsOn": [
         "013",
         "004"
