@@ -42,8 +42,8 @@
         "Manifest.parse() accepts a minimal valid manifest and rejects one missing version/tools",
         "tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:31:24.003Z",
       "dependsOn": [
         "001"
       ],
