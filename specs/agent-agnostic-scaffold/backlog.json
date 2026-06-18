@@ -96,8 +96,8 @@
         "Co-located tests cover default + custom config and the confinement allow/deny cases",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-18T19:35:27.786Z",
       "dependsOn": [
         "002"
       ],
