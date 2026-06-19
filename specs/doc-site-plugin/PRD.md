@@ -134,7 +134,11 @@ target. A docs-site generator is a natural, high-value tool to author here.
 
 - **REQ-RERUN-01** (P0): The generator MUST be safe to re-run against an
   already-scaffolded repo: it updates the manifest, sidebar, and symlinks in
-  place rather than clobbering.
+  place rather than clobbering. On re-run the generator MUST preserve the
+  Astro/Starlight version pins already written to the target rather than
+  re-resolving to latest (which "always latest," REQ-REL-02, governs only at
+  first scaffold), so idempotency (REQ-REL-01) holds; a version bump is an
+  explicit, opt-in action, never a side effect of a re-run.
 - **REQ-RERUN-02** (P0): The generator MUST NOT overwrite files a user has
   hand-edited since the last scaffold. On divergence it skips or prompts; authored
   content pages are always preserved.
@@ -148,13 +152,24 @@ target. A docs-site generator is a natural, high-value tool to author here.
   and the remediation rather than reporting success.
 - **REQ-VERIFY-03** (P0): On success, the generator MUST print clear next steps
   (how to run, preview, and deploy the site).
+- **REQ-VERIFY-04** (P0): The generator's own multi-file emission is
+  non-transactional: if it fails partway through emission (e.g. after writing
+  some config/scripts/symlinks), it MUST NOT attempt a rollback but MUST clearly
+  flag that the target tree is in a partial state and report which step failed. A
+  partially-scaffolded repo is recoverable by re-running the generator, which
+  reconciles the tree in place per REQ-RERUN-01 (never-clobber, manifest-driven
+  merge). This is intentionally distinct from the `diagram-generator` sibling
+  tool's no-partial-writes guarantee, which applies only to that tool's own
+  single-artifact output.
 
 ## 4. Non-Functional Requirements
 
 ### 4.1 Reliability / Determinism
 
 - **REQ-REL-01** (P0): Re-running the generator with the same inputs MUST be
-  idempotent at the file-and-symlink level (no destructive churn).
+  idempotent at the file-and-symlink level: a second identical run MUST yield a
+  no-op git diff in the target tree, modulo regenerated build caches (e.g. the
+  `.astro` cache).
 - **REQ-REL-02** (P0): The generator MUST resolve to the latest Astro / Starlight
   versions at scaffold time. (Trade-off accepted: newer over strictly
   reproducible; see Open Questions OQ-1.)
@@ -173,15 +188,30 @@ target. A docs-site generator is a natural, high-value tool to author here.
 - **REQ-PORT-01** (P0): Emitted toolchain wiring (scripts, CI, package manifest)
   MUST match the target repo's detected package manager and runtime (Bun+pnpm or
   Node+npm, monorepo vs single package).
-- **REQ-PORT-02** (P0): The generator's procedure MUST be agent-agnostic so it
-  behaves equivalently when invoked through any of the five supported coding
-  agents.
+- **REQ-PORT-02** (P0): The generator's procedure MUST be agent-agnostic. The
+  pass/fail equivalence bar is build-time, not runtime: given identical interview
+  answers, the emitted file set (Starlight config, scripts, CI, package manifest,
+  manifest) MUST be byte-identical regardless of which of the five supported
+  coding agents drove the procedure, verified by a golden-output comparison
+  across the five emitted tool forms. Runtime-conversational variation (how each
+  agent phrases the interview) is inherently agent-dependent and is explicitly
+  out of scope for this equivalence bar.
+- **REQ-PORT-03** (P0): For monorepo targets, the generator MUST register the
+  docs package in the workspace manifest (e.g. `pnpm-workspace.yaml` or the root
+  `package.json` `workspaces` field) and emit root-level passthrough scripts
+  (`dev:docs` / `build:docs` equivalents), matching the detected package manager,
+  so the scaffolded site is a first-class workspace member rather than an
+  unregistered package. (Reference: canon.md reference-implementation root
+  `package.json` / `pnpm-workspace.yaml` row.)
 
 ### 4.4 Usability
 
 - **REQ-USE-01** (P0): The interview MUST keep simple sites simple — optional
   components (diagrams, extra deploy targets, drift rules) MUST NOT be forced on a
-  user who wants a minimal site.
+  user who wants a minimal site. Concretely: when a user declines every optional
+  component, the generator MUST emit zero files for those declined components (no
+  dangling hooks, configs, or references), so a minimal site contains only the
+  core scaffold.
 - **REQ-USE-02** (P0): Every assumption made via graceful degradation MUST be
   surfaced to the user.
 
@@ -250,7 +280,8 @@ target. A docs-site generator is a natural, high-value tool to author here.
   manifest/sidebar/symlinks in place with no destructive overwrite of edited
   pages.
 - The tool is authored once in this repo and emits cleanly to all five agent
-  targets via `bun run build`.
+  targets via `bun run build`; given identical interview answers, the emitted
+  file set is byte-identical across all five agent forms (REQ-PORT-02).
 - A user's most likely complaint if we got it wrong — "it overwrote my edits" or
   "it claimed success but the site doesn't build" — is precluded by REQ-RERUN-02
   and REQ-VERIFY-01.

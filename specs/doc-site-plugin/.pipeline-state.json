@@ -14,6 +14,14 @@
         "PRD.md"
       ],
       "completedAt": "2026-06-18T00:00:00Z"
+    },
+    "forge-verify-prd": {
+      "status": "findings-applied",
+      "findingsFile": ".verification/VERIFY-prd-2026-06-19.md",
+      "findingsCount": 5,
+      "verifiedAt": "2026-06-19T00:00:00Z",
+      "fixedAt": "2026-06-19T00:00:00Z",
+      "commit": "0104538"
     }
   }
 }
