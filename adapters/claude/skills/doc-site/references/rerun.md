@@ -1,9 +1,7 @@
 # rerun.md — Provenance, Re-run, Versions, Safety & the Build Smoke Test
 
 This is the agent procedure for the **lifecycle / safety / verification** subsystem
-(`SKILL.md` Phases 4, 6, 7). It is the operational companion to spec
-`08-rerun-and-verification.md` and implements the decision record in
-`00-core-definitions.md §3.3`. Read it whenever you emit files, re-run against an
+(`SKILL.md` Phases 4, 6, 7). Read it whenever you emit files, re-run against an
 already-scaffolded repo, resolve versions, or gate success on the build.
 
 The "code" here is the exact shell/CLI commands you run (`sha256sum`/`shasum`, `ln`,
@@ -15,7 +13,7 @@ in-repo runtime module — this behavior runs at scaffold time in the target rep
 ## 1. Provenance write during emit (Phase 4)
 
 The provenance manifest is `.doc-site-scaffold.json` at the **target repo root**. Its
-shape and field contract are defined in `00-core-definitions.md §3` — this doc
+shape and field contract are defined in `00 §3` — this doc
 specifies only the _write procedure_.
 
 ### 1.1 Per-file hash recording
@@ -99,7 +97,7 @@ function decideManagedFile(path, recorded):
     return action
 ```
 
-Mapping to `00-core-definitions.md §3.3`:
+Mapping to `00 §3.3`:
 
 | On-disk state                               | `recorded`     | Action                                   | §3.3 row |
 | ------------------------------------------- | -------------- | ---------------------------------------- | -------- |
@@ -176,8 +174,7 @@ regenerated build caches (`.astro/`, `dist/`). This is a consequence of two mech
 Because run #1 hashed the _emitted_ bytes and substitution is deterministic, the run #2
 hash equals the recorded hash, so no file is spuriously flagged. The only tree changes
 are regenerated build caches, which the emitted `.gitignore` excludes from version
-control. This property is asserted by the double-apply scaffold-output golden fixture
-(`10-testing-strategy.md`).
+control. This property is asserted by the double-apply scaffold-output golden fixture.
 
 ---
 
@@ -293,7 +290,7 @@ or any scaffolded file.
 ## 6. Build smoke test gate (Phase 6)
 
 Before declaring success, you MUST run the emitted build end-to-end and require it to go
-**green**. Success/failure map onto the outcome taxonomy in `00-core-definitions.md §7`.
+**green**. Success/failure map onto the outcome taxonomy in `00 §7`.
 
 ### 6.1 Steps (in order)
 

@@ -1,12 +1,11 @@
 # Drift Guard Component (agent reference)
 
 This reference covers the **drift-guard** template group — emitted only when the
-component-selection record has `driftGuard: true` (`00-core-definitions.md §5`). It
+component-selection record has `driftGuard: true` (`00 §5`). It
 documents the single template asset
 `references/templates/drift-guard/check-docs.mjs.tmpl`, how the agent wires the
 `docs:check` script and the optional CI step during **Phase 4 (emit)**, and the
-fork-free custom-rule convention. The authoritative spec is
-`specs/doc-site-plugin/07-drift-guard.md`.
+fork-free custom-rule convention.
 
 `check-docs.mjs` is a stdlib-only ESM script that runs identically under `node` and
 `bun` — it imports only from `node:fs`, `node:path`, and `node:url`, and derives all
@@ -25,14 +24,14 @@ The `drift-guard/` group is emitted **iff** the selection record has
   selected — the optional pre-build CI step (§4).
 - **`driftGuard: false`** → emit **nothing**: no `check-docs.mjs`, no `docs:check`
   script, no CI step, and no reference anywhere else. This is the decline-clean
-  guarantee (REQ-USE-01) asserted by the decline-all scaffold-output fixture
-  (`10-testing-strategy.md`). The custom-rule file `docs.drift.rules.mjs` is
+  guarantee (REQ-USE-01) asserted by the decline-all scaffold-output fixture.
+  The custom-rule file `docs.drift.rules.mjs` is
   **never** emitted by the generator either way — it is a user-authored convention
   (§5).
 
 `check-docs.mjs` is a managed plumbing file: its sha256 is recorded in
-`.doc-site-scaffold.json` (`00-core-definitions.md §3`) so a re-run never clobbers a
-user-edited copy (`08-rerun-and-verification.md`).
+`.doc-site-scaffold.json` (`00 §3`) so a re-run never clobbers a
+user-edited copy (see `rerun.md`).
 
 ---
 
@@ -98,13 +97,13 @@ When emitted, the agent adds a `docs:check` script to the docs package's
 ```
 
 - If the repo already runs a **meta `gate`/`check` script** (detected per
-  `02-detection-and-interview.md`), the agent **appends** `docs:check` to it so
+  `detect.md`), the agent **appends** `docs:check` to it so
   drift fails the existing gate (e.g. `… && {{PKG_MANAGER}} run docs:check`).
 - If no such meta script exists, `docs:check` is left as a standalone entry and
-  surfaced in the next-steps output (`08-rerun-and-verification.md`,
+  surfaced in the next-steps output (see `rerun.md`,
   REQ-VERIFY-03).
 - For monorepos, a root passthrough is added per the monorepo root-scripts fragment
-  pattern (`06-deploy-and-monorepo.md`). The script is invoked with the detected
+  pattern (`monorepo.md`). The script is invoked with the detected
   package manager (`{{PKG_MANAGER}} run docs:check`).
 
 ---
@@ -113,7 +112,7 @@ When emitted, the agent adds a `docs:check` script to the docs package's
 
 When the repo has CI **and** the GitHub Pages deploy target is selected, the agent
 inserts the guard as a job step **before** the build in the emitted
-`.github/workflows/docs.yml` (`06-deploy-and-monorepo.md`), so a broken page never
+`.github/workflows/docs.yml` (`deploy-github-pages.md`), so a broken page never
 deploys:
 
 ```yaml

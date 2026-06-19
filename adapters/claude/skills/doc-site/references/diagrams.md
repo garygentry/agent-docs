@@ -1,7 +1,7 @@
 # Diagrams Component (agent reference)
 
 This reference covers the **diagrams** template group — emitted only when the
-component-selection record has `diagrams: true` (`00-core-definitions.md §5`). It
+component-selection record has `diagrams: true` (`00 §5`). It
 documents how the agent vendors the renderer, runs the version pin-check, fills the
 generated tokens in
 `references/templates/diagrams/diagrams.prebuild.snippet.tmpl`, and wires the
@@ -10,10 +10,8 @@ prebuild into the core `package.json`.
 The generator does **not** ship a bespoke renderer. It **vendors** the frozen
 `diagram-render.mjs` bundle from the sibling `diagram-generator` skill and invokes it
 per that skill's frozen **v1.0.0 scriptable contract** (REQ-DIAG-02, CON-05). The
-authoritative renderer contract (flags, exit codes, `CONTRACT_VERSION`) lives in
-`specs/doc-site-plugin/00-core-definitions.md §8`; the component spec is
-`specs/doc-site-plugin/05-diagrams-component.md`. This file is the emit-time
-procedure.
+authoritative renderer contract (flags, exit codes, `CONTRACT_VERSION`) is owned by
+the sibling `diagram-generator` skill; this file is the emit-time procedure.
 
 ---
 
@@ -69,14 +67,14 @@ The source file mode is preserved (`0644`). The renderer is always invoked via t
 the executable bit. The vendored copy is a **managed plumbing file**: its
 repo-relative path and sha256 are recorded in `.doc-site-scaffold.json` `files`
 (§3.2), making it subject to never-clobber on re-run
-(`08-rerun-and-verification.md`).
+(see `rerun.md`).
 
 ---
 
 ## 3. Version pin-check — runs BEFORE vendoring (CON-05)
 
 Before copying anything, the generator verifies the sibling renderer matches the
-pinned `CONTRACT_VERSION` **`1.0.0`** (`00-core-definitions.md §8`). It runs the
+pinned `CONTRACT_VERSION` **`1.0.0`** (`00 §8`). It runs the
 renderer's machine-readable `--version` handle at the fixed rel-path:
 
 ```sh
@@ -174,7 +172,7 @@ The resolved single-spec `scripts` fragment:
 ### 4.3 Composition with the symlink layer
 
 When the **symlink** content layer is also selected
-(`04-content-symlink-layer.md`), its `prebuild` and this one are **both** merged into
+(`symlink.md`), its `prebuild` and this one are **both** merged into
 the single `prebuild` script. The ordering is **symlink-setup first, then diagram
 generation**:
 
@@ -204,7 +202,7 @@ provenance, never-clobber on re-run). If a spec already exists, none is added.
 
 Any **nonzero** exit from the vendored renderer is a **build failure** the prebuild
 surfaces; it is never swallowed. The exit-code contract is consumed directly from
-`00-core-definitions.md §8`:
+the renderer (`00 §8`):
 
 | Exit | Renderer meaning | Prebuild behavior                                                             |
 | ---- | ---------------- | ----------------------------------------------------------------------------- |

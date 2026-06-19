@@ -1,8 +1,8 @@
 # interview.md — Phase 2: interview
 
 This is the agent-facing procedure for **Phase 2 (interview)** of the `doc-site`
-skill. It implements `specs/doc-site-plugin/02-detection-and-interview.md §4` and fills
-every substitution token (`00 §4.1`) and the component-selection record (`00 §5`).
+skill. It fills every substitution token (`00 §4.1`) and the component-selection
+record (`00 §5`).
 
 The interview is **conversational and agent-driven**. The exact phrasing you use to ask each
 question is up to you (out of scope for byte-identity, REQ-PORT-02); what is fixed is the set

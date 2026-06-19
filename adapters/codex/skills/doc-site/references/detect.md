@@ -1,8 +1,7 @@
 # detect.md — Phase 1: detection probes
 
 This is the agent-facing procedure for **Phase 1 (detect)** of the `doc-site`
-skill. It implements the decision record in `specs/doc-site-plugin/02-detection-and-interview.md`
-and the detection-signal / assumption model in `specs/doc-site-plugin/00-core-definitions.md §6`.
+skill.
 
 **The load-bearing principle: detection is best-effort and never a hard prerequisite.**
 Every value detection could not resolve is still reachable through the interview (Phase 2,

@@ -6,10 +6,8 @@ how the agent fills the generated tokens in
 `references/templates/symlink/setup-docs.sh.tmpl` and how the script is wired into
 the core `package.json`.
 
-The runtime behavior of the script (idempotency, `ln -sfn` no-dereference,
-repo-confinement) is specified in `specs/doc-site-plugin/04-content-symlink-layer.md`;
-the authoritative re-run / safety policy lives in
-`specs/doc-site-plugin/08-rerun-and-verification.md`. This file is the
+The script is idempotent (`ln -sfn`, no-dereference) and repo-confined. The
+authoritative re-run / safety policy is covered in `rerun.md`; this file is the
 emit-time procedure.
 
 ---
@@ -26,7 +24,7 @@ The `symlink/` group is emitted **only** when `contentMode ∈ {symlink, mixed}`
 
 In **native** mode the content layer contributes **zero files** — no
 `setup-docs.sh`, no `predev`/`prebuild` entries. This is part of the decline-all
-invariant (`00-core-definitions.md §5`).
+invariant (`00 §5`).
 
 `symlink` and `mixed` use the **identical** template. The only difference is which
 manifest pages produce `link_file` lines — that is data, not template logic.
@@ -35,7 +33,7 @@ manifest pages produce `link_file` lines — that is data, not template logic.
 
 ## 2. Generating `{{SYMLINK_PAGE_LINES}}` from the manifest
 
-The agent reads `docs.manifest.json` (`00-core-definitions.md §2`) and emits one
+The agent reads `docs.manifest.json` (`00 §2`) and emits one
 line **per page where `source == "symlink"` AND `unmanaged != true`**:
 
 ```sh
@@ -96,8 +94,8 @@ caller's working directory.
 ## 4. `predev` / `prebuild` wiring in the core `package.json`
 
 When `contentMode ∈ {symlink, mixed}`, the agent adds **two** script entries to the
-core `package.json` template's `scripts` block (`03-core-site-and-manifest.md` owns
-the template; this layer contributes the lines):
+core `package.json` template's `scripts` block (`core.md` owns the template; this
+layer contributes the lines):
 
 ```jsonc
 {
@@ -117,7 +115,7 @@ POSIX-`sh` interpreter regardless of the file's shebang.
 
 ### Composition with diagrams
 
-If the **diagrams** component is also selected (`05-diagrams-component.md`), its
+If the **diagrams** component is also selected, its
 prebuild snippet and this symlink prebuild are composed into a single `prebuild` by
 the agent — **diagram generation first, then symlink relinking** — so generated SVGs
 exist in `{{IMAGES_SRC_DIR}}` before `link_dir` runs over `images/`. The composition
@@ -131,4 +129,4 @@ step run **last** in any composed `prebuild`.
 The resolved script is written to the target repo at `{{DOCS_PKG_DIR}}/setup-docs.sh`
 with mode `0755`. It is a **managed plumbing file**: its sha256 is recorded in
 `.doc-site-scaffold.json` so re-run can detect a user edit and skip overwriting it
-(`08-rerun-and-verification.md`).
+(see `rerun.md`).
