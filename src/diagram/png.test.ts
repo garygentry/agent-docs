@@ -35,9 +35,7 @@ describe("renderPng — SVG → PNG via @resvg/resvg-wasm (REQ-OUT-03)", () => {
   });
 
   it("throws DiagramPngError for a malformed SVG", async () => {
-    await expect(renderPng("<svg this is not valid")).rejects.toBeInstanceOf(
-      DiagramPngError,
-    );
+    await expect(renderPng("<svg this is not valid")).rejects.toBeInstanceOf(DiagramPngError);
   });
 
   it("wraps the failure into DiagramPngError.detail", async () => {

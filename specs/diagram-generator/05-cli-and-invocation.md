@@ -5,12 +5,12 @@ The two invocation modes of the `diagram-generator` skill and how they converge 
 zero-install **scriptable contract** that `doc-site-plugin` (and any consuming repo)
 depends on (tech-spec §5, the four contract dimensions resolving doc-site-plugin's
 OQ-4). Part B specifies the **conversational** path: what `skills/diagram-generator/SKILL.md`
-must contain so an agent translates prose into a `DiagramSpec` and invokes the *same*
+must contain so an agent translates prose into a `DiagramSpec` and invokes the _same_
 CLI — never a separate natural-language code path.
 
 Both modes are **P0** (REQ-INV-01/02) and both terminate in a single validated
 `DiagramSpec` → render → write pipeline (tech-spec §1). This document owns only the
-*invocation boundary*: argument parsing, input acquisition, output-path resolution,
+_invocation boundary_: argument parsing, input acquisition, output-path resolution,
 artifact writing, path confinement, exit signaling, versioning, and the SKILL.md
 authoring rules. Schema parsing lives in `02-schema-and-validation.md`; rendering in
 `03-rendering-engine.md`; PNG in `04-theme-postprocess-png.md`. All shared types,
@@ -23,17 +23,17 @@ symbol (matching `src/model.ts`).
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-| --- | --- | --- |
-| REQ-INV-01 | Conversational invocation | 4 |
-| REQ-INV-02 | Non-interactive / scriptable invocation, deterministic output paths | 2, 3 |
-| REQ-INV-03 | Build-consumable contract — four dimensions doc-site-plugin depends on | 1, 2, 3 |
+| REQ ID     | Requirement                                                               | Section   |
+| ---------- | ------------------------------------------------------------------------- | --------- |
+| REQ-INV-01 | Conversational invocation                                                 | 4         |
+| REQ-INV-02 | Non-interactive / scriptable invocation, deterministic output paths       | 2, 3      |
+| REQ-INV-03 | Build-consumable contract — four dimensions doc-site-plugin depends on    | 1, 2, 3   |
 | REQ-INV-04 | Documented, versioned, stable contract — `--version` / `CONTRACT_VERSION` | 1, 2.4, 5 |
-| REQ-IN-01 | Accept natural-language description, infer structure | 4.1, 4.2 |
-| REQ-IN-03 | MUST NOT invent semantic content the user did not describe | 4.3 |
-| REQ-USE-01 | Conversational path keeps simple diagrams simple — no DSL to learn | 4.1, 4.2 |
-| REQ-SEC-01 | Writes confined to caller-specified path(s) — no escape | 3.3 |
-| REQ-SEC-02 | No network at any point | 1.4, 2.5 |
+| REQ-IN-01  | Accept natural-language description, infer structure                      | 4.1, 4.2  |
+| REQ-IN-03  | MUST NOT invent semantic content the user did not describe                | 4.3       |
+| REQ-USE-01 | Conversational path keeps simple diagrams simple — no DSL to learn        | 4.1, 4.2  |
+| REQ-SEC-01 | Writes confined to caller-specified path(s) — no escape                   | 3.3       |
+| REQ-SEC-02 | No network at any point                                                   | 1.4, 2.5  |
 
 ## 1. The four contract dimensions (REQ-INV-03/04)
 
@@ -41,12 +41,12 @@ The scriptable surface frozen here is exactly the four-dimension contract
 doc-site-plugin's OQ-4 depends on (tech-spec §5). Enumerated explicitly so an
 implementer and a consumer agree on the same surface:
 
-| # | Dimension | What the contract guarantees | Owned by |
-| --- | --- | --- | --- |
-| 1 | **Input** | A JSON `DiagramSpec` (`00` §2.4) supplied as a **file path** argument *or* `-` to read from **stdin**. Nothing else is an input form. | §2.1, §3.1 |
-| 2 | **Output** | **Caller-controlled, predictable paths** via `--out-file` (or `--out-dir` + `--out-name`), plus a `--out-dir`-only convenience deriving `<slug>.<theme>.<ext>`, plus bare stdin→stdout for a single artifact. Formats: **SVG always**; **PNG** only on `--format png\|both`. | §2.3, §3.2 |
-| 3 | **Invocable types** | All six diagram types of REQ-COV-01/02 (`00` §2.1 `DiagramType`) are invocable non-interactively via `--type` or the spec's `diagramType`. | §2.2 |
-| 4 | **Exit / signaling** | `EXIT_CODES` (`00` §6): `0` = success; distinct non-zero per failure class, each with a **specific stderr message**; **no partial writes** on any failure. | §3.4 |
+| #   | Dimension            | What the contract guarantees                                                                                                                                                                                                                                                 | Owned by   |
+| --- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 1   | **Input**            | A JSON `DiagramSpec` (`00` §2.4) supplied as a **file path** argument _or_ `-` to read from **stdin**. Nothing else is an input form.                                                                                                                                        | §2.1, §3.1 |
+| 2   | **Output**           | **Caller-controlled, predictable paths** via `--out-file` (or `--out-dir` + `--out-name`), plus a `--out-dir`-only convenience deriving `<slug>.<theme>.<ext>`, plus bare stdin→stdout for a single artifact. Formats: **SVG always**; **PNG** only on `--format png\|both`. | §2.3, §3.2 |
+| 3   | **Invocable types**  | All six diagram types of REQ-COV-01/02 (`00` §2.1 `DiagramType`) are invocable non-interactively via `--type` or the spec's `diagramType`.                                                                                                                                   | §2.2       |
+| 4   | **Exit / signaling** | `EXIT_CODES` (`00` §6): `0` = success; distinct non-zero per failure class, each with a **specific stderr message**; **no partial writes** on any failure.                                                                                                                   | §3.4       |
 
 ### 1.4 No network (REQ-SEC-02)
 
@@ -101,11 +101,7 @@ raise `DiagramUsageError` (`00` §5, exit `64`).
 The parsed shape:
 
 ```typescript
-import {
-  type DiagramType,
-  type Theme,
-  type HexColor,
-} from "./schema.js";
+import { type DiagramType, type Theme, type HexColor } from "./schema.js";
 
 /** Artifact format selector for `--format` (tech-spec §5). */
 export type OutputFormat = "svg" | "png" | "both";
@@ -186,7 +182,7 @@ cross-field validation in `02-schema-and-validation.md` — not silently coerced
   >  stdout
 ```
 
-Resolution happens *after* render, because the slug is derived from the rendered
+Resolution happens _after_ render, because the slug is derived from the rendered
 `RenderResult.slug` (`00` §3.2) and the per-artifact theme is known. The resolver:
 
 ```typescript
@@ -198,9 +194,7 @@ import { type RenderResult, type Theme } from "./schema.js";
  * Keys are present only for requested formats: `svg` always (when not stdout),
  * `png` only when `format` is `"png"` or `"both"`.
  */
-export type ResolvedOutput =
-  | { readonly svg?: string; readonly png?: string }
-  | "stdout";
+export type ResolvedOutput = { readonly svg?: string; readonly png?: string } | "stdout";
 
 /**
  * Resolve absolute output paths for one rendered variant per the tech-spec §5
@@ -243,7 +237,7 @@ collision (tech-spec §3.4).
 > **The slug is a non-load-bearing nicety.** It exists only for the `--out-dir`-only
 > convenience case. Build consumers that need predictable, slug-independent paths
 > MUST pin via `--out-file` or `--out-dir` + `--out-name` (dimension 2). Changing the
-> slug algorithm is therefore *not* a contract break for consumers who pinned, but is
+> slug algorithm is therefore _not_ a contract break for consumers who pinned, but is
 > still documented and version-tracked because the convenience default is part of the
 > published surface.
 
@@ -401,16 +395,16 @@ is written to `process.stdout`. PNG to stdout is refused (§2.3 throws
 On success `main` returns `0`. On any `DiagramError` it prints to stderr and returns
 the mapped `exitCode`:
 
-| Failure | Error class (`00` §5) | Code | Exit |
-| --- | --- | --- | --- |
-| Bad flags / missing input | `DiagramUsageError` | USAGE_ERROR | 64 |
-| Bad spec (JSON/Zod/cross-field) | `DiagramInputError` | INPUT_INVALID | 2 |
-| Engine/layout failure | `DiagramRenderError` | RENDER_FAILED | 3 |
-| Post-render assertion failure | `DiagramOutputError` | OUTPUT_INVALID | 4 |
-| PNG rasterization failure | `DiagramPngError` | PNG_FAILED | 5 |
-| FS write / path escape | `DiagramIoError` | IO_ERROR | 6 |
+| Failure                         | Error class (`00` §5) | Code           | Exit |
+| ------------------------------- | --------------------- | -------------- | ---- |
+| Bad flags / missing input       | `DiagramUsageError`   | USAGE_ERROR    | 64   |
+| Bad spec (JSON/Zod/cross-field) | `DiagramInputError`   | INPUT_INVALID  | 2    |
+| Engine/layout failure           | `DiagramRenderError`  | RENDER_FAILED  | 3    |
+| Post-render assertion failure   | `DiagramOutputError`  | OUTPUT_INVALID | 4    |
+| PNG rasterization failure       | `DiagramPngError`     | PNG_FAILED     | 5    |
+| FS write / path escape          | `DiagramIoError`      | IO_ERROR       | 6    |
 
-Validation (input *and* output) completes before *any* artifact is written, so a
+Validation (input _and_ output) completes before _any_ artifact is written, so a
 rejected spec or a malformed SVG produces a non-zero exit and **zero files** — the
 "no partial writes" guarantee of dimension 4.
 
@@ -437,7 +431,7 @@ bun diagram-render --version    # → 1.0.0
 
 `skills/diagram-generator/SKILL.md` (`01-architecture-layout.md` §1) is the
 agent-facing procedure for the conversational mode. It defines **no new code path** —
-its job is to get the agent to produce a `DiagramSpec` JSON and invoke the *same*
+its job is to get the agent to produce a `DiagramSpec` JSON and invoke the _same_
 bundled CLI from §2. Both modes converge on one execution path (tech-spec §1). This
 section specifies what SKILL.md MUST contain; it does not author SKILL.md (that is a
 separate file owned by the implementer).
@@ -491,8 +485,8 @@ filled in to make the diagram look complete (REQ-IN-03, OOS-04).
 
 This is **prompt-discipline, not machine-validated**: there is no automated check in
 v1 that a `DiagramSpec` faithfully reflects the user's prose (tech-spec §3.2). The
-schema (`02-schema-and-validation.md`) validates *structural* well-formedness, not
-*semantic* faithfulness. SKILL.md is therefore the sole enforcement point for
+schema (`02-schema-and-validation.md`) validates _structural_ well-formedness, not
+_semantic_ faithfulness. SKILL.md is therefore the sole enforcement point for
 REQ-IN-03, and must state the constraint unambiguously, with at least one
 do/don't example (e.g. "user said 'a web app talking to an API' → two nodes and one
 edge; do NOT add a database, cache, or load balancer the user never mentioned").
@@ -530,6 +524,7 @@ Implement these first; this document builds directly on them:
 An implementation matches this spec when:
 
 **Flags & parsing (§2.1)**
+
 - [ ] Each flag parses: `--type` (all six), `--theme` (light/dark), `--accent`
       (#rrggbb), `--format` (svg/png/both), `--out-file`, `--out-name`, `--out-dir`,
       `--version`, and the `-` stdin sentinel.
@@ -538,6 +533,7 @@ An implementation matches this spec when:
       `--out-dir` each raise `DiagramUsageError` (exit 64) with a specific message.
 
 **Output-path precedence (§2.3)**
+
 - [ ] `--out-file foo.svg` → SVG at exactly `foo.svg`.
 - [ ] `--out-file foo.svg --format both` → `foo.svg` + `foo.png`.
 - [ ] `--out-dir d --out-name n --format both` → `d/n.svg` + `d/n.png`.
@@ -547,14 +543,17 @@ An implementation matches this spec when:
       first, then ordered `--out-file > --out-dir+--out-name > --out-dir+slug > stdout`.
 
 **Input (§3.1)**
+
 - [ ] Spec read from a file path renders identically to the same spec piped via `-`.
 - [ ] A missing input file → `DiagramIoError` (exit 6).
 - [ ] A structurally invalid spec → `DiagramInputError` (exit 2), zero files written.
 
 **Versioning (§2.4)**
+
 - [ ] `--version` prints `CONTRACT_VERSION` to stdout and exits 0, with no input required.
 
 **Exit codes & no-partial-write (§3.4)**
+
 - [ ] Bad input → exit 2 and no file on disk.
 - [ ] A forced output-validation failure (e.g. an injected `<foreignObject>`) → exit
       4 and **no artifact written**.
@@ -563,16 +562,19 @@ An implementation matches this spec when:
 - [ ] Each `EXIT_CODES` value (`00` §6) is reachable and distinct.
 
 **Path confinement (§3.3, REQ-SEC-01)**
+
 - [ ] A `--out-name '../escape'` (or a slug derived from a `..`-laden title) is
       refused with `DiagramIoError` (exit 6) before any write.
 - [ ] Confinement matches the `confinePath` semantics (`src/paths.ts:27`) — resolved
       dest must equal the root or start with `root + sep`.
 
 **No network (§1.4, REQ-SEC-02)**
+
 - [ ] The bundle issues no network request across all of the above (no fetch/socket
       import present; verifiable by static scan of the committed `.mjs`).
 
 **Conversational flow (§4)**
+
 - [ ] SKILL.md describes prose → `DiagramSpec` JSON → invoke the same bundled CLI,
       with no separate NL renderer.
 - [ ] SKILL.md contains the explicit "depict only what the user described" rule

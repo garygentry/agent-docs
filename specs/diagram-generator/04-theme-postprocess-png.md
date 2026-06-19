@@ -23,15 +23,15 @@ this document makes it so. Validation of the result is `02-schema-and-validation
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-| --- | --- | --- |
-| REQ-THEME-01 | Light/dark variants + configurable accent color | 2 (all) |
-| REQ-COV-01 | Semantic component coloring, z-order, legend-outside-boundary | 2.2, 3.2, 3.3, 3.4 |
-| REQ-A11Y-01 | `<title>`/`<desc>`/`role="img"` injected | 3.5 |
-| REQ-OUT-04 | No view-time network; font embedded as data-URI | 3.6 |
-| REQ-PORT-01 | Artifacts portable across viewers; embedded font + inline color render identically with no network | 3.6, 3.7 |
-| REQ-OUT-03 | PNG rasterization at build time | 4 |
-| REQ-REPRO-01 | Deterministic, byte-stable SVG (canonicalization, OTQ-6) | 3.7 |
+| REQ ID       | Requirement                                                                                        | Section            |
+| ------------ | -------------------------------------------------------------------------------------------------- | ------------------ |
+| REQ-THEME-01 | Light/dark variants + configurable accent color                                                    | 2 (all)            |
+| REQ-COV-01   | Semantic component coloring, z-order, legend-outside-boundary                                      | 2.2, 3.2, 3.3, 3.4 |
+| REQ-A11Y-01  | `<title>`/`<desc>`/`role="img"` injected                                                           | 3.5                |
+| REQ-OUT-04   | No view-time network; font embedded as data-URI                                                    | 3.6                |
+| REQ-PORT-01  | Artifacts portable across viewers; embedded font + inline color render identically with no network | 3.6, 3.7           |
+| REQ-OUT-03   | PNG rasterization at build time                                                                    | 4                  |
+| REQ-REPRO-01 | Deterministic, byte-stable SVG (canonicalization, OTQ-6)                                           | 3.7                |
 
 > **Resolves:** OTQ-2 (§2), OTQ-5 (§4), OTQ-6 (§3.7).
 
@@ -44,8 +44,8 @@ contract is the CLI, `05-cli-and-invocation.md`). It therefore lives **here** in
 `theme.ts`, not in `00-core-definitions.md`.
 
 > **Placement note (for the foundation author):** `00-core-definitions.md` fixes
-> only the *keys* of the palette (`NodeRole`, `Theme`) and explicitly forward-refs
-> the *values* and the resolved shape to this document (`00` §4). If a future
+> only the _keys_ of the palette (`NodeRole`, `Theme`) and explicitly forward-refs
+> the _values_ and the resolved shape to this document (`00` §4). If a future
 > document needs `ResolvedPalette` (none in this suite does), promoting it into
 > `00` would be reasonable; for now it is defined and exported here as internal.
 
@@ -108,65 +108,65 @@ dark fills) so node labels clear a WCAG AA contrast bar.
 
 Base tokens (light):
 
-| Token | Hex | Role in render |
-| --- | --- | --- |
-| `background` | `#ffffff` | canvas backdrop |
-| `surface` | `#f1f5f9` | legend box / chrome panels |
-| `edge` | `#475569` | connector arrows |
-| `label` | `#0f172a` | edge labels, legend text, title |
-| `boundary` | `#94a3b8` | dashed container boundaries |
+| Token              | Hex       | Role in render                                  |
+| ------------------ | --------- | ----------------------------------------------- |
+| `background`       | `#ffffff` | canvas backdrop                                 |
+| `surface`          | `#f1f5f9` | legend box / chrome panels                      |
+| `edge`             | `#475569` | connector arrows                                |
+| `label`            | `#0f172a` | edge labels, legend text, title                 |
+| `boundary`         | `#94a3b8` | dashed container boundaries                     |
 | `accent` (default) | `#2563eb` | accent-derived tokens when no `accent` supplied |
 
 Role colors (light) — `{fill, stroke, text}`:
 
-| `NodeRole` | fill | stroke | text |
-| --- | --- | --- | --- |
-| `default` | `#e2e8f0` | `#94a3b8` | `#0f172a` |
+| `NodeRole` | fill      | stroke    | text      |
+| ---------- | --------- | --------- | --------- |
+| `default`  | `#e2e8f0` | `#94a3b8` | `#0f172a` |
 | `frontend` | `#22d3ee` | `#0891b2` | `#0f172a` |
-| `backend` | `#34d399` | `#059669` | `#0f172a` |
+| `backend`  | `#34d399` | `#059669` | `#0f172a` |
 | `database` | `#a78bfa` | `#7c3aed` | `#0f172a` |
-| `queue` | `#fb923c` | `#ea580c` | `#0f172a` |
-| `cache` | `#f87171` | `#dc2626` | `#0f172a` |
+| `queue`    | `#fb923c` | `#ea580c` | `#0f172a` |
+| `cache`    | `#f87171` | `#dc2626` | `#0f172a` |
 | `external` | `#cbd5e1` | `#64748b` | `#0f172a` |
 | `security` | `#fb7185` | `#e11d48` | `#0f172a` |
-| `gateway` | `#fbbf24` | `#d97706` | `#0f172a` |
-| `storage` | `#5eead4` | `#0d9488` | `#0f172a` |
-| `compute` | `#93c5fd` | `#2563eb` | `#0f172a` |
+| `gateway`  | `#fbbf24` | `#d97706` | `#0f172a` |
+| `storage`  | `#5eead4` | `#0d9488` | `#0f172a` |
+| `compute`  | `#93c5fd` | `#2563eb` | `#0f172a` |
 
 ### 2.2 Dark token set (resolves OTQ-2, dark)
 
 Base tokens (dark) — the slate canvas honors the Cocoon `#020617`/slate convention:
 
-| Token | Hex | Role in render |
-| --- | --- | --- |
-| `background` | `#020617` | canvas backdrop |
-| `surface` | `#0f172a` | legend box / chrome panels |
-| `edge` | `#94a3b8` | connector arrows |
-| `label` | `#e2e8f0` | edge labels, legend text, title |
-| `boundary` | `#475569` | dashed container boundaries |
+| Token              | Hex       | Role in render                                  |
+| ------------------ | --------- | ----------------------------------------------- |
+| `background`       | `#020617` | canvas backdrop                                 |
+| `surface`          | `#0f172a` | legend box / chrome panels                      |
+| `edge`             | `#94a3b8` | connector arrows                                |
+| `label`            | `#e2e8f0` | edge labels, legend text, title                 |
+| `boundary`         | `#475569` | dashed container boundaries                     |
 | `accent` (default) | `#60a5fa` | accent-derived tokens when no `accent` supplied |
 
 Role colors (dark) — `{fill, stroke, text}`:
 
-| `NodeRole` | fill | stroke | text |
-| --- | --- | --- | --- |
-| `default` | `#1e293b` | `#475569` | `#f8fafc` |
+| `NodeRole` | fill      | stroke    | text      |
+| ---------- | --------- | --------- | --------- |
+| `default`  | `#1e293b` | `#475569` | `#f8fafc` |
 | `frontend` | `#0e7490` | `#22d3ee` | `#f8fafc` |
-| `backend` | `#047857` | `#34d399` | `#f8fafc` |
+| `backend`  | `#047857` | `#34d399` | `#f8fafc` |
 | `database` | `#6d28d9` | `#a78bfa` | `#f8fafc` |
-| `queue` | `#c2410c` | `#fb923c` | `#f8fafc` |
-| `cache` | `#b91c1c` | `#f87171` | `#f8fafc` |
+| `queue`    | `#c2410c` | `#fb923c` | `#f8fafc` |
+| `cache`    | `#b91c1c` | `#f87171` | `#f8fafc` |
 | `external` | `#334155` | `#64748b` | `#f8fafc` |
 | `security` | `#be123c` | `#fb7185` | `#f8fafc` |
-| `gateway` | `#b45309` | `#fbbf24` | `#f8fafc` |
-| `storage` | `#0f766e` | `#5eead4` | `#f8fafc` |
-| `compute` | `#1d4ed8` | `#93c5fd` | `#f8fafc` |
+| `gateway`  | `#b45309` | `#fbbf24` | `#f8fafc` |
+| `storage`  | `#0f766e` | `#5eead4` | `#f8fafc` |
+| `compute`  | `#1d4ed8` | `#93c5fd` | `#f8fafc` |
 
 ### 2.3 Accent override resolution
 
 When the caller supplies an `accent` (`HexColor` from `00` §2.1, validated at input
 parse, REQ-THEME-01), it **replaces the accent-derived tokens** in the resolved
-palette. The accent is a brand color for the *chrome*, not a re-coloring of every
+palette. The accent is a brand color for the _chrome_, not a re-coloring of every
 node:
 
 1. `palette.accent` is set to the supplied accent (else the variant default above).
@@ -174,7 +174,7 @@ node:
 3. The **`default` role's `stroke`** is set to the accent so untyped boxes pick up
    the brand outline.
 
-Semantic role *fills* are **not** overridden by accent — role colors carry meaning
+Semantic role _fills_ are **not** overridden by accent — role colors carry meaning
 (REQ-COV-01) and must stay stable across brands. This keeps the accent a tasteful
 brand tint, not a destruction of the semantic palette.
 
@@ -186,8 +186,12 @@ import type { HexColor, NodeRole, Theme } from "./schema.js";
 
 /** Frozen light/dark token tables — the §2.1/§2.2 values. Internal constant. */
 const PALETTES: Record<Theme, ResolvedPalette> = {
-  light: { /* … the §2.1 tables, accent "#2563eb" … */ } as ResolvedPalette,
-  dark: { /* … the §2.2 tables, accent "#60a5fa" … */ } as ResolvedPalette,
+  light: {
+    /* … the §2.1 tables, accent "#2563eb" … */
+  } as ResolvedPalette,
+  dark: {
+    /* … the §2.2 tables, accent "#60a5fa" … */
+  } as ResolvedPalette,
 };
 
 /**
@@ -226,9 +230,9 @@ input. An invalid `accent` cannot reach this function — it fails at input pars
 ```typescript
 const p = resolveTheme("dark", "#ff6600");
 p.roles.database.fill; // "#6d28d9"  (semantic, unchanged by accent)
-p.edge;                // "#ff6600"  (accent-overridden)
-p.accent;              // "#ff6600"
-p.background;          // "#020617"
+p.edge; // "#ff6600"  (accent-overridden)
+p.accent; // "#ff6600"
+p.background; // "#020617"
 ```
 
 ## 3. `src/diagram/svg-postprocess.ts` — the post-process passes
@@ -294,10 +298,7 @@ export interface PostProcessResult {
  *   passes do not throw; the dedicated output assertions (02 §3) report tier-2 /
  *   a11y / font / viewBox violations.
  */
-export function postProcess(
-  rawSvg: string,
-  opts: PostProcessOptions,
-): PostProcessResult;
+export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProcessResult;
 ```
 
 The passes operate on a parsed SVG DOM (the bundled XML parser, `@rgrove/parse-xml`,
@@ -451,7 +452,7 @@ REQ-SEC-02 ("fetch nothing at view time") assertions check.
 
 Graphviz-WASM output is not byte-stable (float layout, coordinate rounding,
 generated-ID order, attribute order). With `@viz-js/viz` **pinned** (`01` §4) the
-*geometry* is reproducible across runs of the pinned engine, but the *serialization*
+_geometry_ is reproducible across runs of the pinned engine, but the _serialization_
 is not — so a deterministic serializer plus normalization makes the SVG
 byte-identical. The pass is applied **last**, after all content passes, and produces
 the string returned by `postProcess`. The exact rules:
@@ -475,9 +476,9 @@ the string returned by `postProcess`. The exact rules:
    `stroke-width`, `stroke-dasharray`, `font-family`, `font-size`, `text-anchor`),
    then any remaining attributes in lexicographic order. Identical attribute sets
    always serialize identically.
-4. **Stable element ordering.** Element *children* are **not** reordered by this
+4. **Stable element ordering.** Element _children_ are **not** reordered by this
    pass (paint order is semantic — §3.3 already fixed it); canonicalization only
-   fixes *attribute* order and id/coordinate normalization. The §3.3 z-order pass is
+   fixes _attribute_ order and id/coordinate normalization. The §3.3 z-order pass is
    the single authority on child order, and it is deterministic, so the combined
    result is stable.
 5. **Whitespace normalization.** Emit with no insignificant whitespace between
@@ -503,7 +504,7 @@ function canonNumber(n: number): string; // uses SVG_COORD_PRECISION
 Applying these six rules to a tree whose geometry comes from the pinned engine
 yields a **byte-identical** string across runs — the precondition for the
 determinism assertion in `08`/`02` (REQ-REPRO-01, OTQ-6). LLM non-determinism in the
-*prose* path is out of scope (PRD §4.3 caveat): this guarantee holds for a fixed
+_prose_ path is out of scope (PRD §4.3 caveat): this guarantee holds for a fixed
 `DiagramSpec`.
 
 ## 4. `src/diagram/png.ts` — SVG → PNG (REQ-OUT-03, resolves OTQ-5)
@@ -575,10 +576,7 @@ const DEFAULT_PNG_SCALE = 2 as const;
  * @throws {DiagramPngError} (code `PNG_FAILED`, exit 5) if WASM init or rasterization
  *   fails — the underlying resvg message is wrapped into `detail`. No partial bytes.
  */
-export async function renderPng(
-  svg: string,
-  opts?: RenderPngOptions,
-): Promise<Uint8Array>;
+export async function renderPng(svg: string, opts?: RenderPngOptions): Promise<Uint8Array>;
 ```
 
 WASM initialization is memoized (one `initWasm` per process, like `getViz` in
@@ -603,11 +601,11 @@ run. PNG bytes are intentionally **not** committed as goldens.
 
 ### 4.4 Error handling
 
-| Failure | Wrapped as | Exit |
-| --- | --- | --- |
-| `initWasm` fails (corrupt/missing inlined WASM) | `DiagramPngError("PNG engine failed to initialize", <cause>)` | 5 |
-| `new Resvg(svg)` rejects malformed SVG | `DiagramPngError("PNG rasterization rejected the SVG", <cause>)` | 5 |
-| `.render()`/`.asPng()` throws | `DiagramPngError("PNG rasterization failed", <cause>)` | 5 |
+| Failure                                         | Wrapped as                                                       | Exit |
+| ----------------------------------------------- | ---------------------------------------------------------------- | ---- |
+| `initWasm` fails (corrupt/missing inlined WASM) | `DiagramPngError("PNG engine failed to initialize", <cause>)`    | 5    |
+| `new Resvg(svg)` rejects malformed SVG          | `DiagramPngError("PNG rasterization rejected the SVG", <cause>)` | 5    |
+| `.render()`/`.asPng()` throws                   | `DiagramPngError("PNG rasterization failed", <cause>)`           | 5    |
 
 All map to `PNG_FAILED` (`00` §5, exit `5`). Because `renderPng` runs only after
 output validation passes (`02` §3 / `render.ts`), a malformed-SVG rejection here is a

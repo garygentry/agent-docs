@@ -90,9 +90,7 @@ function lifelineX(i: number): number {
  *   references an unknown participant (defensive — validation already guarantees
  *   referential integrity, 02 §2) or if `participants` is empty.
  */
-export function renderSequence(
-  spec: DiagramSpec,
-): { svg: string; width: number; height: number } {
+export function renderSequence(spec: DiagramSpec): { svg: string; width: number; height: number } {
   if (spec.diagramType !== "sequence") {
     throw new DiagramRenderError(
       "renderSequence only handles sequence diagrams",
@@ -104,10 +102,7 @@ export function renderSequence(
   const messages: Message[] = spec.messages;
 
   if (participants.length === 0) {
-    throw new DiagramRenderError(
-      "sequence diagram has no participants",
-      "participants.length=0",
-    );
+    throw new DiagramRenderError("sequence diagram has no participants", "participants.length=0");
   }
 
   // Defensive referential-integrity guard (§4.7). Validation (02 §2) already
@@ -137,8 +132,7 @@ export function renderSequence(
     (acc, msg) => acc + (msg.from === msg.to ? SELF_MESSAGE_EXTRA : 0),
     0,
   );
-  const width =
-    MARGIN * 2 + HEADER_WIDTH + (participants.length - 1) * LIFELINE_GAP;
+  const width = MARGIN * 2 + HEADER_WIDTH + (participants.length - 1) * LIFELINE_GAP;
   const height =
     MARGIN * 2 +
     HEADER_HEIGHT +

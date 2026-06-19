@@ -217,6 +217,7 @@ diagram-render <input.json | -> [options]
 ```
 
 **The four contract dimensions** doc-site-plugin OQ-4 depends on:
+
 1. **Input** — JSON `DiagramSpec` via file path or `-` (stdin).
 2. **Output** — consumers get **fully predictable paths** via `--out-file`
    (or `--out-dir` + `--out-name`), so they need no knowledge of slug rules;
@@ -235,6 +236,7 @@ semantics require a bump so consumers pin against a known release.
 ## 6. Integration Points
 
 **Depends on (this repo):**
+
 - `tools.manifest.json` — append one `ToolEntry`:
   `{ "name": "diagram-generator", "type": "skill", "source": "skills/diagram-generator", "description": "Converts natural-language or an engine-neutral node/edge/container spec into portable tier-2 SVG and PNG diagrams." }`
   (ToolEntry shape `{name,type,source,description?,targets?}` verified from
@@ -302,15 +304,15 @@ well-formedness parser (e.g. `@rgrove/parse-xml`). Current runtime deps (`zod`,
 
 ## 9. Dependencies
 
-| Dependency | Kind | Why |
-| --- | --- | --- |
-| `@viz-js/viz` | devDep (bundled) | Graphviz-WASM layout/SVG for graph-shaped types (§3.1) |
-| `@resvg/resvg-js` | devDep (bundled), **pinned** | SVG→PNG, in-process (§3.4, REQ-OUT-03) |
-| `@rgrove/parse-xml` (or equiv) | devDep (bundled) | output XML well-formedness check (§3.5) |
-| subset font asset (e.g. a libre sans/mono) | bundled asset | embedded as base64 data-URI for portable text (§3.4, REQ-OUT-04) |
-| `zod` | existing runtime | `DiagramSpec` schema (reused) |
-| `zod-to-json-schema` | existing runtime | generate `diagram-input.schema.json` |
-| `bun build` | toolchain | produce the committed single-file bundle (§3.3/3.6) |
+| Dependency                                 | Kind                         | Why                                                              |
+| ------------------------------------------ | ---------------------------- | ---------------------------------------------------------------- |
+| `@viz-js/viz`                              | devDep (bundled)             | Graphviz-WASM layout/SVG for graph-shaped types (§3.1)           |
+| `@resvg/resvg-js`                          | devDep (bundled), **pinned** | SVG→PNG, in-process (§3.4, REQ-OUT-03)                           |
+| `@rgrove/parse-xml` (or equiv)             | devDep (bundled)             | output XML well-formedness check (§3.5)                          |
+| subset font asset (e.g. a libre sans/mono) | bundled asset                | embedded as base64 data-URI for portable text (§3.4, REQ-OUT-04) |
+| `zod`                                      | existing runtime             | `DiagramSpec` schema (reused)                                    |
+| `zod-to-json-schema`                       | existing runtime             | generate `diagram-input.schema.json`                             |
+| `bun build`                                | toolchain                    | produce the committed single-file bundle (§3.3/3.6)              |
 
 No system binaries; no headless browser; no network at build or view time.
 
@@ -319,7 +321,7 @@ No system binaries; no headless browser; no network at build or view time.
 - **OTQ-1 (golden strategy for the bundle):** the committed `.mjs` inlines WASM and
   is large/opaque. Decide in forge-3-specs whether goldens byte-compare the bundle
   or assert **relpath presence only** (leaving byte-fidelity to `build:diagram:check`
-  + the adapter drift guard). Leaning: presence-only in goldens; drift guard owns bytes.
+  - the adapter drift guard). Leaning: presence-only in goldens; drift guard owns bytes.
 - **OTQ-2 (semantic palette + theme tokens):** exact `role`→color map and
   light/dark token values — seed from the research's Cocoon taxonomy, pin in
   forge-3-specs.

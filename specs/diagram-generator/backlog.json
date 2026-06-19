@@ -387,8 +387,8 @@
         "SAMPLE_RELPATHS in src/test/golden.shared.ts registers the new skill's per-target relpaths",
         "bun run gate passes (including schema:check:diagram and build:diagram:check)"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T03:56:45.619Z",
       "dependsOn": [
         "013",
         "014"

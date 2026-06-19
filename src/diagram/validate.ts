@@ -1,10 +1,6 @@
 import { z } from "zod";
 import { parseXml, XmlElement, type XmlDocument } from "@rgrove/parse-xml";
-import {
-  DiagramSpec,
-  type DiagramSpec as DiagramSpecT,
-  type DiagramType,
-} from "./schema.js";
+import { DiagramSpec, type DiagramSpec as DiagramSpecT, type DiagramType } from "./schema.js";
 import { DiagramInputError, DiagramOutputError } from "./errors.js";
 
 /**
@@ -73,10 +69,7 @@ export const GRAPH_DIAGRAM_TYPES: ReadonlySet<DiagramType> = new Set([
  * @param spec - The per-field-valid, defaulted DiagramSpec object.
  * @param ctx - Zod refinement context; issues are added here.
  */
-export function diagramSuperRefine(
-  spec: DecodedSpec,
-  ctx: z.RefinementCtx,
-): void {
+export function diagramSuperRefine(spec: DecodedSpec, ctx: z.RefinementCtx): void {
   // ── 1. Unique ids (per collection) ──────────────────────────────
   reportDuplicates(spec.nodes, "nodes", ctx);
   reportDuplicates(spec.containers, "containers", ctx);
@@ -181,11 +174,7 @@ export function diagramSuperRefine(
  * Record a `custom` issue for every duplicate id in `items`, pathed at the second
  * (and later) occurrence so the offending entry is pinpointed. Helper for rule 1.
  */
-function reportDuplicates(
-  items: Array<{ id: string }>,
-  field: string,
-  ctx: z.RefinementCtx,
-): void {
+function reportDuplicates(items: Array<{ id: string }>, field: string, ctx: z.RefinementCtx): void {
   const seen = new Set<string>();
   for (const [i, item] of items.entries()) {
     if (seen.has(item.id)) {
@@ -391,8 +380,7 @@ export function assertFontPortable(svg: string): void {
       "assertFontPortable",
     );
   }
-  const hasEmbeddedFace =
-    /@font-face\b[^}]*\bsrc\s*:[^}]*url\(\s*["']?data:/is.test(svg);
+  const hasEmbeddedFace = /@font-face\b[^}]*\bsrc\s*:[^}]*url\(\s*["']?data:/is.test(svg);
   if (!hasEmbeddedFace) {
     throw new DiagramOutputError(
       "rendered SVG has no embedded data-URI @font-face; text would not be portable (REQ-OUT-04)",
@@ -414,10 +402,7 @@ export function assertFontPortable(svg: string): void {
 export function assertA11y(doc: XmlDocument): void {
   const root = doc.root;
   if (!root || root.attributes["role"] !== "img") {
-    throw new DiagramOutputError(
-      'root <svg> is missing role="img" (REQ-A11Y-01)',
-      "assertA11y",
-    );
+    throw new DiagramOutputError('root <svg> is missing role="img" (REQ-A11Y-01)', "assertA11y");
   }
   if (!hasDescendant(root, "title")) {
     throw new DiagramOutputError("SVG is missing <title> (REQ-A11Y-01)", "assertA11y");

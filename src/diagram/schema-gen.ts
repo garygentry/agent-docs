@@ -42,10 +42,7 @@ export const DIAGRAM_SCHEMA_OUTPUT_PATH = "schemas/diagram-input.schema.json" as
  * @returns The JSON Schema as a plain object.
  */
 export function buildDiagramSchema(): Record<string, unknown> {
-  const schema = zodToJsonSchema(DiagramSpec, { $refStrategy: "none" }) as Record<
-    string,
-    unknown
-  >;
+  const schema = zodToJsonSchema(DiagramSpec, { $refStrategy: "none" }) as Record<string, unknown>;
   schema["$schema"] = "http://json-schema.org/draft-07/schema#";
   schema["$id"] = "diagram-input.schema.json";
   schema["title"] = "Diagram Generator Input Spec";

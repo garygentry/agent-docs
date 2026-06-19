@@ -47,27 +47,19 @@ describe("DiagramSpec", () => {
   });
 
   it("rejects an unknown top-level key via .strict()", () => {
-    expect(() =>
-      DiagramSpec.parse({ ...minimalArchitecture, node: [] }),
-    ).toThrow(ZodError);
+    expect(() => DiagramSpec.parse({ ...minimalArchitecture, node: [] })).toThrow(ZodError);
   });
 
   it("rejects a bad accent value '#abc'", () => {
-    expect(() =>
-      DiagramSpec.parse({ ...minimalArchitecture, accent: "#abc" }),
-    ).toThrow(ZodError);
+    expect(() => DiagramSpec.parse({ ...minimalArchitecture, accent: "#abc" })).toThrow(ZodError);
   });
 
   it("rejects a bad accent value 'red'", () => {
-    expect(() =>
-      DiagramSpec.parse({ ...minimalArchitecture, accent: "red" }),
-    ).toThrow(ZodError);
+    expect(() => DiagramSpec.parse({ ...minimalArchitecture, accent: "red" })).toThrow(ZodError);
   });
 
   it("accepts a valid #rrggbb accent", () => {
-    expect(DiagramSpec.parse({ ...minimalArchitecture, accent: "#1a2b3c" }).accent).toBe(
-      "#1a2b3c",
-    );
+    expect(DiagramSpec.parse({ ...minimalArchitecture, accent: "#1a2b3c" }).accent).toBe("#1a2b3c");
   });
 });
 

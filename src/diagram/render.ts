@@ -34,10 +34,7 @@ export interface RenderOptions {
  * @throws {DiagramOutputError} If the post-processed SVG fails tier-2 / viewBox /
  *   font / a11y assertions (02 §3, exit 4).
  */
-export async function render(
-  spec: DiagramSpec,
-  opts: RenderOptions,
-): Promise<RenderResult> {
+export async function render(spec: DiagramSpec, opts: RenderOptions): Promise<RenderResult> {
   // 1. Input already validated by the CLI via parseSpec (02 §2 / 05 §3.1);
   //    render trusts the typed DiagramSpec and does not re-validate (REQ-REL-01).
 

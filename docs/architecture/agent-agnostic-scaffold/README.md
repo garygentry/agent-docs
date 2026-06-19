@@ -17,7 +17,7 @@ into `adapters/<target>/` plus the installable `.claude-plugin/` manifests.
 ## What it does
 
 - **One source of truth.** A tool's Claude-native source is canonical. Every other
-  target's form is a *transform of* the Claude form — never hand-authored in the
+  target's form is a _transform of_ the Claude form — never hand-authored in the
   common case (`CON-03`).
 - **Five targets, one command.** `bun run build` discovers every tool in
   `tools.manifest.json` and emits all five adapter bundles plus the coverage report
@@ -43,7 +43,7 @@ into `adapters/<target>/` plus the installable `.claude-plugin/` manifests.
 
 ## When NOT to use it
 
-- You only ever target Claude. The canonical sources *are* the Claude form; the
+- You only ever target Claude. The canonical sources _are_ the Claude form; the
   emitter adds no value for a single-target repo.
 - You need to hand-tune most per-target output. Overrides exist for the occasional
   file, but if the majority of a target's bundle is overridden you're fighting the
@@ -53,26 +53,26 @@ into `adapters/<target>/` plus the installable `.claude-plugin/` manifests.
 
 ## Key concepts
 
-| Concept | Meaning |
-| --- | --- |
-| **Canonical source** | The Claude-native file under `skills/`, `agents/`, or `commands/`. The single source of truth. |
-| **Manifest** | `tools.manifest.json` — the explicit, Zod-validated registry of every tool plus the paths/targets `config` block. The sole discovery input. |
-| **Target** | One of `claude`, `codex`, `copilot`, `cursor`, `gemini`. `claude` is the privileged/canonical form. |
-| **Transform** | A `TargetTransform` (`src/targets/<target>.ts`) — pure functions mapping one canonical record to one target's files + drop records. |
-| **Drop** | A construct that couldn't be faithfully represented for a target; downgraded (`fallback`) or omitted (`skipped`) and reported. |
-| **Override** | A whole-file replacement under `overrides/<target>/…` that overlays the generated file and survives rebuilds. |
-| **Verbatim copy** | A shared `references/`/`scripts/` file (or skill-owned ref) copied byte-identical into every bundle, with no provenance header. |
-| **Drift** | A committed adapter file that no longer matches a fresh emit (`content` / `orphan` / `missing`). The CI guard fails on any. |
+| Concept              | Meaning                                                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Canonical source** | The Claude-native file under `skills/`, `agents/`, or `commands/`. The single source of truth.                                              |
+| **Manifest**         | `tools.manifest.json` — the explicit, Zod-validated registry of every tool plus the paths/targets `config` block. The sole discovery input. |
+| **Target**           | One of `claude`, `codex`, `copilot`, `cursor`, `gemini`. `claude` is the privileged/canonical form.                                         |
+| **Transform**        | A `TargetTransform` (`src/targets/<target>.ts`) — pure functions mapping one canonical record to one target's files + drop records.         |
+| **Drop**             | A construct that couldn't be faithfully represented for a target; downgraded (`fallback`) or omitted (`skipped`) and reported.              |
+| **Override**         | A whole-file replacement under `overrides/<target>/…` that overlays the generated file and survives rebuilds.                               |
+| **Verbatim copy**    | A shared `references/`/`scripts/` file (or skill-owned ref) copied byte-identical into every bundle, with no provenance header.             |
+| **Drift**            | A committed adapter file that no longer matches a fresh emit (`content` / `orphan` / `missing`). The CI guard fails on any.                 |
 
 ## Build commands
 
-| Command | What it does |
-| --- | --- |
-| `bun run build` | Emit all adapters, the coverage report, and `.claude-plugin/`. |
-| `bun run build:check` | Re-emit in memory and fail if the committed tree drifted. |
-| `bun run schema:gen` | Regenerate `schemas/tools.manifest.schema.json` from the Zod model. |
-| `bun run schema:check` | Fail if the committed JSON Schema drifted from the Zod source. |
-| `bun run gate` | Full CI bar: compile → schema check → typecheck → lint → format → test → drift check. |
+| Command                | What it does                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| `bun run build`        | Emit all adapters, the coverage report, and `.claude-plugin/`.                        |
+| `bun run build:check`  | Re-emit in memory and fail if the committed tree drifted.                             |
+| `bun run schema:gen`   | Regenerate `schemas/tools.manifest.schema.json` from the Zod model.                   |
+| `bun run schema:check` | Fail if the committed JSON Schema drifted from the Zod source.                        |
+| `bun run gate`         | Full CI bar: compile → schema check → typecheck → lint → format → test → drift check. |
 
 ## Further reading
 

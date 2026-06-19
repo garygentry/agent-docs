@@ -184,8 +184,6 @@ describe("render — validation placement", () => {
 
   it("a malformed output throws DiagramOutputError (asserted after post-process)", async () => {
     // assertOutputValid is the gate; confirm it is wired to throw on bad output.
-    expect(() => assertOutputValid("<svg>not valid</svg")).toThrow(
-      DiagramOutputError,
-    );
+    expect(() => assertOutputValid("<svg>not valid</svg")).toThrow(DiagramOutputError);
   });
 });

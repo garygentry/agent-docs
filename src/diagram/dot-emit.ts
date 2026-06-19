@@ -17,10 +17,7 @@ import type { Container, DiagramSpec, Node } from "./schema.js";
  * pair. `rounded` is a box with rounded style (Graphviz has no `rounded` shape).
  * All targets render as plain `<text>`-labelled vector shapes (REQ-OUT-01).
  */
-const SHAPE_MAP: Record<
-  NonNullable<Node["shape"]>,
-  { shape: string; style?: string }
-> = {
+const SHAPE_MAP: Record<NonNullable<Node["shape"]>, { shape: string; style?: string }> = {
   box: { shape: "box" },
   rounded: { shape: "box", style: "rounded" },
   cylinder: { shape: "cylinder" },
@@ -53,10 +50,7 @@ const TYPE_DEFAULTS: Record<
  * invariant (§2.1) holds even for labels containing angle brackets.
  */
 function escapeDot(text: string): string {
-  return text
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, "\\n");
+  return text.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
 }
 
 /**
@@ -69,11 +63,7 @@ function clusterName(id: string): string {
 }
 
 /** Emit a single node declaration line (label + role class + shape). */
-function emitNode(
-  node: Node,
-  defaultShape: NonNullable<Node["shape"]>,
-  indent: string,
-): string {
+function emitNode(node: Node, defaultShape: NonNullable<Node["shape"]>, indent: string): string {
   const role = node.role ?? "default";
   const shapeInfo = SHAPE_MAP[node.shape ?? defaultShape];
   const attrs = [
@@ -127,16 +117,10 @@ export function emitDot(spec: DiagramSpec): string {
 
   for (const edge of spec.edges) {
     if (!nodeById.has(edge.from)) {
-      throw new DiagramRenderError(
-        "edge references an unknown node id",
-        `edge.from=${edge.from}`,
-      );
+      throw new DiagramRenderError("edge references an unknown node id", `edge.from=${edge.from}`);
     }
     if (!nodeById.has(edge.to)) {
-      throw new DiagramRenderError(
-        "edge references an unknown node id",
-        `edge.to=${edge.to}`,
-      );
+      throw new DiagramRenderError("edge references an unknown node id", `edge.to=${edge.to}`);
     }
   }
   for (const container of spec.containers) {

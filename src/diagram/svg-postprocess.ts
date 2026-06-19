@@ -140,17 +140,16 @@ function hasClass(cls: string | undefined, token: string): boolean {
  *   dimensions (after legend expansion + canonicalization), and the artifact slug.
  * @throws {DiagramOutputError} If the raw SVG cannot be parsed into a DOM.
  */
-export function postProcess(
-  rawSvg: string,
-  opts: PostProcessOptions,
-): PostProcessResult {
+export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProcessResult {
   const palette = resolveTheme(opts.theme, opts.accent ?? opts.spec.accent);
 
   // ── §3.1 Parse ──────────────────────────────────────────────────
   const root = parseRoot(rawSvg);
 
   // Current canvas bounds, derived from the SVG itself (graph path passes 0).
-  let [minX, minY, vbW, vbH] = readViewBox(root, opts.width, opts.height);
+  const [minX, minY, initVbW, initVbH] = readViewBox(root, opts.width, opts.height);
+  let vbW = initVbW;
+  let vbH = initVbH;
 
   // The drawing parent: graphviz wraps everything in <g class="graph">; the
   // sequence path draws directly under <svg>. Color/z-order operate there.
@@ -182,7 +181,8 @@ export function postProcess(
   // Authoritative dimensions on the root (numeric, no `pt`).
   root.attrs["width"] = canonNumber(vbW);
   root.attrs["height"] = canonNumber(vbH);
-  root.attrs["viewBox"] = `${canonNumber(minX)} ${canonNumber(minY)} ${canonNumber(vbW)} ${canonNumber(vbH)}`;
+  root.attrs["viewBox"] =
+    `${canonNumber(minX)} ${canonNumber(minY)} ${canonNumber(vbW)} ${canonNumber(vbH)}`;
 
   // ── §3.7 Canonicalization (last) ────────────────────────────────
   canonicalizeIds(root);
@@ -259,10 +259,7 @@ const SHAPE_NAMES = new Set(["polygon", "ellipse", "path", "rect", "circle"]);
 function bakeColors(drawParent: SElement, palette: ResolvedPalette): void {
   // Recolor any graphviz backdrop polygon (direct fill="white" child) to background.
   for (const child of elementChildren(drawParent)) {
-    if (
-      (child.name === "polygon" || child.name === "rect") &&
-      child.attrs["fill"] === "white"
-    ) {
+    if ((child.name === "polygon" || child.name === "rect") && child.attrs["fill"] === "white") {
       child.attrs["fill"] = palette.background;
     }
   }
@@ -354,17 +351,11 @@ function enforceZOrder(drawParent: SElement): void {
   for (const child of elementChildren(drawParent)) {
     const cls = child.attrs["class"];
     if (roleFromClass(cls) !== undefined) bands.node!.push(child);
-    else if (hasClass(cls, "container") || hasClass(cls, "cluster"))
-      bands.container!.push(child);
+    else if (hasClass(cls, "container") || hasClass(cls, "cluster")) bands.container!.push(child);
     else if (hasClass(cls, "edge")) bands.edge!.push(child);
     else bands.other!.push(child);
   }
-  drawParent.children = [
-    ...bands.other!,
-    ...bands.container!,
-    ...bands.edge!,
-    ...bands.node!,
-  ];
+  drawParent.children = [...bands.other!, ...bands.container!, ...bands.edge!, ...bands.node!];
 }
 
 // ---------------------------------------------------------------------------
@@ -391,8 +382,7 @@ const LG_CHAR_W = 7.5;
 function buildLegend(spec: DiagramSpec, palette: ResolvedPalette): LegendEntry[] {
   const present = new Set<NodeRole>();
   for (const n of spec.nodes) if (n.role && n.role !== "default") present.add(n.role);
-  for (const p of spec.participants)
-    if (p.role && p.role !== "default") present.add(p.role);
+  for (const p of spec.participants) if (p.role && p.role !== "default") present.add(p.role);
 
   // Canonical, deterministic ordering = the palette's role key order.
   const order = Object.keys(palette.roles) as NodeRole[];
@@ -424,9 +414,7 @@ function placeLegend(
   vbH: number,
 ): { vbW: number; vbH: number } {
   const maxLabel = Math.max(...entries.map((e) => e.text.length));
-  const colWidth = Math.ceil(
-    LG_PAD * 2 + LG_SWATCH + LG_TEXT_GAP + maxLabel * LG_CHAR_W,
-  );
+  const colWidth = Math.ceil(LG_PAD * 2 + LG_SWATCH + LG_TEXT_GAP + maxLabel * LG_CHAR_W);
   const legendX = minX + vbW + LG_GUTTER;
   const newVbW = vbW + LG_GUTTER + colWidth;
   const neededH = LG_PAD * 2 + entries.length * LG_ROW_H;
@@ -659,9 +647,7 @@ function canonNumber(n: number): string {
 
 /** Round every numeric token inside a string value (for `points`/`d`/`transform`). */
 function canonNumberTokens(value: string): string {
-  return value.replace(/-?\d*\.?\d+(?:[eE][-+]?\d+)?/g, (tok) =>
-    canonNumber(Number(tok)),
-  );
+  return value.replace(/-?\d*\.?\d+(?:[eE][-+]?\d+)?/g, (tok) => canonNumber(Number(tok)));
 }
 
 /** Geometry-bearing attributes whose numeric tokens are rounded (§3.7 rule 2). */

@@ -83,9 +83,10 @@ describe("renderSequence — direct-SVG sequence layout (REQ-COV-02, OTQ-3)", ()
   });
 
   it("renders a self-message (from === to) as a loop", () => {
-    const spec = seqSpec([{ id: "a", label: "A" }], [
-      { from: "a", to: "a", label: "recurse", kind: "sync" },
-    ]);
+    const spec = seqSpec(
+      [{ id: "a", label: "A" }],
+      [{ from: "a", to: "a", label: "recurse", kind: "sync" }],
+    );
     const { svg } = renderSequence(spec);
     // Self-message uses a polyline loop and includes its label.
     expect(svg).toContain("recurse");

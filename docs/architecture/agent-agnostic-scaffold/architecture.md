@@ -43,6 +43,7 @@ code path — there is no second renderer that could disagree.
 ## 2. Stage-by-stage
 
 ### 2.1 Load & validate the manifest (`src/manifest.ts`)
+
 `loadManifest(path, repoRoot)` parses `tools.manifest.json`, validates it against
 the `Manifest` Zod schema (`src/model.ts`), and runs the **manifest↔source
 cross-check** (`TQ-4`): every tool's `source` must exist on disk, and every skill's
@@ -50,6 +51,7 @@ cross-check** (`TQ-4`): every tool's `source` must exist on disk, and every skil
 `ManifestValidationError` / `SourceNotFoundError` with structured detail.
 
 ### 2.2 Resolve config (`src/config.ts`)
+
 `resolveConfig(manifest.config, repoRoot)` turns the repo-relative POSIX paths in
 the `config` block (`skillsDir`, `adaptersDir`, `targets`, …) into absolute
 `ResolvedRoots`. Because every path is sourced here, the emitter is **path-agnostic**
@@ -58,6 +60,7 @@ writes later go through a **confined writer** that refuses paths escaping the
 resolved roots (`PathEscapeError`, `REQ-SEC-01`).
 
 ### 2.3 Discover canonical sources (`src/discover.ts`)
+
 `discover()` parses each manifest tool into a typed record — `SkillRecord`,
 `AgentRecord`, or `CommandRecord` — splitting frontmatter from body via
 `src/frontmatter.ts`. It also collects the shared `references/` and `scripts/` trees
@@ -70,6 +73,7 @@ re-serialization. Malformed frontmatter throws `MalformedFrontmatterError` carry
 the offending `sourcePath`.
 
 ### 2.4 Emit (`src/emit.ts`)
+
 The in-memory heart of the build. For each target in the fixed `TARGET_ORDER`:
 
 1. Look up its `TargetTransform` in the registry (`src/targets/index.ts`).
@@ -87,6 +91,7 @@ The in-memory heart of the build. For each target in the fixed `TARGET_ORDER`:
 than reading `package.json`, so it never touches disk for identity.
 
 ### 2.5 Overlay overrides (`src/overrides.ts`)
+
 `loadOverrides()` reads `overrides/<target>/<relpath>` whole files;
 `applyOverrides()` replaces any matching generated file's content with the override
 (`REQ-EMIT-04`). Overrides that point at a path no longer emitted are **non-fatal**
@@ -94,11 +99,13 @@ than reading `package.json`, so it never touches disk for identity.
 a tool doesn't break the build on a leftover override.
 
 ### 2.6 Report (`src/report.ts`)
+
 `buildReportModel()` + `renderReport()` produce `adapters/GENERATION-REPORT.md`: per
 target tallies (emitted / fallback / skipped / overridden / verbatim), the full drop
 list with reasons (`REQ-EMIT-03`), and any stale overrides (`REQ-OBS-01`).
 
 ### 2.7 Plugin manifests (`src/plugin.ts`)
+
 `emitPlugin(meta)` produces `.claude-plugin/plugin.json` + `marketplace.json` so the
 canonical side is an installable Claude plugin (`REQ-PKG`). `PluginMeta` is assembled
 in the CLI from `package.json` (single source of truth for `name`/`version`, shared
@@ -106,6 +113,7 @@ with the gemini aggregate). A missing name/version raises
 `EmitterError("…", "PLUGIN_META_INVALID")`.
 
 ### 2.8 Publish (`src/publish.ts`)
+
 `publish()` writes the whole `adapters/` subtree **atomically** (stage to a temp dir,
 then swap), and copies `VerbatimRecord`s byte-for-byte preserving mode (scripts stay
 `0o755`). Plugin manifests live under `.claude-plugin/`, not `adapters/`, so they are
@@ -153,19 +161,19 @@ Every target implements one interface, so adding a target is a closed, local cha
 
 ```ts
 interface TargetTransform {
-  readonly target: Target;                       // == registry key == a Target literal
+  readonly target: Target; // == registry key == a Target literal
   transformSkill(skill: SkillRecord): TransformOutput;
   transformAgent(agent: AgentRecord): TransformOutput;
   transformCommand(command: CommandRecord): TransformOutput;
-  aggregateManifest(                             // called ONCE after all records,
-    entries: ManifestEntry[],                    // entries pre-sorted by name
+  aggregateManifest( // called ONCE after all records,
+    entries: ManifestEntry[], // entries pre-sorted by name
     identity: { name: string; version: string },
-  ): EmittedFile | null;                         // null = target has no aggregate
+  ): EmittedFile | null; // null = target has no aggregate
 }
 
 interface TransformOutput {
-  files: EmittedFile[];          // adapters/<target>-relative paths
-  drops: DropRecord[];           // every unrepresentable construct — never silently empty
+  files: EmittedFile[]; // adapters/<target>-relative paths
+  drops: DropRecord[]; // every unrepresentable construct — never silently empty
   manifestEntries: ManifestEntry[];
 }
 ```
@@ -183,20 +191,20 @@ under the right per-target directory).
 
 ### Per-target shape (summary)
 
-| Target | Skills | Commands | Agents | Aggregate |
-| --- | --- | --- | --- | --- |
-| `claude` | `skills/<n>/SKILL.md` (canonical, no drops) | native `commands/` | native `agents/` | — |
-| `codex` | `skills/<n>/SKILL.md` | best-effort fallback | TOML agent + structural-key drops | `openai.yaml` |
-| `cursor` | flattened `rules/<n>.mdc` | native command | agent → rule | — |
-| `gemini` | `skills/<n>/<n>.md` | TOML commands | agent file | `gemini-extension.json` (identity-bearing) |
-| `copilot` | `instructions/<n>.instructions.md` | `.prompt.md` / instruction fallback | `.agent.md` | — |
+| Target    | Skills                                      | Commands                            | Agents                            | Aggregate                                  |
+| --------- | ------------------------------------------- | ----------------------------------- | --------------------------------- | ------------------------------------------ |
+| `claude`  | `skills/<n>/SKILL.md` (canonical, no drops) | native `commands/`                  | native `agents/`                  | —                                          |
+| `codex`   | `skills/<n>/SKILL.md`                       | best-effort fallback                | TOML agent + structural-key drops | `openai.yaml`                              |
+| `cursor`  | flattened `rules/<n>.mdc`                   | native command                      | agent → rule                      | —                                          |
+| `gemini`  | `skills/<n>/<n>.md`                         | TOML commands                       | agent file                        | `gemini-extension.json` (identity-bearing) |
+| `copilot` | `instructions/<n>.instructions.md`          | `.prompt.md` / instruction fallback | `.agent.md`                       | —                                          |
 
 The exact per-target rules live in spec `04-transforms.md`; the code is the source of
 truth for current behavior.
 
 ## 6. Key design decisions
 
-- **Claude form is canonical (`CON-03`).** Adapters are transforms *of* the Claude
+- **Claude form is canonical (`CON-03`).** Adapters are transforms _of_ the Claude
   artifacts, not parallel sources. This avoids an N-way merge problem and gives every
   target a single upstream to diff against.
 - **Explicit manifest over filesystem globbing.** `tools.manifest.json` is the one

@@ -98,39 +98,45 @@ describe("parseSpec — referential integrity", () => {
         containers: [{ id: "box", label: "Box", children: ["ghost"] }],
       }),
     ).toThrow(DiagramInputError);
-    expect(detailOf(() =>
-      parseSpec({
-        diagramType: "architecture",
-        title: "Bad",
-        description: "d",
-        nodes: [{ id: "a", label: "A" }],
-        containers: [{ id: "box", label: "Box", children: ["ghost"] }],
-      }),
-    )).toContain("containers.0.children.0");
+    expect(
+      detailOf(() =>
+        parseSpec({
+          diagramType: "architecture",
+          title: "Bad",
+          description: "d",
+          nodes: [{ id: "a", label: "A" }],
+          containers: [{ id: "box", label: "Box", children: ["ghost"] }],
+        }),
+      ),
+    ).toContain("containers.0.children.0");
   });
 
   it("rejects a container.parent referencing a missing container id", () => {
-    expect(detailOf(() =>
-      parseSpec({
-        diagramType: "architecture",
-        title: "Bad",
-        description: "d",
-        nodes: [{ id: "a", label: "A" }],
-        containers: [{ id: "box", label: "Box", children: ["a"], parent: "ghost" }],
-      }),
-    )).toContain("containers.0.parent");
+    expect(
+      detailOf(() =>
+        parseSpec({
+          diagramType: "architecture",
+          title: "Bad",
+          description: "d",
+          nodes: [{ id: "a", label: "A" }],
+          containers: [{ id: "box", label: "Box", children: ["a"], parent: "ghost" }],
+        }),
+      ),
+    ).toContain("containers.0.parent");
   });
 
   it("rejects a message referencing a missing participant id", () => {
-    expect(detailOf(() =>
-      parseSpec({
-        diagramType: "sequence",
-        title: "Bad",
-        description: "d",
-        participants: [{ id: "user", label: "User" }],
-        messages: [{ from: "user", to: "ghost", label: "x" }],
-      }),
-    )).toContain("messages.0.to");
+    expect(
+      detailOf(() =>
+        parseSpec({
+          diagramType: "sequence",
+          title: "Bad",
+          description: "d",
+          participants: [{ id: "user", label: "User" }],
+          messages: [{ from: "user", to: "ghost", label: "x" }],
+        }),
+      ),
+    ).toContain("messages.0.to");
   });
 });
 
@@ -239,15 +245,11 @@ describe("parseSpec — diagram-type ↔ field agreement (00 §2.5)", () => {
 
 describe("parseSpec — strict & per-field", () => {
   it("rejects an unknown top-level key", () => {
-    expect(() =>
-      parseSpec({ ...validArchitecture, bogus: true }),
-    ).toThrow(DiagramInputError);
+    expect(() => parseSpec({ ...validArchitecture, bogus: true })).toThrow(DiagramInputError);
   });
 
   it("rejects a malformed accent at parse", () => {
-    expect(() =>
-      parseSpec({ ...validArchitecture, accent: "red" }),
-    ).toThrow(DiagramInputError);
+    expect(() => parseSpec({ ...validArchitecture, accent: "red" })).toThrow(DiagramInputError);
   });
 });
 
@@ -287,12 +289,15 @@ describe("assertWellFormed", () => {
 
 describe("assertTier2", () => {
   it("throws when <foreignObject> is present", () => {
-    const svg = validSvg.replace("<text x=\"10\" y=\"20\">Web</text>", "<foreignObject></foreignObject>");
+    const svg = validSvg.replace(
+      '<text x="10" y="20">Web</text>',
+      "<foreignObject></foreignObject>",
+    );
     expect(() => assertTier2(svg)).toThrow(DiagramOutputError);
   });
 
   it("throws when no <text> is present", () => {
-    const svg = validSvg.replace("<text x=\"10\" y=\"20\">Web</text>", "");
+    const svg = validSvg.replace('<text x="10" y="20">Web</text>', "");
     expect(() => assertTier2(svg)).toThrow(DiagramOutputError);
   });
 
@@ -378,7 +383,10 @@ describe("assertOutputValid — reject paths", () => {
   });
 
   it("throws DiagramOutputError for a <foreignObject>", () => {
-    const svg = validSvg.replace("<text x=\"10\" y=\"20\">Web</text>", "<text>x</text><foreignObject/>");
+    const svg = validSvg.replace(
+      '<text x="10" y="20">Web</text>',
+      "<text>x</text><foreignObject/>",
+    );
     expect(() => assertOutputValid(svg)).toThrow(DiagramOutputError);
   });
 

@@ -7,6 +7,10 @@
   "version": "0.1.0",
   "skills": [
     {
+      "name": "diagram-generator",
+      "description": "Generate rich, professional diagrams as SVG (and PNG) images instead of ASCII art. Use whenever the user asks to create a diagram, visualize architecture, draw a system design, create a flowchart, illustrate data flow, map out infrastructure, show how something works, or produce any technical visual — including sequence diagrams, ER diagrams, network topologies, pipeline flows, state machines, and deployment architectures. Even if the user says \"ASCII diagram\", produce an image with this skill."
+    },
+    {
       "name": "docs-helper",
       "description": "Helps write and review project documentation following the repo's house style. Use when authoring or editing docs, READMEs, or reference pages."
     }

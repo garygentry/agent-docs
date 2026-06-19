@@ -8,14 +8,14 @@ document references this layout for file placement and import paths.
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-| --- | --- | --- |
-| CON-01 | Authored as a canonical skill, emitted to all 5 targets | 1, 2, 5 |
-| CON-02 | Shared dependency — stable scriptable contract | 2.2 |
-| REQ-OUT-04 | No view-time network; fonts embedded | 4 (bundled assets) |
-| REQ-INV-02 | Scriptable, zero-install bundle | 2.2, 3 |
-| REQ-PORT-02 | Agent-agnostic — same procedure on every target | 2.1, 5 |
-| REQ-REPRO-01 | Deterministic build of the committed bundle | 3, 6 |
+| REQ ID       | Requirement                                             | Section            |
+| ------------ | ------------------------------------------------------- | ------------------ |
+| CON-01       | Authored as a canonical skill, emitted to all 5 targets | 1, 2, 5            |
+| CON-02       | Shared dependency — stable scriptable contract          | 2.2                |
+| REQ-OUT-04   | No view-time network; fonts embedded                    | 4 (bundled assets) |
+| REQ-INV-02   | Scriptable, zero-install bundle                         | 2.2, 3             |
+| REQ-PORT-02  | Agent-agnostic — same procedure on every target         | 2.1, 5             |
+| REQ-REPRO-01 | Deterministic build of the committed bundle             | 3, 6               |
 
 ## 1. Directory tree (full)
 
@@ -134,14 +134,14 @@ New dependencies are **devDependencies only** — they are bundled into the comm
 §6/§9). Current runtime deps (`zod`, `zod-to-json-schema`, `yaml`, `smol-toml`) are
 unchanged; `zod` is reused for `DiagramSpec`.
 
-| Package | Kind | Purpose |
-| --- | --- | --- |
-| `@viz-js/viz` | devDep (bundled), **pinned** | Graphviz-WASM layout → plain-`<text>` SVG (03 §2). Pin required for determinism (OTQ-6). |
-| `@resvg/resvg-js` | devDep (bundled), **pinned** | SVG → PNG in-process (04 §4, REQ-OUT-03). Pin bounds PNG drift (OTQ-5). |
-| `@rgrove/parse-xml` | devDep (bundled) | output XML well-formedness check (02 §3). |
-| subset font asset | bundled asset | a libre sans (e.g. DejaVu Sans / IBM Plex subset) embedded as base64 data-URI (04 §3, REQ-OUT-04). |
-| `zod` | existing runtime | `DiagramSpec` schema (reused, `00`). |
-| `zod-to-json-schema` | existing runtime | generate `diagram-input.schema.json` (02 §5). |
+| Package              | Kind                         | Purpose                                                                                            |
+| -------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| `@viz-js/viz`        | devDep (bundled), **pinned** | Graphviz-WASM layout → plain-`<text>` SVG (03 §2). Pin required for determinism (OTQ-6).           |
+| `@resvg/resvg-js`    | devDep (bundled), **pinned** | SVG → PNG in-process (04 §4, REQ-OUT-03). Pin bounds PNG drift (OTQ-5).                            |
+| `@rgrove/parse-xml`  | devDep (bundled)             | output XML well-formedness check (02 §3).                                                          |
+| subset font asset    | bundled asset                | a libre sans (e.g. DejaVu Sans / IBM Plex subset) embedded as base64 data-URI (04 §3, REQ-OUT-04). |
+| `zod`                | existing runtime             | `DiagramSpec` schema (reused, `00`).                                                               |
+| `zod-to-json-schema` | existing runtime             | generate `diagram-input.schema.json` (02 §5).                                                      |
 
 > **Pin policy:** `@viz-js/viz` and `@resvg/resvg-js` are pinned to exact versions
 > (no `^`) because their output bytes feed the determinism test (08 §4) and the PNG
@@ -157,11 +157,11 @@ Add to `scripts` (existing `gate` is extended, not replaced):
   "scripts": {
     // … existing …
     "build:diagram": "bun build src/diagram/cli.ts --target=node --minify --outfile skills/diagram-generator/scripts/diagram-render.mjs",
-    "build:diagram:check": "bun run src/diagram/build-check.ts",   // re-bundle in memory, diff committed (06 §4)
+    "build:diagram:check": "bun run src/diagram/build-check.ts", // re-bundle in memory, diff committed (06 §4)
     "schema:gen:diagram": "bun run src/diagram/schema-gen.ts",
     "schema:check:diagram": "bun run src/diagram/schema-gen.ts --check",
-    "gate": "bun run compile && bun run schema:check && bun run schema:check:diagram && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build:check && bun run build:diagram:check"
-  }
+    "gate": "bun run compile && bun run schema:check && bun run schema:check:diagram && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build:check && bun run build:diagram:check",
+  },
 }
 ```
 

@@ -40,9 +40,7 @@ export type Theme = z.infer<typeof Theme>;
  * render (REQ-REL-02). Three-digit (`#abc`) and alpha forms are intentionally
  * rejected for portability across tier-2 viewers.
  */
-export const HexColor = z
-  .string()
-  .regex(/^#[0-9a-fA-F]{6}$/, "accent must be a #rrggbb hex color");
+export const HexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "accent must be a #rrggbb hex color");
 /** A `#rrggbb` hex color. */
 export type HexColor = z.infer<typeof HexColor>;
 

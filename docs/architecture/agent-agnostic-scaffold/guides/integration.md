@@ -39,12 +39,12 @@ defaults in the table below):
 }
 ```
 
-| Field | Default |
-| --- | --- |
+| Field                                     | Default                          |
+| ----------------------------------------- | -------------------------------- |
 | `skillsDir` / `agentsDir` / `commandsDir` | `skills` / `agents` / `commands` |
-| `referencesDir` / `scriptsDir` | `references` / `scripts` |
-| `overridesDir` / `adaptersDir` | `overrides` / `adapters` |
-| `targets` | all five, in canonical order |
+| `referencesDir` / `scriptsDir`            | `references` / `scripts`         |
+| `overridesDir` / `adaptersDir`            | `overrides` / `adapters`         |
+| `targets`                                 | all five, in canonical order     |
 
 ### 2. Drive it programmatically (optional)
 
@@ -57,7 +57,7 @@ import { loadManifest, emit, emitPlugin } from "agent-docs";
 
 const repoRoot = process.cwd();
 const manifest = loadManifest(`${repoRoot}/tools.manifest.json`, repoRoot);
-const result   = emit(manifest, roots, { name: pkg.name, version: pkg.version });
+const result = emit(manifest, roots, { name: pkg.name, version: pkg.version });
 // → overlay overrides → render report → publish atomically
 ```
 
@@ -106,16 +106,25 @@ the moment you add a `Target` literal, the compiler forces you to implement it.
    import type { TargetTransform } from "./_shared.js";
    export const newTarget: TargetTransform = {
      target: "newtarget",
-     transformSkill(skill)   { /* → files[], drops[], manifestEntries[] */ },
-     transformAgent(agent)   { /* … */ },
-     transformCommand(cmd)   { /* … or best-effort fallback + a DropRecord */ },
-     aggregateManifest(entries, identity) { return null; }, // or build one EmittedFile
+     transformSkill(skill) {
+       /* → files[], drops[], manifestEntries[] */
+     },
+     transformAgent(agent) {
+       /* … */
+     },
+     transformCommand(cmd) {
+       /* … or best-effort fallback + a DropRecord */
+     },
+     aggregateManifest(entries, identity) {
+       return null;
+     }, // or build one EmittedFile
    };
    ```
 
    Reuse the shared helpers: `orderFrontmatter`, `renderFrontmatter` (provenance),
    `dropAllClaudeKeys`, `hintValue`, `skillVerbatimRecords`. Keep every function
    **pure** — no I/O, no clock, no RNG.
+
 3. **Register it.** Add it to the `TRANSFORMS` map in `src/targets/index.ts`. (The
    `Record<Target, TargetTransform>` type will fail to compile until you do.)
 4. **Record what you can't represent.** Any construct the target lacks

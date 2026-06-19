@@ -12,20 +12,20 @@ placement in `01-architecture-layout.md`; nothing here redefines a shared type.
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-| --- | --- | --- |
-| REQ-IN-02 | Engine-neutral structured spec — cross-field integrity | 2 |
-| REQ-IN-03 | MUST NOT invent semantic content (authoring-enforced) | 4 |
-| REQ-REL-01 | Validate well-formed/renderable before emitting | 2, 3 |
-| REQ-REL-02 | Fail loudly; no broken artifact emitted | 2, 3 |
-| REQ-OUT-02 | Explicit viewBox + width/height, well-formed coordinates | 3.4 |
-| REQ-OUT-04 | No external font/CDN; embedded data-URI font | 3.5 |
-| REQ-A11Y-01 | `<title>`/`<desc>`/`role="img"` present | 3.6 |
-| REQ-IN-02 | Committed JSON Schema generation + drift guard for the engine-neutral input | 5 |
+| REQ ID      | Requirement                                                                 | Section |
+| ----------- | --------------------------------------------------------------------------- | ------- |
+| REQ-IN-02   | Engine-neutral structured spec — cross-field integrity                      | 2       |
+| REQ-IN-03   | MUST NOT invent semantic content (authoring-enforced)                       | 4       |
+| REQ-REL-01  | Validate well-formed/renderable before emitting                             | 2, 3    |
+| REQ-REL-02  | Fail loudly; no broken artifact emitted                                     | 2, 3    |
+| REQ-OUT-02  | Explicit viewBox + width/height, well-formed coordinates                    | 3.4     |
+| REQ-OUT-04  | No external font/CDN; embedded data-URI font                                | 3.5     |
+| REQ-A11Y-01 | `<title>`/`<desc>`/`role="img"` present                                     | 3.6     |
+| REQ-IN-02   | Committed JSON Schema generation + drift guard for the engine-neutral input | 5       |
 
 > **Cross-document note (REQ-OUT-01):** the tier-2-clean assertion (§3.3) checks the
 > property mandated by REQ-OUT-01 (plain `<text>`, no `<foreignObject>`). REQ-OUT-01
-> itself is *owned* by `03-rendering-engine.md` (the renderer must produce it); §3.3
+> itself is _owned_ by `03-rendering-engine.md` (the renderer must produce it); §3.3
 > is the validation gate that proves it.
 
 ## 1. Module placement & dependency direction
@@ -69,7 +69,9 @@ bundle, `schema.ts` imports `diagramSuperRefine` from `validate.ts` and applies 
 import { diagramSuperRefine } from "./validate.js";
 
 export const DiagramSpec = z
-  .object({ /* … fields from 00 §2.4 … */ })
+  .object({
+    /* … fields from 00 §2.4 … */
+  })
   .strict()
   .superRefine(diagramSuperRefine);
 ```
@@ -138,10 +140,7 @@ export const GRAPH_DIAGRAM_TYPES: ReadonlySet<DiagramType> = new Set([
  * @param spec - The per-field-valid, defaulted DiagramSpec object.
  * @param ctx - Zod refinement context; issues are added here.
  */
-export function diagramSuperRefine(
-  spec: DecodedSpec,
-  ctx: z.RefinementCtx,
-): void {
+export function diagramSuperRefine(spec: DecodedSpec, ctx: z.RefinementCtx): void {
   // ── 1. Unique ids (per collection) ──────────────────────────────
   reportDuplicates(spec.nodes, "nodes", ctx);
   reportDuplicates(spec.containers, "containers", ctx);
@@ -246,11 +245,7 @@ export function diagramSuperRefine(
  * Record a `custom` issue for every duplicate id in `items`, pathed at the second
  * (and later) occurrence so the offending entry is pinpointed. Helper for rule 1.
  */
-function reportDuplicates(
-  items: Array<{ id: string }>,
-  field: string,
-  ctx: z.RefinementCtx,
-): void {
+function reportDuplicates(items: Array<{ id: string }>, field: string, ctx: z.RefinementCtx): void {
   const seen = new Set<string>();
   for (const [i, item] of items.entries()) {
     if (seen.has(item.id)) {
@@ -289,9 +284,13 @@ function rejectNonEmpty(
 ```jsonc
 {
   "diagramType": "flowchart",
-  "title": "Bad", "description": "d",
-  "nodes": [{ "id": "a", "label": "A" }, { "id": "a", "label": "A2" }],
-  "edges": [{ "from": "a", "to": "ghost" }]
+  "title": "Bad",
+  "description": "d",
+  "nodes": [
+    { "id": "a", "label": "A" },
+    { "id": "a", "label": "A2" },
+  ],
+  "edges": [{ "from": "a", "to": "ghost" }],
 }
 ```
 
@@ -339,8 +338,8 @@ export function parseSpec(raw: unknown): DiagramSpecT {
 
 ## 3. Two-stage validation — output assertions (REQ-REL-01/02, REQ-OUT-02/04, REQ-A11Y-01)
 
-**Stage 1** is §2.4 (`parseSpec`). **Stage 2** runs *after* the engine produces SVG
-markup but *before* any byte is written to disk (`render.ts`, `01` §3). Every Stage-2
+**Stage 1** is §2.4 (`parseSpec`). **Stage 2** runs _after_ the engine produces SVG
+markup but _before_ any byte is written to disk (`render.ts`, `01` §3). Every Stage-2
 failure is a `DiagramOutputError` (`00` §5, code `OUTPUT_INVALID`, exit 4). The
 aggregator `assertOutputValid` runs all five assertions; the caller writes the
 artifact only if it returns normally (REQ-REL-01: "no partial artifact written on
@@ -523,8 +522,7 @@ export function assertFontPortable(svg: string): void {
       "assertFontPortable",
     );
   }
-  const hasEmbeddedFace =
-    /@font-face\b[^}]*\bsrc\s*:[^}]*url\(\s*["']?data:/is.test(svg);
+  const hasEmbeddedFace = /@font-face\b[^}]*\bsrc\s*:[^}]*url\(\s*["']?data:/is.test(svg);
   if (!hasEmbeddedFace) {
     throw new DiagramOutputError(
       "rendered SVG has no embedded data-URI @font-face; text would not be portable (REQ-OUT-04)",
@@ -550,10 +548,7 @@ export function assertFontPortable(svg: string): void {
 export function assertA11y(doc: XmlDocument): void {
   const root = doc.root;
   if (!root || root.attributes["role"] !== "img") {
-    throw new DiagramOutputError(
-      'root <svg> is missing role="img" (REQ-A11Y-01)',
-      "assertA11y",
-    );
+    throw new DiagramOutputError('root <svg> is missing role="img" (REQ-A11Y-01)', "assertA11y");
   }
   if (!hasDescendant(root, "title")) {
     throw new DiagramOutputError("SVG is missing <title> (REQ-A11Y-01)", "assertA11y");
@@ -657,10 +652,7 @@ export const DIAGRAM_SCHEMA_OUTPUT_PATH = "schemas/diagram-input.schema.json" as
  * @returns The JSON Schema as a plain object.
  */
 export function buildDiagramSchema(): Record<string, unknown> {
-  const schema = zodToJsonSchema(DiagramSpec, { $refStrategy: "none" }) as Record<
-    string,
-    unknown
-  >;
+  const schema = zodToJsonSchema(DiagramSpec, { $refStrategy: "none" }) as Record<string, unknown>;
   schema["$schema"] = "http://json-schema.org/draft-07/schema#";
   schema["$id"] = "diagram-input.schema.json";
   schema["title"] = "Diagram Generator Input Spec";
@@ -733,7 +725,7 @@ guard — is byte-for-byte the same pattern, so the gate behaves identically (01
   `src/diagram/schema-gen.ts`), import graph (§3), and the `schema:gen:diagram` /
   `schema:check:diagram` / `gate` script wiring (§5).
 - `03-rendering-engine.md` — owns producing the SVG that §3 validates and owns
-  REQ-OUT-01 (this doc only *asserts* it); `render.ts` calls `assertOutputValid`.
+  REQ-OUT-01 (this doc only _asserts_ it); `render.ts` calls `assertOutputValid`.
 - `04-theme-postprocess-png.md` — `svg-postprocess.ts` injects the data-URI
   `@font-face` (§3.5) and the `<title>`/`<desc>`/`role="img"` (§3.6) that these
   assertions check.

@@ -24,15 +24,15 @@ pipeline (§5).
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-| --- | --- | --- |
-| REQ-COV-01 | Architecture / box-arrow-flow diagrams (nodes, edges, containers, role color hook) | 2.2, 2.3, 2.4 |
-| REQ-COV-02 | flowchart / sequence / ER / state / data-flow types | 2.2, 4 |
-| REQ-OUT-01 | Tier-2 SVG: plain `<text>`, no HTML-like labels / `<foreignObject>` | 2.1, 2.5, 3.2, 4.5, 5.3 |
-| REQ-OUT-02 | Explicit `viewBox` + width/height, well-formed coordinates | 4.2, 4.6, 5.3 |
-| REQ-REL-01 | Validate well-formed before emit (output assertion call) | 5.2 |
-| REQ-REL-02 | Fail loudly — wrap engine errors in typed errors | 3.3, 4.7, 5.4 |
-| REQ-REPRO-01 | Determinism (no engine-side IDs/randomness; canon pass cross-ref) | 2.6, 3.4, 5.5 |
+| REQ ID       | Requirement                                                                        | Section                 |
+| ------------ | ---------------------------------------------------------------------------------- | ----------------------- |
+| REQ-COV-01   | Architecture / box-arrow-flow diagrams (nodes, edges, containers, role color hook) | 2.2, 2.3, 2.4           |
+| REQ-COV-02   | flowchart / sequence / ER / state / data-flow types                                | 2.2, 4                  |
+| REQ-OUT-01   | Tier-2 SVG: plain `<text>`, no HTML-like labels / `<foreignObject>`                | 2.1, 2.5, 3.2, 4.5, 5.3 |
+| REQ-OUT-02   | Explicit `viewBox` + width/height, well-formed coordinates                         | 4.2, 4.6, 5.3           |
+| REQ-REL-01   | Validate well-formed before emit (output assertion call)                           | 5.2                     |
+| REQ-REL-02   | Fail loudly — wrap engine errors in typed errors                                   | 3.3, 4.7, 5.4           |
+| REQ-REPRO-01 | Determinism (no engine-side IDs/randomness; canon pass cross-ref)                  | 2.6, 3.4, 5.5           |
 
 OTQ-3 (sequence layout details — lifeline spacing, activation bars, self-messages,
 overlap) is resolved in §4.
@@ -90,13 +90,13 @@ before this module is reached, §5.1). Each type fixes a default `rankdir`, a
 default node `shape`, and an edge default. A node's explicit `Node.shape` (00 §2.2)
 overrides the per-type default.
 
-| `diagramType` | `rankdir` | default node shape | edge default | notes |
-| --- | --- | --- | --- | --- |
-| `architecture` | `LR` | `box` | `dir=forward`, solid | containers → `subgraph cluster_*` (§2.4); legend handled in `04` |
-| `flowchart` | `TB` | `box` (decisions: `diamond`) | `dir=forward`, solid | a `Node.shape==="diamond"` renders a decision; rounded for start/end |
-| `er` | `LR` | `box` | `dir=none` by default (associations), arrowable | entity attributes as multi-line quoted label (§2.3) — NO record shape |
-| `state` | `TB` | `rounded` (`shape=box, style=rounded`) | `dir=forward`, solid | initial/final pseudo-states use `point`/`doublecircle` via `Node.shape` mapping |
-| `dataflow` | `LR` | `box` | `dir=forward`, solid | stores → `cylinder`; processes → `box`; externals → `box` (color in 04) |
+| `diagramType`  | `rankdir` | default node shape                     | edge default                                    | notes                                                                           |
+| -------------- | --------- | -------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------- |
+| `architecture` | `LR`      | `box`                                  | `dir=forward`, solid                            | containers → `subgraph cluster_*` (§2.4); legend handled in `04`                |
+| `flowchart`    | `TB`      | `box` (decisions: `diamond`)           | `dir=forward`, solid                            | a `Node.shape==="diamond"` renders a decision; rounded for start/end            |
+| `er`           | `LR`      | `box`                                  | `dir=none` by default (associations), arrowable | entity attributes as multi-line quoted label (§2.3) — NO record shape           |
+| `state`        | `TB`      | `rounded` (`shape=box, style=rounded`) | `dir=forward`, solid                            | initial/final pseudo-states use `point`/`doublecircle` via `Node.shape` mapping |
+| `dataflow`     | `LR`      | `box`                                  | `dir=forward`, solid                            | stores → `cylinder`; processes → `box`; externals → `box` (color in 04)         |
 
 `rankdir` is applied as a graph attribute; it is **not** user-configurable in v1
 (no field for it on `DiagramSpec`, 00 §2.4), so layout direction is a deterministic
@@ -111,10 +111,7 @@ maps to Graphviz shapes via a fixed table:
  * pair. `rounded` is a box with rounded style (Graphviz has no `rounded` shape).
  * All targets render as plain `<text>`-labelled vector shapes (REQ-OUT-01).
  */
-const SHAPE_MAP: Record<
-  NonNullable<Node["shape"]>,
-  { shape: string; style?: string }
-> = {
+const SHAPE_MAP: Record<NonNullable<Node["shape"]>, { shape: string; style?: string }> = {
   box: { shape: "box" },
   rounded: { shape: "box", style: "rounded" },
   cylinder: { shape: "cylinder" },
@@ -184,7 +181,7 @@ role→color map (OTQ-2, `04 §2`) lives in exactly one place.
 `emitDot` is a pure function of `spec`; it introduces no clock, no RNG, no
 hash-map iteration order. All emission order is array order from the spec
 (`nodes`, `edges`, `containers`, `children`). This makes the DOT string
-byte-stable for a given spec. (Graphviz's *layout* of that DOT is not byte-stable —
+byte-stable for a given spec. (Graphviz's _layout_ of that DOT is not byte-stable —
 that is handled by the canonicalization pass in `04 §3`, cross-referenced in §3.4
 and §5.5; it is **not** this module's concern.)
 
@@ -318,7 +315,7 @@ export async function renderGraph(dot: string): Promise<string> {
 > **WARNING:** `@viz-js/viz` is not yet installed in this repo (it is a new
 > bundled devDependency, `01 §4`). The signatures above —
 > `instance(): Promise<Viz>` and `Viz.renderString(dot: string, options?: {
-> format?: string; engine?: string }): string` — reflect the documented public API
+format?: string; engine?: string }): string` — reflect the documented public API
 > of `@viz-js/viz` (v3, the WASM successor to viz.js). **Verify the exact
 > `instance`/`renderString` signature and the `{ format, engine }` option shape
 > against the pinned version's `.d.ts` before implementing.** If the installed
@@ -392,17 +389,17 @@ const FONT_FAMILY = "DiagramSans";
 
 ### 4.3 Geometry (REQ-OUT-02)
 
-- **Lifeline x-position.** Participant *i* (0-based, in `spec.participants` order)
+- **Lifeline x-position.** Participant _i_ (0-based, in `spec.participants` order)
   has center x = `MARGIN + HEADER_WIDTH / 2 + i * LIFELINE_GAP`. Even spacing →
   deterministic and overlap-free between adjacent lifelines as long as
   `LIFELINE_GAP >= HEADER_WIDTH` (160 ≥ 120 holds).
 - **Header boxes.** Each participant gets a header box of `HEADER_WIDTH ×
-  HEADER_HEIGHT` centered on its lifeline x at the top, with the label as a centered
+HEADER_HEIGHT` centered on its lifeline x at the top, with the label as a centered
   `<text>` (truncated/ellipsized if it exceeds `HEADER_WIDTH`; truncation is a
   post-process concern, but the geometry reserves exactly `HEADER_WIDTH`).
 - **Lifeline.** A vertical dashed line from the bottom of each header box down to
   the bottom of the diagram (`totalHeight - MARGIN`).
-- **Message rows.** Message *m* (0-based, document order) sits at row baseline
+- **Message rows.** Message _m_ (0-based, document order) sits at row baseline
   y = `MARGIN + HEADER_HEIGHT + HEADER_TO_FIRST_MSG + m * MESSAGE_ROW_HEIGHT`,
   plus accumulated extra height for any preceding self-messages (§4.5). The arrow is
   drawn horizontally at this y between the `from` and `to` lifeline x-positions;
@@ -418,11 +415,11 @@ height = MARGIN * 2 + HEADER_HEIGHT + HEADER_TO_FIRST_MSG
 
 ### 4.4 Message arrow styles by `Message.kind` (00 §2.3)
 
-| `kind` | line | arrowhead | semantics |
-| --- | --- | --- | --- |
-| `sync` | solid | **closed/filled** triangle | synchronous call |
-| `async` | solid | **open** (V-shaped, two strokes) arrowhead | asynchronous send |
-| `reply` | **dashed** | open arrowhead | return / response |
+| `kind`  | line       | arrowhead                                  | semantics         |
+| ------- | ---------- | ------------------------------------------ | ----------------- |
+| `sync`  | solid      | **closed/filled** triangle                 | synchronous call  |
+| `async` | solid      | **open** (V-shaped, two strokes) arrowhead | asynchronous send |
+| `reply` | **dashed** | open arrowhead                             | return / response |
 
 Arrowheads are drawn as explicit SVG `<path>`/`<polyline>` primitives (not
 markers requiring `<defs>` references that some tier-2 viewers mishandle) pointing
@@ -450,7 +447,7 @@ toward the `to` lifeline. Direction is left→right or right→left based on the
 ### 4.6 Overlap avoidance (OTQ-3)
 
 - Lifelines never overlap because spacing is fixed and `LIFELINE_GAP ≥
-  HEADER_WIDTH` (§4.3).
+HEADER_WIDTH` (§4.3).
 - Messages never overlap vertically because each occupies its own row of fixed
   height (plus self-message extra); rows are laid out by a running y-cursor, so the
   geometry is collision-free by construction. No iterative de-overlap pass is
@@ -484,16 +481,14 @@ import type { DiagramSpec } from "./schema.js";
  *   references an unknown participant (defensive — validation already guarantees
  *   referential integrity, 02 §2) or if `participants` is empty.
  */
-export function renderSequence(
-  spec: DiagramSpec,
-): { svg: string; width: number; height: number };
+export function renderSequence(spec: DiagramSpec): { svg: string; width: number; height: number };
 ```
 
 **Error handling:** purely defensive guards (empty participants, dangling
 message reference) throw `DiagramRenderError`; no IO, no async. A spec that passed
 `02 §2` validation cannot trip these in normal operation.
 
-## 5. `src/diagram/render.ts` — orchestration (REQ-OUT-*)
+## 5. `src/diagram/render.ts` — orchestration (REQ-OUT-\*)
 
 `render` is the single entry the CLI (`05-cli-and-invocation.md`) calls per theme
 variant. It owns the dispatch, the post-process call, and the output assertion.
@@ -521,8 +516,8 @@ variant. It owns the dispatch, the post-process call, and the output assertion.
 ```typescript
 import type { DiagramSpec, HexColor, RenderResult, Theme } from "./schema.js";
 import { assertOutputValid } from "./validate.js"; // 02 §3
-import { emitDot } from "./dot-emit.js";           // §2
-import { renderGraph } from "./graph-render.js";   // §3
+import { emitDot } from "./dot-emit.js"; // §2
+import { renderGraph } from "./graph-render.js"; // §3
 import { renderSequence } from "./sequence-svg.js"; // §4
 import { postProcess } from "./svg-postprocess.js"; // 04 §3
 
@@ -555,10 +550,7 @@ export interface RenderOptions {
  * @throws {DiagramOutputError} If the post-processed SVG fails tier-2 / viewBox /
  *   font / a11y assertions (02 §3, exit 4).
  */
-export async function render(
-  spec: DiagramSpec,
-  opts: RenderOptions,
-): Promise<RenderResult> {
+export async function render(spec: DiagramSpec, opts: RenderOptions): Promise<RenderResult> {
   // 1. Input already validated by the CLI via parseSpec (02 §2 / 05 §3.1);
   //    render trusts the typed DiagramSpec and does not re-validate (REQ-REL-01).
 

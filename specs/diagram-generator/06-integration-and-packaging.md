@@ -17,15 +17,15 @@ module tree, dependency table, and `package.json` script set) and references
 
 ## Requirement Coverage
 
-| REQ / item | Requirement | Section |
-| --- | --- | --- |
-| CON-01 | Authored as a canonical skill, registered in the manifest | 2 |
-| CON-02 | Shared dependency — frozen scriptable contract for consumers | 6 |
-| REQ-INV-04 | Versioned contract surface that consumers pin against | 6 |
-| REQ-PORT-02 | Agent-agnostic — verbatim emission to all 5 targets | 5 |
-| REQ-OUT-04 | Build determinism — committed bundle byte-stable, drift-guarded | 3, 4 |
-| REQ-REPRO-01 | Deterministic bundle build + drift guard owns bundle bytes | 4 |
-| OTQ-1 | Golden strategy for the bundle — RESOLVED (committed byte golden) | 4.3 |
+| REQ / item   | Requirement                                                       | Section |
+| ------------ | ----------------------------------------------------------------- | ------- |
+| CON-01       | Authored as a canonical skill, registered in the manifest         | 2       |
+| CON-02       | Shared dependency — frozen scriptable contract for consumers      | 6       |
+| REQ-INV-04   | Versioned contract surface that consumers pin against             | 6       |
+| REQ-PORT-02  | Agent-agnostic — verbatim emission to all 5 targets               | 5       |
+| REQ-OUT-04   | Build determinism — committed bundle byte-stable, drift-guarded   | 3, 4    |
+| REQ-REPRO-01 | Deterministic bundle build + drift guard owns bundle bytes        | 4       |
+| OTQ-1        | Golden strategy for the bundle — RESOLVED (committed byte golden) | 4.3     |
 
 ## 2. Manifest registration (CON-01)
 
@@ -64,7 +64,7 @@ export const ToolEntry = z.object({
   "name": "diagram-generator",
   "type": "skill",
   "source": "skills/diagram-generator",
-  "description": "Converts natural-language or an engine-neutral node/edge/container spec into portable tier-2 SVG and PNG diagrams."
+  "description": "Converts natural-language or an engine-neutral node/edge/container spec into portable tier-2 SVG and PNG diagrams.",
 }
 ```
 
@@ -107,8 +107,8 @@ script wiring and the `gate` integration.
 {
   "scripts": {
     "schema:gen:diagram": "bun run src/diagram/schema-gen.ts",
-    "schema:check:diagram": "bun run src/diagram/schema-gen.ts --check"
-  }
+    "schema:check:diagram": "bun run src/diagram/schema-gen.ts --check",
+  },
 }
 ```
 
@@ -171,8 +171,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 /** Committed bundle path (repo-relative); single committed copy. */
-export const BUNDLE_OUTPUT_PATH =
-  "skills/diagram-generator/scripts/diagram-render.mjs" as const;
+export const BUNDLE_OUTPUT_PATH = "skills/diagram-generator/scripts/diagram-render.mjs" as const;
 
 /** Bundle entry; MUST match the `build:diagram` script (01 §5). */
 const ENTRY = "src/diagram/cli.ts";
@@ -214,7 +213,7 @@ if (import.meta.main) {
 }
 ```
 
-> **Flag parity is load-bearing.** `build-check.ts` MUST use the *same* bundler
+> **Flag parity is load-bearing.** `build-check.ts` MUST use the _same_ bundler
 > flags as `build:diagram` (`--target=node --minify`). If `build:diagram` gains a
 > flag, this file must mirror it, or the drift guard produces false positives. To
 > avoid skew, both the script string (`01` §5) and `ENTRY`/flags here are the
@@ -236,6 +235,7 @@ byte compare" framing was incompatible with the actual test and is dropped.
 **Why this is the correct (and only passing) option:** `golden.test.ts` enforces a
 strict three-way equality `emitted == golden == wanted` over the sample-scoped
 relpaths. Concretely, with `wanted = SAMPLE_RELPATHS[target]`:
+
 - line 64 keeps only emitted files whose relpath is in `wanted`;
 - lines 70-71 byte-compare **every committed golden** against the emitted content;
 - line 76 asserts `emitted.keys() === golden.keys()`;
@@ -293,7 +293,7 @@ publish step at `src/publish.ts:113-120`, and it **preserves the executable mode
 // src/publish.ts:116-119 (verified) — verbatim copy preserves file mode
 const sourceAbs = confinePath(roots.repoRoot, record.sourcePath);
 const content = readFileSync(sourceAbs, "utf8");
-const mode = statSync(sourceAbs).mode & 0o777;   // ← mode carried through
+const mode = statSync(sourceAbs).mode & 0o777; // ← mode carried through
 writeConfined(staging, record.relpath, content, mode);
 ```
 
@@ -308,13 +308,13 @@ bundle is byte-identical to the committed one and runs with zero install
 
 `skillRefDir` (`src/targets/_shared.ts:203-212`) maps the skill location:
 
-| Target | Skill location prefix (`skillRefDir`) | SKILL file transform |
-| --- | --- | --- |
-| claude | `skills/diagram-generator` | `SKILL.md` (unchanged) |
-| codex | `skills/diagram-generator` | `SKILL.md` (unchanged) |
-| gemini | `skills/diagram-generator` | `SKILL.md` → `diagram-generator.md` |
-| copilot | `instructions/diagram-generator` | `instructions/diagram-generator.instructions.md` |
-| cursor | `rules/diagram-generator` | `rules/diagram-generator.mdc` |
+| Target  | Skill location prefix (`skillRefDir`) | SKILL file transform                             |
+| ------- | ------------------------------------- | ------------------------------------------------ |
+| claude  | `skills/diagram-generator`            | `SKILL.md` (unchanged)                           |
+| codex   | `skills/diagram-generator`            | `SKILL.md` (unchanged)                           |
+| gemini  | `skills/diagram-generator`            | `SKILL.md` → `diagram-generator.md`              |
+| copilot | `instructions/diagram-generator`      | `instructions/diagram-generator.instructions.md` |
+| cursor  | `rules/diagram-generator`             | `rules/diagram-generator.mdc`                    |
 
 Owned refs (`references/*.md`, `scripts/diagram-render.mjs`) are rebased under the
 `skillRefDir` prefix verbatim (`skillVerbatimRecords`,
@@ -331,6 +331,7 @@ per-target SKILL transform yields the **exact** emitted (`<target>/`-stripped)
 relpath set per target:
 
 **claude** (and **codex** — identical paths):
+
 ```
 skills/diagram-generator/SKILL.md
 skills/diagram-generator/references/schema-guide.md
@@ -340,6 +341,7 @@ skills/diagram-generator/scripts/diagram-render.mjs
 
 **gemini** (SKILL renamed; refs/scripts under `skills/diagram-generator/`; PLUS the
 aggregate `gemini-extension.json`):
+
 ```
 skills/diagram-generator/diagram-generator.md
 skills/diagram-generator/references/schema-guide.md
@@ -349,6 +351,7 @@ gemini-extension.json
 ```
 
 **copilot** (`instructions/` prefix):
+
 ```
 instructions/diagram-generator.instructions.md
 instructions/diagram-generator/references/schema-guide.md
@@ -357,6 +360,7 @@ instructions/diagram-generator/scripts/diagram-render.mjs
 ```
 
 **cursor** (`rules/` prefix; flattened `.mdc` with sibling owned dir):
+
 ```
 rules/diagram-generator.mdc
 rules/diagram-generator/references/schema-guide.md

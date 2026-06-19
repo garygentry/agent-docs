@@ -59,11 +59,11 @@ When a user asks for a diagram:
 **Depict only what the user described. Never invent semantic content, components,
 or architecture the user did not state.** Do not add implied databases, assumed
 gateways, caches, load balancers, queues, or "typical" components to make the
-diagram look complete. The schema validates *structural* well-formedness, not
-*semantic* faithfulness — this prompt discipline is the **only** thing that keeps
+diagram look complete. The schema validates _structural_ well-formedness, not
+_semantic_ faithfulness — this prompt discipline is the **only** thing that keeps
 the diagram true to the request.
 
-- ✅ User: *"a web app talking to an API"* → two nodes (`webapp` → `api`) and one
+- ✅ User: _"a web app talking to an API"_ → two nodes (`webapp` → `api`) and one
   edge. Nothing else.
 - ❌ Do **not** add a `database`, `cache`, or `gateway` node the user never
   mentioned, even if such a system "usually" has one.

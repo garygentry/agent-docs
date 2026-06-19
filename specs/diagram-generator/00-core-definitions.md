@@ -14,17 +14,17 @@ every exported symbol and field.
 
 ## Requirement Coverage
 
-| REQ ID | Requirement | Section |
-| --- | --- | --- |
-| REQ-IN-02 | Engine-neutral structured spec (nodes/edges/containers) | 2, 3 |
-| REQ-COV-01 | Architecture diagrams + semantic role color | 2.2, 2.4, 4 |
-| REQ-COV-02 | flowchart/sequence/ER/state/data-flow types | 2.1, 2.5 |
-| REQ-THEME-01 | light/dark variants + configurable accent | 2.3, 4 |
-| REQ-A11Y-01 | `<title>`/`<desc>`/`role="img"` source fields | 2.2 |
-| REQ-REL-02 | Fail loudly — typed error hierarchy | 5 |
-| REQ-INV-04 | Versioned contract — `CONTRACT_VERSION` | 6 |
-| REQ-OUT-02 | viewBox/width/height — render-result shape | 3.2 |
-| REQ-SEC-01 | Path-confinement error | 5 |
+| REQ ID       | Requirement                                             | Section     |
+| ------------ | ------------------------------------------------------- | ----------- |
+| REQ-IN-02    | Engine-neutral structured spec (nodes/edges/containers) | 2, 3        |
+| REQ-COV-01   | Architecture diagrams + semantic role color             | 2.2, 2.4, 4 |
+| REQ-COV-02   | flowchart/sequence/ER/state/data-flow types             | 2.1, 2.5    |
+| REQ-THEME-01 | light/dark variants + configurable accent               | 2.3, 4      |
+| REQ-A11Y-01  | `<title>`/`<desc>`/`role="img"` source fields           | 2.2         |
+| REQ-REL-02   | Fail loudly — typed error hierarchy                     | 5           |
+| REQ-INV-04   | Versioned contract — `CONTRACT_VERSION`                 | 6           |
+| REQ-OUT-02   | viewBox/width/height — render-result shape              | 3.2         |
+| REQ-SEC-01   | Path-confinement error                                  | 5           |
 
 ## 1. Module placement
 
@@ -76,9 +76,7 @@ export type Theme = z.infer<typeof Theme>;
  * render (REQ-REL-02). Three-digit (`#abc`) and alpha forms are intentionally
  * rejected for portability across tier-2 viewers.
  */
-export const HexColor = z
-  .string()
-  .regex(/^#[0-9a-fA-F]{6}$/, "accent must be a #rrggbb hex color");
+export const HexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "accent must be a #rrggbb hex color");
 /** A `#rrggbb` hex color. */
 export type HexColor = z.infer<typeof HexColor>;
 ```
@@ -263,10 +261,10 @@ The single `DiagramSpec` shape serves all six types, but two field families are
 mutually exclusive by type. This invariant is enforced in the `superRefine`
 (§3.1), not the base object:
 
-| `diagramType` | Populated fields | Empty fields |
-| --- | --- | --- |
-| `architecture`, `flowchart`, `er`, `state`, `dataflow` | `nodes`, `edges`, `containers` | `participants`, `messages` |
-| `sequence` | `participants`, `messages` | `nodes`, `edges`, `containers` |
+| `diagramType`                                          | Populated fields               | Empty fields                   |
+| ------------------------------------------------------ | ------------------------------ | ------------------------------ |
+| `architecture`, `flowchart`, `er`, `state`, `dataflow` | `nodes`, `edges`, `containers` | `participants`, `messages`     |
+| `sequence`                                             | `participants`, `messages`     | `nodes`, `edges`, `containers` |
 
 ## 3. Derived shapes
 
@@ -309,9 +307,9 @@ export interface RenderResult {
 ## 4. Theme tokens (forward reference)
 
 The concrete `NodeRole`→color map and the light/dark token values resolve OTQ-2 and
-are specified in `04-theme-postprocess-png.md` §2. `00` fixes only the *keys*
+are specified in `04-theme-postprocess-png.md` §2. `00` fixes only the _keys_
 (`NodeRole`, `Theme`) so every other document references a stable vocabulary; the
-*values* live in `theme.ts`.
+_values_ live in `theme.ts`.
 
 ## 5. Error hierarchy (REQ-REL-02, REQ-SEC-01)
 

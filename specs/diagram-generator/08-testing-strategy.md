@@ -23,24 +23,24 @@ assertions wired into `bun run gate`.
 Each row maps a PRD §8 success criterion (and its backing `REQ-XXX-NN`) to the
 test section that proves it.
 
-| PRD §8 success criterion | REQ ID(s) | Test section |
-| --- | --- | --- |
-| Each diagram type renders successfully from text | REQ-COV-01, REQ-COV-02 | 3 (golden), 7.2 (fixtures) |
-| Structured spec produces a valid, well-formed artifact | REQ-IN-02, REQ-REL-01 | 3, 4 |
-| Natural-language description produces a valid artifact (the NL half of PRD §8's first criterion) | REQ-IN-01, REQ-INV-01, REQ-USE-01 | 10 (out of automated-test scope — non-deterministic LLM step) |
-| SVG opens correctly everywhere — tier-2 (`<text>`, no `<foreignObject>`) | REQ-OUT-01 | 4.2 |
-| SVG declares explicit `viewBox` + width/height | REQ-OUT-02 | 4.2 |
-| SVG renders with no network access; embedded font, no external URL | REQ-OUT-04, REQ-SEC-02 | 4.2 |
-| SVG carries `<title>`/`<desc>`/`role="img"` | REQ-A11Y-01 | 4.2 |
-| Architecture inspectable properties (semantic color, legend-outside, z-order) | REQ-COV-01 | 4.3 |
-| Light and dark variants with accent both render | REQ-THEME-01 | 3, 4.4 |
-| Regenerating an unchanged spec is diff-clean (byte-identical) | REQ-REPRO-01 | 5 |
-| PNG produced at build time, valid & correctly sized | REQ-OUT-03 | 6 |
-| Scriptable path: caller paths, input forms, types, exit codes | REQ-INV-02, REQ-INV-03, REQ-INV-04 | 7 |
-| Versioned contract — `--version` prints `CONTRACT_VERSION` | REQ-INV-04 | 7.5 |
-| Malformed generation caught by validation, reported not emitted | REQ-REL-01, REQ-REL-02 | 7.4, 4.2 |
-| Path confinement — writes only inside the caller's dir | REQ-SEC-01 | 7.6 |
-| Skill emits to all five targets; `gate` stays green | REQ-PORT-02 | 8 |
+| PRD §8 success criterion                                                                         | REQ ID(s)                          | Test section                                                  |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------- | ------------------------------------------------------------- |
+| Each diagram type renders successfully from text                                                 | REQ-COV-01, REQ-COV-02             | 3 (golden), 7.2 (fixtures)                                    |
+| Structured spec produces a valid, well-formed artifact                                           | REQ-IN-02, REQ-REL-01              | 3, 4                                                          |
+| Natural-language description produces a valid artifact (the NL half of PRD §8's first criterion) | REQ-IN-01, REQ-INV-01, REQ-USE-01  | 10 (out of automated-test scope — non-deterministic LLM step) |
+| SVG opens correctly everywhere — tier-2 (`<text>`, no `<foreignObject>`)                         | REQ-OUT-01                         | 4.2                                                           |
+| SVG declares explicit `viewBox` + width/height                                                   | REQ-OUT-02                         | 4.2                                                           |
+| SVG renders with no network access; embedded font, no external URL                               | REQ-OUT-04, REQ-SEC-02             | 4.2                                                           |
+| SVG carries `<title>`/`<desc>`/`role="img"`                                                      | REQ-A11Y-01                        | 4.2                                                           |
+| Architecture inspectable properties (semantic color, legend-outside, z-order)                    | REQ-COV-01                         | 4.3                                                           |
+| Light and dark variants with accent both render                                                  | REQ-THEME-01                       | 3, 4.4                                                        |
+| Regenerating an unchanged spec is diff-clean (byte-identical)                                    | REQ-REPRO-01                       | 5                                                             |
+| PNG produced at build time, valid & correctly sized                                              | REQ-OUT-03                         | 6                                                             |
+| Scriptable path: caller paths, input forms, types, exit codes                                    | REQ-INV-02, REQ-INV-03, REQ-INV-04 | 7                                                             |
+| Versioned contract — `--version` prints `CONTRACT_VERSION`                                       | REQ-INV-04                         | 7.5                                                           |
+| Malformed generation caught by validation, reported not emitted                                  | REQ-REL-01, REQ-REL-02             | 7.4, 4.2                                                      |
+| Path confinement — writes only inside the caller's dir                                           | REQ-SEC-01                         | 7.6                                                           |
+| Skill emits to all five targets; `gate` stays green                                              | REQ-PORT-02                        | 8                                                             |
 
 ## 1. Test layout & runner
 
@@ -86,7 +86,7 @@ after the `04 §3` post-process (color + a11y + font + canonicalization). Becaus
 SVGs are canonicalized (`04 §3.7`, `SVG_COORD_PRECISION` from `00 §6`), they are
 byte-stable and safe to commit and diff (REQ-REPRO-01). These diagram goldens cover
 the **rendered SVG only** — the bundle `.mjs` is not among them. (The bundle `.mjs`
-does carry a committed byte golden, but in the separate *emitter* golden suite
+does carry a committed byte golden, but in the separate _emitter_ golden suite
 `src/test/__golden__/` per OTQ-1 / `06 §4.3`, alongside the `build:diagram:check`
 drift guard — see §8; it is unrelated to this `src/diagram/__golden__/` SVG set.)
 
@@ -221,12 +221,12 @@ The functions under test are the exact exports of `src/diagram/validate.ts`
 
 ```typescript
 import {
-  assertOutputValid,   // 02 §3.1 — aggregator
-  assertWellFormed,    // 02 §3.2 — well-formed XML, returns the parsed doc
-  assertTier2,         // 02 §3.3 — <text> present, no <foreignObject>
-  assertStructural,    // 02 §3.4 — viewBox + width + height
-  assertFontPortable,  // 02 §3.5 — embedded data-URI @font-face, no external URL
-  assertA11y,          // 02 §3.6 — <title>/<desc>/role="img"
+  assertOutputValid, // 02 §3.1 — aggregator
+  assertWellFormed, // 02 §3.2 — well-formed XML, returns the parsed doc
+  assertTier2, // 02 §3.3 — <text> present, no <foreignObject>
+  assertStructural, // 02 §3.4 — viewBox + width + height
+  assertFontPortable, // 02 §3.5 — embedded data-URI @font-face, no external URL
+  assertA11y, // 02 §3.6 — <title>/<desc>/role="img"
 } from "./validate.js";
 ```
 
@@ -299,7 +299,7 @@ describe("golden SVG output properties (REQ-OUT-*, REQ-A11Y-01, REQ-SEC-02)", ()
         expect(svg).not.toMatch(/@import\b/);
       });
 
-      it("carries <title>, <desc>, and role=\"img\" (REQ-A11Y-01)", () => {
+      it('carries <title>, <desc>, and role="img" (REQ-A11Y-01)', () => {
         const doc = assertWellFormed(svg);
         expect(() => assertA11y(doc)).not.toThrow();
         expect(svg).toContain("<title");
@@ -321,14 +321,14 @@ REQ-COV-01 requires architecture diagrams to satisfy several inspectable
 properties. Be honest about which are practically assertable in code vs.
 golden-reviewed by a human:
 
-| REQ-COV-01 property | Machine-assertable? | How |
-| --- | --- | --- |
-| No `<foreignObject>` (tier-2) | **Yes** | `assertTier2` (§4.2) — covered for all goldens |
-| Semantic component coloring applied | **Yes** | §4.3 below — role→color baked as inline `fill` |
-| Legend, when present, placed outside boundary boxes | **Partially** | geometry assertion below (legend bbox vs. cluster bbox) — only when the fixture includes a legend |
-| No overlapping component boxes | **No (golden-reviewed)** | requires box-bbox intersection over Graphviz layout coords; brittle. Frozen by the committed golden + human review on regen |
-| Connection arrows routed behind boxes (z-order) | **Partially** | paint-order: assert edge `<path>`/`<g class="edge">` precede node `<g class="node">` in document order (the §`04 §3.3` z-order pass) |
-| Every label contained within its box | **No (golden-reviewed)** | requires text-extent measurement against box geometry; not reliably assertable in v1. Frozen by golden + review |
+| REQ-COV-01 property                                 | Machine-assertable?      | How                                                                                                                                  |
+| --------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| No `<foreignObject>` (tier-2)                       | **Yes**                  | `assertTier2` (§4.2) — covered for all goldens                                                                                       |
+| Semantic component coloring applied                 | **Yes**                  | §4.3 below — role→color baked as inline `fill`                                                                                       |
+| Legend, when present, placed outside boundary boxes | **Partially**            | geometry assertion below (legend bbox vs. cluster bbox) — only when the fixture includes a legend                                    |
+| No overlapping component boxes                      | **No (golden-reviewed)** | requires box-bbox intersection over Graphviz layout coords; brittle. Frozen by the committed golden + human review on regen          |
+| Connection arrows routed behind boxes (z-order)     | **Partially**            | paint-order: assert edge `<path>`/`<g class="edge">` precede node `<g class="node">` in document order (the §`04 §3.3` z-order pass) |
+| Every label contained within its box                | **No (golden-reviewed)** | requires text-extent measurement against box geometry; not reliably assertable in v1. Frozen by golden + review                      |
 
 The architecture fixture (`§7.2`) MUST include at least one `container` (boundary)
 and ≥2 distinct `role`s so the assertable properties below have something to bite
@@ -512,7 +512,8 @@ afterEach(() => {
 ```typescript
 describe("CLI input forms (REQ-INV-03 dimension 1)", () => {
   it("reads a spec from a file path", async () => {
-    const dir = tmpDir(); created.push(dir);
+    const dir = tmpDir();
+    created.push(dir);
     const input = path.join(dir, "arch.json");
     fs.writeFileSync(input, JSON.stringify(architectureFixture.spec));
     const code = await main([input, "--out-dir", dir]);
@@ -522,7 +523,8 @@ describe("CLI input forms (REQ-INV-03 dimension 1)", () => {
   it("reads a spec from stdin via '-'", async () => {
     // 05 §3.1: '-' reads JSON from process.stdin; the harness pipes a string in.
     // (Stdin injection helper omitted; assert the parse path is exercised and code 0.)
-    const dir = tmpDir(); created.push(dir);
+    const dir = tmpDir();
+    created.push(dir);
     const code = await runWithStdin(JSON.stringify(architectureFixture.spec), [
       "-",
       "--out-dir",
@@ -630,12 +632,12 @@ Each deferred fixture is **graph-shaped** (`nodes`/`edges` populated; `participa
 `02 §2` cross-field invariants **plus** one type-distinctive feature, so its 2 goldens
 genuinely exercise the type rather than re-rendering an architecture graph:
 
-| Fixture | Minimal required (per `02 §2`) | Type-distinctive feature it MUST include |
-| --- | --- | --- |
-| `flowchartFixture` | ≥1 node, ≥1 edge | a decision node (`shape: "diamond"`, `03 §2.2`) with ≥2 outgoing edges (branch labels) |
-| `erFixture` | ≥2 entity nodes, ≥1 edge | a relationship edge carrying a cardinality label (e.g. `label: "1..*"`) between two entities (`03 §2.3`) |
-| `stateFixture` | ≥1 node, ≥1 edge | an initial state and a final state (mapped via `Node.shape`, `03 §2.2` `point`/`doublecircle`) plus ≥1 transition edge |
-| `dataflowFixture` | ≥1 node, ≥1 edge | a data store (`shape: "cylinder"`) and a process node with a directed flow edge between them (`03 §2.2`) |
+| Fixture            | Minimal required (per `02 §2`) | Type-distinctive feature it MUST include                                                                               |
+| ------------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `flowchartFixture` | ≥1 node, ≥1 edge               | a decision node (`shape: "diamond"`, `03 §2.2`) with ≥2 outgoing edges (branch labels)                                 |
+| `erFixture`        | ≥2 entity nodes, ≥1 edge       | a relationship edge carrying a cardinality label (e.g. `label: "1..*"`) between two entities (`03 §2.3`)               |
+| `stateFixture`     | ≥1 node, ≥1 edge               | an initial state and a final state (mapped via `Node.shape`, `03 §2.2` `point`/`doublecircle`) plus ≥1 transition edge |
+| `dataflowFixture`  | ≥1 node, ≥1 edge               | a data store (`shape: "cylinder"`) and a process node with a directed flow edge between them (`03 §2.2`)               |
 
 Each MUST also set distinct `title`/`description` (a11y, REQ-A11Y-01) and parse against
 `00 §2` + `02 §2`. These contracts are load-bearing: `FIXTURES` drives the golden (§3),
@@ -650,7 +652,8 @@ Each precedence branch of `05 §2.3`
 ```typescript
 describe("CLI output paths & precedence (REQ-INV-03 dimension 2)", () => {
   it("--out-file writes the exact caller path", async () => {
-    const dir = tmpDir(); created.push(dir);
+    const dir = tmpDir();
+    created.push(dir);
     const out = path.join(dir, "diagram.svg");
     const code = await main([await specFile(dir), "--out-file", out]);
     expect(code).toBe(0);
@@ -658,14 +661,16 @@ describe("CLI output paths & precedence (REQ-INV-03 dimension 2)", () => {
   });
 
   it("--out-dir + --out-name writes <name>.<ext> (overrides slug)", async () => {
-    const dir = tmpDir(); created.push(dir);
+    const dir = tmpDir();
+    created.push(dir);
     const code = await main([await specFile(dir), "--out-dir", dir, "--out-name", "custom"]);
     expect(code).toBe(0);
     expect(fs.existsSync(path.join(dir, "custom.svg"))).toBe(true);
   });
 
   it("--out-dir alone derives <slug>.<theme>.<ext>", async () => {
-    const dir = tmpDir(); created.push(dir);
+    const dir = tmpDir();
+    created.push(dir);
     const code = await main([await specFile(dir), "--out-dir", dir, "--theme", "dark"]);
     expect(code).toBe(0);
     // slug from title "Web Service" → "web-service" (00 §3.2 / 05 §2.3).
@@ -673,7 +678,8 @@ describe("CLI output paths & precedence (REQ-INV-03 dimension 2)", () => {
   });
 
   it("--format both swaps the extension per artifact (.svg + .png)", async () => {
-    const dir = tmpDir(); created.push(dir);
+    const dir = tmpDir();
+    created.push(dir);
     const out = path.join(dir, "arch.svg");
     const code = await main([await specFile(dir), "--out-file", out, "--format", "both"]);
     expect(code).toBe(0);
@@ -700,7 +706,8 @@ describe("CLI output paths & precedence (REQ-INV-03 dimension 2)", () => {
 describe("CLI invocable types (REQ-INV-03 dimension 3)", () => {
   for (const fixture of FIXTURES) {
     it(`--type ${fixture.spec.diagramType} renders to exit 0`, async () => {
-      const dir = tmpDir(); created.push(dir);
+      const dir = tmpDir();
+      created.push(dir);
       const input = path.join(dir, "spec.json");
       fs.writeFileSync(input, JSON.stringify(fixture.spec));
       const code = await main([input, "--type", fixture.spec.diagramType, "--out-dir", dir]);
@@ -716,7 +723,8 @@ describe("CLI invocable types (REQ-INV-03 dimension 3)", () => {
   // the 02 §2.5 cross-field rule ("sequence" must not populate nodes/edges/containers)
   // → INPUT_INVALID. If --type were silently ignored, the spec would render at exit 0.
   it("--type that disagrees with the spec's fields takes effect (→ INPUT_INVALID, not silently ignored)", async () => {
-    const dir = tmpDir(); created.push(dir);
+    const dir = tmpDir();
+    created.push(dir);
     const input = path.join(dir, "arch.json");
     fs.writeFileSync(input, JSON.stringify(architectureFixture.spec)); // diagramType: "architecture", has nodes
     const code = await main([input, "--type", "sequence", "--out-dir", dir]);
@@ -727,7 +735,8 @@ describe("CLI invocable types (REQ-INV-03 dimension 3)", () => {
 
 describe("CLI exit signaling (REQ-INV-03 dimension 4, REQ-REL-02)", () => {
   it("bad spec → INPUT_INVALID, no file written", async () => {
-    const dir = tmpDir(); created.push(dir);
+    const dir = tmpDir();
+    created.push(dir);
     const input = path.join(dir, "bad.json");
     fs.writeFileSync(input, JSON.stringify({ diagramType: "architecture" })); // missing title/desc
     const code = await main([input, "--out-dir", dir]);
@@ -782,7 +791,8 @@ describe("CLI --version (REQ-INV-04)", () => {
 ```typescript
 describe("CLI path confinement (REQ-SEC-01)", () => {
   it("an --out-dir + name that escapes the dir is rejected with IO_ERROR", async () => {
-    const dir = tmpDir(); created.push(dir);
+    const dir = tmpDir();
+    created.push(dir);
     // 05 §3.3 confines writes to the caller's dir; a traversal name must be refused.
     const code = await main([await specFile(dir), "--out-dir", dir, "--out-name", "../escape"]);
     expect(code).toBe(EXIT_CODES.IO_ERROR); // 6
@@ -843,14 +853,14 @@ all five targets, behaves equivalently."
 The suite layers cheap exhaustive unit tests under a smaller set of integration
 tests:
 
-| Area | Strategy | Target |
-| --- | --- | --- |
-| `schema.ts`, `validate.ts` (parse + cross-field + output asserts) | exhaustive unit (owned by `00`/`02`) | high line+branch (≈100% — pure logic) |
-| `dot-emit.ts`, `theme.ts`, `svg-postprocess.ts` (pure transforms) | unit (owned by `03`/`04`) + golden coverage | high line+branch |
-| `graph-render.ts`, `sequence-svg.ts`, `render.ts` | golden + property + determinism (§3–§5) | every type × theme exercised |
-| `png.ts` | smoke only (§6) — not byte-compared | one valid + one error path |
-| `cli.ts` | contract tests (§7) — every dimension, every exit code | every precedence branch + every `EXIT_CODES` entry |
-| emitter integration | existing `golden.test.ts` + drift checks (§8) | gate-green |
+| Area                                                              | Strategy                                               | Target                                             |
+| ----------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------- |
+| `schema.ts`, `validate.ts` (parse + cross-field + output asserts) | exhaustive unit (owned by `00`/`02`)                   | high line+branch (≈100% — pure logic)              |
+| `dot-emit.ts`, `theme.ts`, `svg-postprocess.ts` (pure transforms) | unit (owned by `03`/`04`) + golden coverage            | high line+branch                                   |
+| `graph-render.ts`, `sequence-svg.ts`, `render.ts`                 | golden + property + determinism (§3–§5)                | every type × theme exercised                       |
+| `png.ts`                                                          | smoke only (§6) — not byte-compared                    | one valid + one error path                         |
+| `cli.ts`                                                          | contract tests (§7) — every dimension, every exit code | every precedence branch + every `EXIT_CODES` entry |
+| emitter integration                                               | existing `golden.test.ts` + drift checks (§8)          | gate-green                                         |
 
 No formal global coverage-percentage gate is added beyond what the repo already
 enforces; the bar is **behavioral**: every PRD §8 criterion has a named test
@@ -859,9 +869,9 @@ enforces; the bar is **behavioral**: every PRD §8 criterion has a named test
 
 ## 10. Out of automated-test scope — the natural-language path
 
-PRD §8's first success criterion (`PRD.md:200`) requires that *"a natural-language
+PRD §8's first success criterion (`PRD.md:200`) requires that _"a natural-language
 description AND an equivalent structured spec each produce a valid, well-formed
-diagram artifact."* This suite proves the **structured-spec** half exhaustively
+diagram artifact."_ This suite proves the **structured-spec** half exhaustively
 (§3–§7). The **natural-language** half — **REQ-IN-01** (infer structure from prose),
 **REQ-INV-01** (conversational invocation), and **REQ-USE-01** (keep simple diagrams
 simple, no DSL) — is the prose→`DiagramSpec` inference step in `05 §4` (the SKILL.md
@@ -871,7 +881,7 @@ REQ-REPRO-01 carves out the prose path (PRD §4.3 caveat) and OQ-1 declines auto
 - The inference step is **LLM-driven and non-deterministic** — the same prompt can
   yield different (all-valid) specs across runs, so there is no stable artifact to
   assert byte- or structure-equality against.
-- What *is* deterministic once a spec exists — that the spec renders to a valid,
+- What _is_ deterministic once a spec exists — that the spec renders to a valid,
   well-formed, tier-2 artifact — is already fully covered by §3–§5 over `FIXTURES`.
 
 Instead, the NL path is validated by the **SKILL.md procedure and human review**: the

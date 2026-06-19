@@ -28,12 +28,7 @@ import {
   Theme,
   type Theme as ThemeT,
 } from "./schema.js";
-import {
-  DiagramInputError,
-  DiagramIoError,
-  DiagramUsageError,
-  DiagramError,
-} from "./errors.js";
+import { DiagramInputError, DiagramIoError, DiagramUsageError, DiagramError } from "./errors.js";
 import { parseSpec } from "./validate.js"; // 02 §2
 import { render } from "./render.js"; // 03 §5
 import { renderPng } from "./png.js"; // 04 §4
@@ -127,10 +122,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
 
     if (arg === "-") {
       if (inputSeen) {
-        throw new DiagramUsageError(
-          "more than one input source supplied",
-          arg,
-        );
+        throw new DiagramUsageError("more than one input source supplied", arg);
       }
       fromStdin = true;
       inputSeen = true;
@@ -163,20 +155,14 @@ export function parseArgs(argv: string[]): ParsedArgs {
         case "--accent": {
           const r = HexColor.safeParse(value);
           if (!r.success) {
-            throw new DiagramUsageError(
-              "--accent must be a #rrggbb hex color",
-              value,
-            );
+            throw new DiagramUsageError("--accent must be a #rrggbb hex color", value);
           }
           accent = r.data;
           break;
         }
         case "--format": {
           if (!FORMATS.has(value)) {
-            throw new DiagramUsageError(
-              "--format must be svg, png, or both",
-              value,
-            );
+            throw new DiagramUsageError("--format must be svg, png, or both", value);
           }
           format = value as OutputFormat;
           break;
@@ -209,14 +195,10 @@ export function parseArgs(argv: string[]): ParsedArgs {
   // --version short-circuits all other requirements (§2.3 / §2.4).
   if (!version) {
     if (!inputSeen) {
-      throw new DiagramUsageError(
-        "no input supplied (give a spec file path or '-' for stdin)",
-      );
+      throw new DiagramUsageError("no input supplied (give a spec file path or '-' for stdin)");
     }
     if (outFile !== undefined && (outName !== undefined || outDir !== undefined)) {
-      throw new DiagramUsageError(
-        "--out-file cannot be combined with --out-dir or --out-name",
-      );
+      throw new DiagramUsageError("--out-file cannot be combined with --out-dir or --out-name");
     }
     if (outName !== undefined && outDir === undefined) {
       throw new DiagramUsageError("--out-name requires --out-dir");
@@ -246,9 +228,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
  * sentinel `"stdout"` when no output target was supplied (single-artifact
  * stream, §3.2). Keys are present only for the requested format.
  */
-export type ResolvedOutput =
-  | { readonly svg?: string; readonly png?: string }
-  | "stdout";
+export type ResolvedOutput = { readonly svg?: string; readonly png?: string } | "stdout";
 
 /** Swap (or append) a path's extension to `ext` (e.g. `.svg`). */
 function withExtension(path: string, ext: string): string {
@@ -281,10 +261,7 @@ export function resolveOutputPaths(
   }
 
   if (args.outDir !== undefined) {
-    const base =
-      args.outName !== undefined
-        ? args.outName
-        : `${result.slug}.${result.theme}`;
+    const base = args.outName !== undefined ? args.outName : `${result.slug}.${result.theme}`;
     const path = `${args.outDir}${sep}${base}${ext}`;
     return format === "svg" ? { svg: path } : { png: path };
   }
@@ -326,10 +303,7 @@ async function readInput(args: ParsedArgs): Promise<string> {
   try {
     return await readFile(args.inputPath as string, "utf8");
   } catch (cause) {
-    throw new DiagramIoError(
-      `failed to read spec file: ${args.inputPath}`,
-      messageOf(cause),
-    );
+    throw new DiagramIoError(`failed to read spec file: ${args.inputPath}`, messageOf(cause));
   }
 }
 
@@ -360,24 +334,15 @@ async function writeArtifact(
 ): Promise<void> {
   const resolvedRoot = resolve(root);
   const resolvedDest = resolve(destPath);
-  if (
-    resolvedDest !== resolvedRoot &&
-    !resolvedDest.startsWith(resolvedRoot + sep)
-  ) {
-    throw new DiagramIoError(
-      "refusing to write outside the resolved output location",
-      destPath,
-    );
+  if (resolvedDest !== resolvedRoot && !resolvedDest.startsWith(resolvedRoot + sep)) {
+    throw new DiagramIoError("refusing to write outside the resolved output location", destPath);
   }
 
   try {
     await mkdir(dirname(resolvedDest), { recursive: true });
     await writeFile(resolvedDest, bytes);
   } catch (cause) {
-    throw new DiagramIoError(
-      `failed to write artifact: ${destPath}`,
-      messageOf(cause),
-    );
+    throw new DiagramIoError(`failed to write artifact: ${destPath}`, messageOf(cause));
   }
 }
 
@@ -433,9 +398,7 @@ export async function main(argv: string[]): Promise<number> {
     // §3.3/§3.4 — resolve ALL requested format targets first (so a png→stdout
     // usage error is raised before any byte is written), then write in order.
     const formats: Array<"svg" | "png"> =
-      args.format === "both"
-        ? ["svg", "png"]
-        : [args.format as "svg" | "png"];
+      args.format === "both" ? ["svg", "png"] : [args.format as "svg" | "png"];
     const targets = formats.map((f) => ({
       format: f,
       out: resolveOutputPaths(args, result, f),

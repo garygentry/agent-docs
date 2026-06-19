@@ -3,6 +3,7 @@
 # the deterministic emitters.
 schemas/
 adapters/
+src/test/__golden__/
 .claude-plugin/
 dist/
 bun.lock

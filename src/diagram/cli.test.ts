@@ -43,12 +43,14 @@ let stderr = "";
 let stdoutSpy: { mockRestore(): void };
 let stderrSpy: { mockRestore(): void };
 
-const append = (sink: "out" | "err") => (chunk: string | Uint8Array): boolean => {
-  const text = typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
-  if (sink === "out") stdout += text;
-  else stderr += text;
-  return true;
-};
+const append =
+  (sink: "out" | "err") =>
+  (chunk: string | Uint8Array): boolean => {
+    const text = typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
+    if (sink === "out") stdout += text;
+    else stderr += text;
+    return true;
+  };
 
 beforeEach(() => {
   stdout = "";
@@ -353,13 +355,7 @@ describe("main — path confinement", () => {
   it("refuses to write outside --out-dir via a '..'-laden --out-name (IO_ERROR)", async () => {
     const p = join(workDir, "spec.json");
     await writeFile(p, JSON.stringify(architecture));
-    const code = await main([
-      p,
-      "--out-dir",
-      join(workDir, "nested"),
-      "--out-name",
-      "../escape",
-    ]);
+    const code = await main([p, "--out-dir", join(workDir, "nested"), "--out-name", "../escape"]);
     expect(code).toBe(6);
     expect(stderr).toMatch(/DiagramIoError/);
   });

@@ -16,6 +16,12 @@
       "type": "skill",
       "source": "skills/docs-helper",
       "description": "Helps write and review project documentation following the repo's house style."
+    },
+    {
+      "name": "diagram-generator",
+      "type": "skill",
+      "source": "skills/diagram-generator",
+      "description": "Converts natural-language or an engine-neutral node/edge/container spec into portable tier-2 SVG and PNG diagrams."
     }
   ]
 }

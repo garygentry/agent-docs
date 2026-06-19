@@ -30,11 +30,35 @@ export const GOLDEN_IDENTITY: EmitIdentity = { name: meta.name, version: meta.ve
  * NOT inferred from extension / `.includes()` heuristics (which silently admit
  * unrelated files). The sample is skill-only, so codex emits no `agents/openai.yaml`
  * aggregate; only gemini contributes an aggregate manifest.
+ *
+ * Scope note (06 §5.4): the golden suite asserts `emit().files`, which holds the
+ * TRANSFORMED outputs only (SKILL files + gemini aggregate). A skill's verbatim
+ * owned subtree (`references/*`, `scripts/diagram-render.mjs`) is carried in
+ * `emit().verbatim`, not `files`, so it is NOT registered here — its bytes (and the
+ * executable-mode-preserving copy) are pinned instead by the whole-tree
+ * `build:check` against the committed `adapters/<target>/` tree. Per §5.4 the actual
+ * emitter output is the source of truth for this set.
  */
 export const SAMPLE_RELPATHS: Record<Target, string[]> = {
-  claude: ["skills/docs-helper/SKILL.md"], // 04 §6.1
-  codex: ["skills/docs-helper/SKILL.md"], // 04 §7.1 (skill only — no agents → no openai.yaml)
-  copilot: ["instructions/docs-helper.instructions.md"], // 04 §10.1
-  cursor: ["rules/docs-helper.mdc"], // 04 §8.1
-  gemini: ["skills/docs-helper/docs-helper.md", "gemini-extension.json"], // 04 §9.1 (skill + aggregate)
+  claude: [
+    "skills/docs-helper/SKILL.md", // 04 §6.1
+    "skills/diagram-generator/SKILL.md", // 06 §5.2 (SKILL transform; refs/scripts are verbatim — see note)
+  ],
+  codex: [
+    "skills/docs-helper/SKILL.md", // 04 §7.1 (skill only — no agents → no openai.yaml)
+    "skills/diagram-generator/SKILL.md", // 06 §5.2
+  ],
+  copilot: [
+    "instructions/docs-helper.instructions.md", // 04 §10.1
+    "instructions/diagram-generator.instructions.md", // 06 §5.2
+  ],
+  cursor: [
+    "rules/docs-helper.mdc", // 04 §8.1
+    "rules/diagram-generator.mdc", // 06 §5.2
+  ],
+  gemini: [
+    "skills/docs-helper/docs-helper.md", // 04 §9.1 (skill + aggregate)
+    "gemini-extension.json",
+    "skills/diagram-generator/diagram-generator.md", // 06 §5.2
+  ],
 };
