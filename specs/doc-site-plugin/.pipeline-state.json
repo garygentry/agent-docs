@@ -47,7 +47,8 @@
       "findingsFile": ".verification/VERIFY-specs-2026-06-19.md",
       "findingsCount": 8,
       "verifiedAt": "2026-06-19T13:00:00Z",
-      "fixedAt": "2026-06-19T13:15:00Z"
+      "fixedAt": "2026-06-19T13:15:00Z",
+      "commit": "21388df"
     },
     "forge-3-specs": {
       "status": "complete",
