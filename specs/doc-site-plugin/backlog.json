@@ -100,8 +100,8 @@
         "Every {{TOKEN}} used across the core templates and docs is one of the 17 canonical tokens (no new tokens introduced)",
         "bun run gate passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T18:37:09.443Z",
       "dependsOn": [
         "001",
         "002"
