@@ -43,8 +43,10 @@
       "fixedAt": "2026-06-19T00:00:00Z"
     },
     "forge-3-specs": {
-      "status": "in-progress",
+      "status": "complete",
       "version": 1,
+      "completedAt": "2026-06-19T12:30:00Z",
+      "commit": "a56cb2c",
       "basedOnVersions": {
         "forge-1-prd": 2,
         "forge-2-tech": 1
