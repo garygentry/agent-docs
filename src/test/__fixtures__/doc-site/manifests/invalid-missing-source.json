@@ -1,0 +1,4 @@
+{
+  "site": { "title": "Bad", "description": "managed page without source" },
+  "pages": [{ "slug": "about" }]
+}

@@ -59,6 +59,11 @@ jobs:
           # the project Pages subpath /<repo>/.
           SITE: ${{ steps.pages.outputs.origin }}
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          # Literal-base fallback (rare — custom domain served at root): for the
+          # project site https://github.com/{{REPO_SLUG}} the agent may replace the
+          # two runtime-derived lines above with literal interview values instead:
+          #   SITE: {{SITE_URL}}
+          #   BASE_PATH: {{BASE_PATH}}
       # --- end Bun + pnpm fragment ---
 
       - name: Upload Pages artifact

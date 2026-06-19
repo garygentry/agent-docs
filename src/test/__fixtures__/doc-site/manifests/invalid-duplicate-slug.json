@@ -1,0 +1,7 @@
+{
+  "site": { "title": "Bad", "description": "duplicate slug" },
+  "pages": [
+    { "slug": "about", "source": "native" },
+    { "slug": "about", "source": "native" }
+  ]
+}

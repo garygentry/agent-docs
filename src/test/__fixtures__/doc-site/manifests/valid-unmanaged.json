@@ -1,0 +1,7 @@
+{
+  "site": { "title": "Unmanaged Docs", "description": "Has an unmanaged page" },
+  "pages": [
+    { "slug": "guides/setup", "source": "symlink", "from": "docs/setup.md" },
+    { "slug": "legacy", "unmanaged": true }
+  ]
+}

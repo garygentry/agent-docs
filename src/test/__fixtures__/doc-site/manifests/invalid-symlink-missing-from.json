@@ -1,0 +1,4 @@
+{
+  "site": { "title": "Bad", "description": "symlink without from" },
+  "pages": [{ "slug": "guides/setup", "source": "symlink" }]
+}
