@@ -2,6 +2,9 @@ node_modules/
 dist/
 *.tmp-*
 
+# Working plans — local scratch, never tracked (matches feature-forge convention)
+plans/
+
 # Rauf runtime — transient files that must never be tracked
 **/.rauf/.loop.lock
 **/.rauf/state.json
