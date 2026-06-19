@@ -262,8 +262,8 @@
         "SKILL.md Phases 4-7 reference the component docs (core.md, symlink.md, diagrams.md, deploy-*.md, drift-guard.md) and rerun.md, and SKILL.md still lists exactly the 17 canonical tokens in {{TOKEN}} form",
         "bun run gate passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T18:50:10.664Z",
       "dependsOn": [
         "001",
         "004",
