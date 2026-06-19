@@ -149,7 +149,7 @@ separately by deterministic `{{TOKEN}}` substitution (`00-core-definitions.md §
 `01-architecture-layout.md §2`).
 
 > **RESOLVED — bundle tree lives under `references/`, not `assets/`.**
-> `collectOwnedTree` (`src/discover.ts:104`) walks **only** the `references/` and
+> `collectOwnedTree` (`src/discover.ts:107`) walks **only** the `references/` and
 > `scripts/` subdirectories of the skill dir:
 >
 > ```typescript

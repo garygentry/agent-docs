@@ -94,10 +94,14 @@ target-conditional logic.
 | cursor  | `rules/doc-site-plugin/`        | `rules/diagram-generator/scripts/diagram-render.mjs`            |
 | copilot | `instructions/doc-site-plugin/` | `instructions/diagram-generator/scripts/diagram-render.mjs`     |
 
-The bundle is emitted into the diagram-generator skill **verbatim with executable
-mode preserved** (`src/publish.ts:116-119`, documented in
-`specs/diagram-generator/06-integration-and-packaging.md §5.1`), so the copy the
-doc-site generator reads is byte-identical and runnable with zero install.
+The bundle is emitted into the diagram-generator skill **verbatim with the source
+file mode preserved** (`const mode = statSync(sourceAbs).mode & 0o777`,
+`src/publish.ts:113-119`), so the copy the doc-site generator reads is
+byte-identical to the sibling source. The on-disk source
+`skills/diagram-generator/scripts/diagram-render.mjs` is mode `0644` (not
+executable), so the emitted copy is `0644` too — but this feature always invokes it
+via the `node`/`bun` interpreter (`node …/diagram-render.mjs`, see §4 and §5.2/§5.3),
+so it runs with zero install regardless of file mode; no executable bit is required.
 
 > WARNING: The renderer's location in the doc-site bundle depends on the
 > diagram-generator skill being present in the same adapter bundle. Verify the file
@@ -396,7 +400,9 @@ An implementation matches this spec when:
       `diagramContract: "1.0.0"` and the vendored `scripts/diagram-render.mjs` path →
       sha256; on decline, `diagramContract` is absent.
 - [ ] **Vendored copy.** `scripts/diagram-render.mjs` in the target is byte-identical
-      to the sibling source (no token substitution) and executable.
+      to the sibling source (no token substitution), with the source file mode
+      preserved; it is invoked via the `node`/`bun` interpreter, so no executable bit
+      is required.
 - [ ] **Predictable paths.** The emitted prebuild uses `--out-file` (or
       `--out-dir` + `--out-name`); it never uses `--out-dir` alone, so output paths are
       slug-independent.

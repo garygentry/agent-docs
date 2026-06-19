@@ -187,6 +187,7 @@ build-time equivalence bar.
 | `{{PKG_MANAGER}}`   | detection (lockfile / `packageManager`)         | `npm`                                | core (`package.json`), deploy CI |
 | `{{RUNTIME}}`       | detection (`bun.lock` / `engines.node`)         | `node`                               | deploy CI, scripts |
 | `{{DOCS_PKG_DIR}}`  | interview                                        | `docs/` (single) / `packages/docs/` (monorepo) | all paths |
+| `{{IMAGES_SRC_DIR}}`| interview / detection (images dir)               | `docs/images` (or `{{DOCS_PKG_DIR}}/images`) | symlink (`setup-docs.sh`) |
 | `{{ACCENT_LIGHT}}`  | interview                                        | canon default light accent           | core (`custom.css`) |
 | `{{ACCENT_DARK}}`   | interview                                        | canon default dark accent            | core (`custom.css`) |
 | `{{DEFAULT_BRANCH}}`| detection (`git symbolic-ref`)                  | `main`                               | deploy (GH Pages triggers) |

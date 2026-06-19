@@ -119,7 +119,7 @@ of its files (the decline-all invariant, `00 §5`).
 
 The bundle tree (templates + `docs.manifest.schema.json`) lives under
 `references/`, **not** a separate `assets/` directory, because the emitter's
-owned-subtree walker `collectOwnedTree()` (`src/discover.ts:104`) discovers **only**
+owned-subtree walker `collectOwnedTree()` (`src/discover.ts:107`) discovers **only**
 `references/` and `scripts/` subdirectories — an `assets/` directory would be
 silently dropped and never emitted to any adapter. Placing the templates under
 `references/templates/` (and the schema directly under `references/`) keeps them

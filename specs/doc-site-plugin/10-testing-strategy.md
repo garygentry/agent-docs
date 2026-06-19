@@ -49,7 +49,7 @@ that proves it. Runtime-only rows are marked as covered by `08`.
 | REQ / decision ID                          | In-repo proof obligation                                                            | Test section |
 | ------------------------------------------ | ----------------------------------------------------------------------------------- | ------------ |
 | REQ-PORT-02 (tool itself)                  | Skill files emit byte-identical to all 5 targets (exhaustive + representative spot)  | 3, 3.1, 3.2  |
-| REQ-PORT-02 (scaffolded output)            | Substitution procedure deterministic / agent-agnostic — fixture goldens             | 5            |
+| REQ-PORT-02 (scaffolded output)            | Substitution procedure deterministic / agent-agnostic — fixture goldens (full template-group coverage holds once the `static-netlify`/`deploy/static` answer set is added — §6 item 1) | 5            |
 | REQ-USE-01                                 | Decline-all interview set → only the core scaffold; zero files for declined groups  | 5.4          |
 | REQ-CONTENT-01/04 (`source` field)         | Manifest schema accepts symlink/native/mixed; `from` required iff `source:symlink`  | 4.3          |
 | REQ-CONTENT-03 (single manifest)           | Schema is strict (`additionalProperties:false`); rejects unknown keys, dup slugs    | 4.3          |
@@ -161,8 +161,11 @@ The existing `golden.test.ts` asserts a fast, **representative** subset of emitt
 files byte-exact per target, complementing the whole-tree guard with a tight,
 readable diff on transform regressions. It iterates `SAMPLE_RELPATHS`
 (`src/test/golden.shared.ts:42`, a `Record<Target, string[]>`) and does
-**bidirectional set equality** plus byte-exact content per file (verified:
-`golden.test.ts:70-78`).
+**three-way set equality** (emitted ≡ golden ≡ the pinned `SAMPLE_RELPATHS` rows —
+`golden.test.ts:76` and `:78`) plus byte-exact content per file (verified:
+`golden.test.ts:70-78`). Consequence: the five new SKILL rows and their five
+committed goldens must be added **together**, with no extra golden file for the tool
+that is not registered in `SAMPLE_RELPATHS`.
 
 **Add these representative relpaths** to `SAMPLE_RELPATHS` — one transformed entry
 (`SKILL.md`) per target, exercising every per-target transform shape, plus the
@@ -176,7 +179,7 @@ rows are the per-target `SKILL.md` transform only:
 | ------- | -------------------------------------------------------- | ----------- |
 | claude  | `skills/doc-site-plugin/SKILL.md`                        | `01 §5.2`   |
 | codex   | `skills/doc-site-plugin/SKILL.md`                        | `01 §5.2`   |
-| gemini  | `skills/doc-site-plugin/doc-site-plugin.md` (+ existing `gemini-extension.json` aggregate is unchanged) | `01 §5.2` |
+| gemini  | `skills/doc-site-plugin/doc-site-plugin.md` (the gemini `gemini-extension.json` aggregate **gains a `doc-site-plugin` `skills[]` row** — `src/targets/gemini.ts:123-134` — and its committed golden must be regenerated via `bun run src/test/regenerate-goldens.ts`) | `01 §5.2` |
 | cursor  | `rules/doc-site-plugin.mdc`                              | `01 §5.2`   |
 | copilot | `instructions/doc-site-plugin.instructions.md`           | `01 §5.2`   |
 
@@ -244,8 +247,10 @@ function walk(dir: string): string[] {
  */
 const CANONICAL_TOKENS = [
   "SITE_TITLE", "SITE_DESC", "SITE_URL", "BASE_PATH", "REPO_SLUG", "GITHUB_URL",
-  "PKG_MANAGER", "RUNTIME", "DOCS_PKG_DIR", "ACCENT_LIGHT", "ACCENT_DARK",
-  "DEFAULT_BRANCH", "ASTRO_VERSION", "STARLIGHT_VERSION",
+  "PKG_MANAGER", "RUNTIME", "DOCS_PKG_DIR", "IMAGES_SRC_DIR", "ACCENT_LIGHT",
+  "ACCENT_DARK", "DEFAULT_BRANCH", "ASTRO_VERSION", "STARLIGHT_VERSION",
+  // derived/generated tokens (00 §4.1 "Direct vs. derived tokens"):
+  "DOCS_PKG_DIR_TO_ROOT", "SYMLINK_PAGE_LINES",
 ] as const;
 ```
 
@@ -583,7 +588,7 @@ The bar is **behavioral**, not a global line-coverage percentage (matching
 | Skill emission (REQ-PORT-02 tool)     | `build --check` (exhaustive) + `SAMPLE_RELPATHS` goldens (§3) | every `.tmpl`/asset byte-identical across 5 targets; 1 transformed `SKILL.md` row/target |
 | Token vocabulary (`00 §4`)            | token-coverage test (§4.2)                        | **every** documented token exercised by ≥1 template; **no** undefined or orphan token |
 | Manifest schema (`00 §2`)             | accept/reject fixtures (§4.3)                      | every `00 §2.2` validation rule has ≥1 accepting and ≥1 rejecting fixture |
-| Substitution procedure (REQ-PORT-02)  | scaffold-output goldens (§5)                       | **every emitted template covered by ≥1 scaffold fixture** (each template group appears in ≥1 answer set) |
+| Substitution procedure (REQ-PORT-02)  | scaffold-output goldens (§5)                       | **every emitted template covered by ≥1 scaffold fixture** (each template group appears in ≥1 answer set) — *holds once the `static-netlify`/`deploy/static` answer set is added (§6 item 1)* |
 | Decline-all (REQ-USE-01)              | decline-all fixture + invariant guard (§5.4)      | minimal site = core files only; zero declined-component files |
 
 Two explicit cross-coverage obligations bind the answer sets to the templates:
@@ -652,7 +657,10 @@ New **devDependency**: `ajv` (test-only, for §4.3) — no runtime dependency ad
       `adapters/` (REQ-PORT-02, exhaustive — §3.1).
 - [ ] `SAMPLE_RELPATHS` (`src/test/golden.shared.ts`) gains the five per-target
       `doc-site-plugin` `SKILL.md` rows (§3.2 table) and `golden.test.ts` asserts
-      them byte-exact (bidirectional set equality, `golden.test.ts:76`).
+      them byte-exact (three-way set equality, `golden.test.ts:76` and `:78`).
+- [ ] The gemini `gemini-extension.json` aggregate golden
+      (`src/test/__golden__/gemini/gemini-extension.json`) is regenerated to include
+      the new `doc-site-plugin` `skills[]` row (`bun run src/test/regenerate-goldens.ts`).
 - [ ] Token-coverage test (§4.2): every `{{TOKEN}}` in `references/templates/**` is in
       `00 §4.1` and SKILL.md (no undefined tokens); every canonical token is used
       by ≥1 template (no orphan tokens); SKILL.md's table mirrors `00 §4.1` exactly.

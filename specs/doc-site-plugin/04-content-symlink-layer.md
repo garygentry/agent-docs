@@ -217,17 +217,19 @@ hard-code depth because `{{DOCS_PKG_DIR}}` varies per target repo.
 | Token                      | Meaning / source                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------- |
 | `{{DOCS_PKG_DIR}}`         | Docs package dir, repo-relative (`00 §4.1`). E.g. `docs` or `packages/docs`.                       |
-| `{{DOCS_PKG_DIR_TO_ROOT}}` | The `../` chain from `{{DOCS_PKG_DIR}}` back to repo root, derived from `{{DOCS_PKG_DIR}}` depth (one `..` per path segment). E.g. `docs` → `..`; `packages/docs` → `../..`. Derived token; see note below. |
-| `{{IMAGES_SRC_DIR}}`       | Repo-relative dir holding diagram/static images, default `docs/images` (or `{{DOCS_PKG_DIR}}/images` per interview). |
-| `{{SYMLINK_PAGE_LINES}}`   | Agent-generated block of `link_file "<from>" "<slug>"` lines, one per `source: "symlink"` page (§2.3). Not in `00 §4.1`'s table because it is a generated block, not a scalar token — it is documented here. |
+| `{{DOCS_PKG_DIR_TO_ROOT}}` | Defined in `00 §4.1` (derived token). The `../` chain from `{{DOCS_PKG_DIR}}` back to repo root, derived from `{{DOCS_PKG_DIR}}` depth (one `..` per path segment). E.g. `docs` → `..`; `packages/docs` → `../..`. |
+| `{{IMAGES_SRC_DIR}}`       | Defined in `00 §4.1`. Repo-relative dir holding diagram/static images, default `docs/images` (or `{{DOCS_PKG_DIR}}/images` per interview). |
+| `{{SYMLINK_PAGE_LINES}}`   | Defined in `00 §4.1` (derived/generated token). Agent-generated block of `link_file "<from>" "<slug>"` lines, one per `source: "symlink"` page (§2.3). Detailed here. |
 
-> `{{DOCS_PKG_DIR_TO_ROOT}}` is a **derived** token: the agent computes it
-> mechanically from `{{DOCS_PKG_DIR}}` (count path segments → that many `..`),
-> exactly as the reference script's `cd "$(dirname "$0")/.."` does for its fixed
-> single-level depth. Because it is a pure function of `{{DOCS_PKG_DIR}}`, it adds
-> no interview question and preserves byte-identical output (REQ-PORT-02). If a row
-> is required in `00 §4.1` for token-coverage (`10-testing-strategy.md`), add it
-> there as a derived token — see Warnings.
+> `{{DOCS_PKG_DIR_TO_ROOT}}` and `{{SYMLINK_PAGE_LINES}}` are **derived/generated**
+> tokens — both carry rows in the canonical `00 §4.1` table (so the token-coverage
+> test in `10-testing-strategy.md` accepts them). `{{DOCS_PKG_DIR_TO_ROOT}}` is a
+> pure function of `{{DOCS_PKG_DIR}}` (count path segments → that many `..`), exactly
+> as the reference script's `cd "$(dirname "$0")/.."` does for its fixed single-level
+> depth; it adds no interview question and preserves byte-identical output
+> (REQ-PORT-02). `{{SYMLINK_PAGE_LINES}}` is expanded from the manifest's
+> `source: symlink` pages (§2.3). After substitution, no literal `{{…}}` survives in
+> the emitted asset.
 
 ### 2.3 Generating `{{SYMLINK_PAGE_LINES}}` from the manifest (REQ-CONTENT-04)
 
