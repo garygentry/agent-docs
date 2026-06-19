@@ -23,3 +23,9 @@
 - TEST GOTCHA: vitest `toThrow(/re/)` matches `error.message`, NOT `error.detail`. JSON paths live in `DiagramInputError.detail`, so assert paths via a `detailOf()` helper, not the regex form of toThrow.
 - `assertStructural(svg, doc)` has an unused `svg` param (matches spec signature); tsc passes because `noUnusedParameters` is off (only `strict: true`).
 - 39 validate tests pass; full suite 211 pass; tsc clean.
+
+## Item 004 — schema-gen.ts (done)
+- `src/diagram/schema-gen.ts`: transcribed 02 §5 verbatim. `repoRoot = resolve(import.meta.dirname, "..", "..")` (two levels up since file is in src/diagram/). Reuses ONLY `zodToJsonSchema`; imports `DiagramSpec` from `./schema.js`.
+- Generated/committed `schemas/diagram-input.schema.json` (draft-07, `$refStrategy: "none"`, 2-space + trailing newline). `--check` diffs in-memory regen vs committed; exit 0 in sync, exit 1 + drift message on stale.
+- Standalone: not imported anywhere (cli.ts not yet created); guarded by `import.meta.main`.
+- tsc clean.
