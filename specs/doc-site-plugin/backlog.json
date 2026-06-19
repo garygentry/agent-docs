@@ -234,8 +234,8 @@
         "Every {{TOKEN}} used is one of the 17 canonical tokens",
         "bun run gate passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T18:48:01.132Z",
       "dependsOn": [
         "001",
         "004"

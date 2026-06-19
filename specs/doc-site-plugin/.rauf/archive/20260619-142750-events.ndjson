@@ -293,3 +293,44 @@
 {"type":"llm_exited","timestamp":"2026-06-19T18:45:21.673Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"007","provider":"claude-cli","exitCode":0,"timedOut":false,"durationMs":242718,"seq":292,"schemaVersion":"1"}
 {"type":"signal_parsed","timestamp":"2026-06-19T18:45:21.673Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"007","signal":"done","seq":293,"schemaVersion":"1"}
 {"type":"item_completed","timestamp":"2026-06-19T18:45:21.675Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"007","title":"Author deploy/ and monorepo/ template groups + 3 deploy reference docs","seq":294,"schemaVersion":"1"}
+{"type":"iteration_start","timestamp":"2026-06-19T18:45:21.694Z","projectPath":"/home/gary/workspace/agent-docs","iteration":8,"maxIterations":18,"seq":295,"schemaVersion":"1"}
+{"type":"item_selected","timestamp":"2026-06-19T18:45:21.695Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","title":"Author drift-guard/ template group (check-docs.mjs.tmpl) + drift-guard.md","priority":1,"seq":296,"schemaVersion":"1"}
+{"type":"llm_spawned","timestamp":"2026-06-19T18:45:21.696Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","provider":"claude-cli","model":"opus","timeoutMinutes":60,"seq":297,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:45:28.796Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":16417,"outputTokens":5,"seq":298,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:45:30.197Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Read","phase":"start","seq":299,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:45:30.197Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":300,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:45:30.404Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Read","phase":"start","seq":301,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:45:30.404Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":302,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:45:34.440Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":8408,"outputTokens":2,"seq":303,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:45:34.440Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Bash","phase":"start","seq":304,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:45:34.440Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":305,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:45:40.936Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":2290,"outputTokens":2,"seq":306,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:46:22.089Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":2290,"outputTokens":2,"seq":307,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:46:22.089Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Write","phase":"start","seq":308,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:46:22.089Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":309,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:46:28.154Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":2,"outputTokens":3,"seq":310,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:47:01.073Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":2,"outputTokens":3,"seq":311,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:01.073Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Write","phase":"start","seq":312,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:01.074Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":313,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:06.054Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Bash","phase":"start","seq":314,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:06.055Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":315,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:47:10.473Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":131,"outputTokens":4,"seq":316,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:13.218Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Edit","phase":"start","seq":317,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:13.218Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":318,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:47:16.018Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":2,"outputTokens":61,"seq":319,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:16.019Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Read","phase":"start","seq":320,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:16.019Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":321,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:19.686Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Read","phase":"start","seq":322,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:19.686Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":323,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:47:24.341Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":2,"outputTokens":68,"seq":324,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:24.341Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Edit","phase":"start","seq":325,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:24.341Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":326,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:26.594Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Bash","phase":"start","seq":327,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:26.594Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":328,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:47:38.092Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":2,"outputTokens":3,"seq":329,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:38.491Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"Bash","phase":"start","seq":330,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T18:47:38.492Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","toolName":"unknown","phase":"end","seq":331,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T18:48:00.472Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","inputTokens":3606,"outputTokens":2,"seq":332,"schemaVersion":"1"}
+{"type":"llm_exited","timestamp":"2026-06-19T18:48:01.130Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","provider":"claude-cli","exitCode":0,"timedOut":false,"durationMs":159434,"seq":333,"schemaVersion":"1"}
+{"type":"signal_parsed","timestamp":"2026-06-19T18:48:01.131Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","signal":"done","seq":334,"schemaVersion":"1"}
+{"type":"item_completed","timestamp":"2026-06-19T18:48:01.132Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"008","title":"Author drift-guard/ template group (check-docs.mjs.tmpl) + drift-guard.md","seq":335,"schemaVersion":"1"}
