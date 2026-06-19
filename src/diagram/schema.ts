@@ -247,7 +247,7 @@ export type DiagramErrorCode =
  * The scriptable-contract version (REQ-INV-04). `--version` prints this; a
  * breaking change to CLI flags, IO semantics, output-path rules, artifact
  * formats, or exit codes (05-cli-and-invocation.md §2/§3) REQUIRES a bump so
- * consumers like doc-site-plugin can pin against a known release. Semantic
+ * consumers like doc-site can pin against a known release. Semantic
  * versioning: MAJOR = breaking contract change.
  */
 export const CONTRACT_VERSION = "1.0.0" as const;

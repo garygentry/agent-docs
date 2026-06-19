@@ -73,7 +73,7 @@ If the user's description is genuinely incomplete and a component seems necessar
 
 The conversational path and the non-interactive scriptable path are **both P0** and
 **converge on this one CLI**. The CLI contract is frozen and versioned
-(`--version` prints `CONTRACT_VERSION`); consumers such as `doc-site-plugin` pin
+(`--version` prints `CONTRACT_VERSION`); consumers such as `doc-site` pin
 against it. See `specs/diagram-generator/05-cli-and-invocation.md` for the full
 contract.
 

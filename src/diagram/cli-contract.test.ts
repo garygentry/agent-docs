@@ -3,7 +3,7 @@
  * suite, complementing the per-flag unit tests in `cli.test.ts` (item 012).
  *
  * Drives `main(argv)` (05 §3) over the SHARED per-type fixtures (08 §7.2,
- * `fixtures.ts`) to prove the four frozen contract dimensions doc-site-plugin
+ * `fixtures.ts`) to prove the four frozen contract dimensions doc-site
  * pins against (CON-02, REQ-INV-04):
  *   - §7.4 every `--type` value renders, and every `DiagramError` class maps to
  *     its documented `EXIT_CODES` exit code (dimensions 3 + 4);

@@ -38,7 +38,7 @@ This feature ships two ways that converge on the **same** rendering code:
   and diff-stable (`REQ-REPRO-01`).
 - **A frozen, versioned scriptable contract.** The CLI's flags, output-path rules,
   exit codes, and `--version` (`CONTRACT_VERSION = "1.0.0"`) are a stable interface
-  that consuming repos — notably `doc-site-plugin` — pin against (`CON-02`,
+  that consuming repos — notably `doc-site` — pin against (`CON-02`,
   `REQ-INV-01..04`).
 - **Light/dark + accent theming** (`REQ-THEME-01`) and **accessibility built in**:
   every diagram carries `<title>`, `<desc>`, and `role="img"` (`REQ-A11Y-01`).
@@ -117,7 +117,7 @@ A minimal architecture spec:
   office docs) with no fonts to install and no scripts to trust.
 - You want diagrams **generated from data or prose deterministically** — in a build
   step, a docs pipeline, or an agent conversation.
-- You're building a consumer (like `doc-site-plugin`) that needs a **stable,
+- You're building a consumer (like `doc-site`) that needs a **stable,
   versioned** rendering CLI it can pin against.
 
 ## When NOT to use it

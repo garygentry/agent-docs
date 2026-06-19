@@ -24,9 +24,9 @@
       "description": "Converts natural-language or an engine-neutral node/edge/container spec into portable tier-2 SVG and PNG diagrams."
     },
     {
-      "name": "doc-site-plugin",
+      "name": "doc-site",
       "type": "skill",
-      "source": "skills/doc-site-plugin",
+      "source": "skills/doc-site",
       "description": "Scaffolds an Astro 5 + Starlight docs site into a target repo from an agent-driven interview: env-driven site/base, manifest-driven sidebar/symlinker/drift guard, optional diagrams (via diagram-generator) and deploy wiring."
     }
   ]

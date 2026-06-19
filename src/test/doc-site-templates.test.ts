@@ -1,8 +1,8 @@
 /**
- * In-repo template-asset validation for the doc-site-plugin skill (10 §4).
+ * In-repo template-asset validation for the doc-site skill (10 §4).
  *
  * Two independent guards over the authored skill assets — they read ONLY from
- * skills/doc-site-plugin/ (the template tree, SKILL.md, docs.manifest.schema.json),
+ * skills/doc-site/ (the template tree, SKILL.md, docs.manifest.schema.json),
  * never from adapters/ or the emitter:
  *
  *  (a) Token-coverage — enforces 00 §4.1's closed token vocabulary. Every
@@ -21,7 +21,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
 import { REPO_ROOT } from "./golden.shared.js";
 
-const SKILL_DIR = path.join(REPO_ROOT, "skills", "doc-site-plugin");
+const SKILL_DIR = path.join(REPO_ROOT, "skills", "doc-site");
 const TEMPLATES_DIR = path.join(SKILL_DIR, "references", "templates");
 const SKILL_MD = path.join(SKILL_DIR, "SKILL.md");
 const SCHEMA_PATH = path.join(SKILL_DIR, "references", "docs.manifest.schema.json");
@@ -73,7 +73,7 @@ function tokensIn(text: string): Set<string> {
   return found;
 }
 
-describe("doc-site-plugin token coverage (00 §4.1 closed vocabulary)", () => {
+describe("doc-site token coverage (00 §4.1 closed vocabulary)", () => {
   const canonical = new Set<string>(CANONICAL_TOKENS);
 
   const templateFiles = walkFiles(TEMPLATES_DIR);
@@ -127,7 +127,7 @@ describe("doc-site-plugin token coverage (00 §4.1 closed vocabulary)", () => {
   });
 });
 
-describe("doc-site-plugin manifest schema (Draft 2020-12 fixtures)", () => {
+describe("doc-site manifest schema (Draft 2020-12 fixtures)", () => {
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   const schema = JSON.parse(fs.readFileSync(SCHEMA_PATH, "utf8"));
 

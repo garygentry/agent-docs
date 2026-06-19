@@ -173,7 +173,7 @@ generated `diagram-input.schema.json` vs the Zod source).
 
 A consuming repo runs `bun .../diagram-render.mjs <spec.json> …` with **zero install**
 — no `node_modules`, no WASM fetch, no font download. That zero-install property is
-the foundation of the shared contract (`CON-02`): `doc-site-plugin` consumes the SVG
+the foundation of the shared contract (`CON-02`): `doc-site` consumes the SVG
 and pins the CLI's flag/exit/version surface. The bundle is the only artifact that
 crosses the repo boundary, so its byte-fidelity is guarded in the two places above.
 

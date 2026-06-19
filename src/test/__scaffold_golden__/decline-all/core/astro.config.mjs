@@ -1,5 +1,5 @@
 // astro.config.mjs — emitted into docs/
-// MANAGED by doc-site-plugin (tracked in .doc-site-scaffold.json). The `sidebar`
+// MANAGED by doc-site (tracked in .doc-site-scaffold.json). The `sidebar`
 // array is generated from docs.manifest.json — edit the manifest, not this file.
 import { defineConfig, passthroughImageService } from "astro/config";
 import starlight from "@astrojs/starlight";

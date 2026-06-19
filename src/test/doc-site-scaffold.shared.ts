@@ -15,7 +15,7 @@ import * as path from "node:path";
 
 import { REPO_ROOT } from "./golden.shared.js";
 
-export const TEMPLATES_DIR = path.join(REPO_ROOT, "skills/doc-site-plugin/references/templates");
+export const TEMPLATES_DIR = path.join(REPO_ROOT, "skills/doc-site/references/templates");
 export const SCAFFOLD_GOLDEN_DIR = path.join(REPO_ROOT, "src/test/__scaffold_golden__");
 export const ANSWERS_DIR = path.join(REPO_ROOT, "src/test/__fixtures__/doc-site/answers");
 

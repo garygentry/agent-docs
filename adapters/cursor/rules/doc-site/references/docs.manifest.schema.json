@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-docs.dev/schemas/doc-site-plugin/docs.manifest.schema.json",
+  "title": "docs.manifest.json",
+  "description": "Manifest contract for an Astro 5 + Starlight docs site scaffolded by the doc-site skill. Hand-authored static JSON Schema (Draft 2020-12) shipped verbatim into target repos. Encodes every rule from 00-core-definitions.md §2.2. NOTE on slug-uniqueness (00 §2.2 rule 5 / 10 §4.3 caveat): JSON Schema cannot express 'unique slug property across array items' (uniqueItems compares whole items, not a single property), so slug-uniqueness is NOT enforced here — it is enforced by the symlinker and the drift guard at scaffold/check time. Item 011's schema-fixture test honors this by skipping the duplicate-slug reject case.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["site", "pages"],
+  "properties": {
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "description"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Starlight site title (non-empty)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Site description / meta."
+        },
+        "social": {
+          "type": "object",
+          "description": "Starlight social links. Keys are Starlight social-icon names; values are URLs. URL shape is advisory only and not schema-validated (validators run ajv without ajv-formats).",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "description": "Ordered page entries; order is sidebar order. May be empty.",
+      "items": { "$ref": "#/$defs/PageEntry" }
+    }
+  },
+  "$defs": {
+    "PageEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug"],
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Route slug, POSIX-style (e.g. 'guides/setup'). Must be unique across pages (enforced by the symlinker/drift-guard, not by this schema — see top-level description)."
+        },
+        "source": {
+          "enum": ["symlink", "native"],
+          "description": "Where the page body comes from. Required unless unmanaged is true."
+        },
+        "from": {
+          "type": "string",
+          "description": "Repo-root-relative markdown path to symlink in. Required iff source is 'symlink'; forbidden otherwise."
+        },
+        "unmanaged": {
+          "type": "boolean",
+          "default": false,
+          "description": "Escape hatch. When true, source/from are optional and the generator does not wire the page."
+        }
+      },
+      "allOf": [
+        {
+          "description": "Rule 4: unmanaged absent/false ⇒ source required.",
+          "if": {
+            "not": {
+              "properties": { "unmanaged": { "const": true } },
+              "required": ["unmanaged"]
+            }
+          },
+          "then": { "required": ["source"] }
+        },
+        {
+          "description": "Rule 1: source 'symlink' ⇒ from present and non-empty.",
+          "if": {
+            "properties": { "source": { "const": "symlink" } },
+            "required": ["source"]
+          },
+          "then": {
+            "required": ["from"],
+            "properties": { "from": { "minLength": 1 } }
+          }
+        },
+        {
+          "description": "Rule 2: source 'native' ⇒ from absent.",
+          "if": {
+            "properties": { "source": { "const": "native" } },
+            "required": ["source"]
+          },
+          "then": { "not": { "required": ["from"] } }
+        }
+      ]
+    }
+  }
+}
