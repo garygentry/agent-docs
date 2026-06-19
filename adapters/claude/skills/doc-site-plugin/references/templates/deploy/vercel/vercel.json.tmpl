@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter ./{{DOCS_PKG_DIR}} build",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "outputDirectory": "{{DOCS_PKG_DIR}}/dist",
+  "framework": "astro",
+  "build": {
+    "env": {
+      "SITE": "{{SITE_URL}}",
+      "BASE_PATH": ""
+    }
+  }
+}

@@ -43,22 +43,27 @@ export const SAMPLE_RELPATHS: Record<Target, string[]> = {
   claude: [
     "skills/docs-helper/SKILL.md", // 04 §6.1
     "skills/diagram-generator/SKILL.md", // 06 §5.2 (SKILL transform; refs/scripts are verbatim — see note)
+    "skills/doc-site-plugin/SKILL.md", // 09 §6.1 (SKILL transform; refs/templates/schema are verbatim)
   ],
   codex: [
     "skills/docs-helper/SKILL.md", // 04 §7.1 (skill only — no agents → no openai.yaml)
     "skills/diagram-generator/SKILL.md", // 06 §5.2
+    "skills/doc-site-plugin/SKILL.md", // 09 §6.1
   ],
   copilot: [
     "instructions/docs-helper.instructions.md", // 04 §10.1
     "instructions/diagram-generator.instructions.md", // 06 §5.2
+    "instructions/doc-site-plugin.instructions.md", // 09 §6.1
   ],
   cursor: [
     "rules/docs-helper.mdc", // 04 §8.1
     "rules/diagram-generator.mdc", // 06 §5.2
+    "rules/doc-site-plugin.mdc", // 09 §6.1
   ],
   gemini: [
     "skills/docs-helper/docs-helper.md", // 04 §9.1 (skill + aggregate)
     "gemini-extension.json",
     "skills/diagram-generator/diagram-generator.md", // 06 §5.2
+    "skills/doc-site-plugin/doc-site-plugin.md", // 09 §6.1
   ],
 };
