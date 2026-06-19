@@ -85,3 +85,11 @@
 - Dimension assertion (§4.3): expected = round(intrinsic × scale); `Math.abs(actual-expected) <= 2` per axis, else DiagramPngError.
 - resvg DOES throw synchronously in `new Resvg(...)` on malformed SVG (e.g. `<not-svg/>`, `<svg this is not valid`) — wrapped as DiagramPngError. Test reads PNG IHDR (bytes 16–23) for raster dims rather than decoding.
 - 4 png tests; full suite 259 pass; tsc clean.
+
+## Item 011 — render.ts (done)
+- `src/diagram/render.ts`: `render(spec, opts: RenderOptions)` transcribed verbatim from 03 §5. Single options object `{ theme, accent? }`. Async (awaits renderGraph for the graph path).
+- Dispatch: `sequence` → `renderSequence` (sync, supplies width/height); else `emitDot` → `await renderGraph` (passes width=height=0; postProcess derives authoritative dims from the graphviz SVG).
+- postProcess opts `{ theme, accent: opts.accent ?? spec.accent, spec, width, height }`; `accent` falls back to spec.accent. assertOutputValid runs AFTER postProcess; on failure DiagramOutputError propagates and nothing returned.
+- RenderResult dims/slug come from postProcess (single dimension owner, REQ-OUT-02). slug e.g. "Web App" → "web-app".
+- No input re-validation (REQ-REL-01) — render trusts the typed spec; CLI (012) owns parseSpec. No png import (PNG is CLI's job).
+- render.test.ts: all 6 types render end-to-end & pass assertOutputValid; light/dark distinct; width/height match svg attrs; parseSpec rejects bad spec (DiagramInputError); malformed output → DiagramOutputError. 13 tests; full suite 272 pass; tsc clean.
