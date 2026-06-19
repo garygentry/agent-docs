@@ -44,3 +44,14 @@
 - Graphviz output is byte-identical across calls for identical DOT in-process (test asserts byte-equality). Cross-run determinism still relies on 04 canonicalization, but within a process it's stable.
 - Graphviz emits an XML/doctype preamble before `<svg>`; tests slice from `<svg` to assert the root element.
 - 4 graph-render tests; full suite 230 pass; tsc clean.
+
+## Item 007 — sequence-svg.ts (done)
+- `src/diagram/sequence-svg.ts`: `renderSequence(spec)` per 03 §4. Pure/deterministic, no async, no IO. Returns `{svg,width,height}`.
+- Layout constants transcribed verbatim from §4.2; geometry per §4.3. Running y-cursor (`rowY[]`) accumulates self-message extra height so dimensions match the §4.3 formula exactly (verified: 3 participants/4 messages/1 self-msg → 488×328).
+- Arrow styles (§4.4): sync→filled `<polygon>` arrowhead (`arrowhead-closed`), async/reply→open `<polyline>` (`arrowhead-open`), reply line gets `stroke-dasharray`. Arrowheads drawn as explicit primitives, NOT `<marker>`/`<defs>`.
+- Activation bars (§4.5): emitted after lifelines, before arrows (z-order). Span = activating row → next matching `reply` from the activated target, else one MESSAGE_ROW_HEIGHT.
+- Self-message: polyline loop (out/down/back) + left-pointing arrowhead at lifeline; consumes MESSAGE_ROW_HEIGHT+SELF_MESSAGE_EXTRA.
+- Participant role carried as `class="role-<role>"` on header `<g>` (mirrors dot-emit §2.5); no color baked (deferred to 009).
+- Output is pre-a11y/pre-font raw SVG (has viewBox/width/height; no <title>/<desc>/role=img yet — those are svg-postprocess 009's job).
+- GOTCHA: `noUncheckedIndexedAccess` is on — `rowY[m]`/`messages[k]` are `T | undefined`; cast with `as number`/`as Message` where index validity is structurally guaranteed.
+- New text escaping helper `escapeXml` (&,<,>,") — distinct from dot-emit's `escapeDot`; SVG/XML grammar, not DOT grammar.
