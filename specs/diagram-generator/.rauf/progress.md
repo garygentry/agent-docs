@@ -77,3 +77,11 @@
 - Byte-determinism CONFIRMED across runs. width/height set numeric (graphviz emits `pt`; overwritten with viewBox dims).
 - slug derived from spec.title (lowercase, non-alnum→`-`, trim, fallback "diagram") — no shared slug helper existed; render.ts (011) can reuse this shape.
 - 11 tests; full suite 255 pass; tsc clean. Completed in one iteration.
+
+## Item 010 — png.ts (done)
+- `src/diagram/png.ts`: `renderPng(svg, opts?)` per 04 §4. Returns `Uint8Array` PNG bytes; default scale 2 (`DEFAULT_PNG_SCALE`), `fitTo:{mode:"zoom",value:scale}`.
+- ENGINE DISCREPANCY: 04 §4.1 prefers the WASM build `@resvg/resvg-wasm` (inlinable for bundle 014), but item 001 actually pinned the NATIVE `@resvg/resvg-js@2.6.2` (that's what's installed + what the title/AC name). Implemented against `@resvg/resvg-js`. Contract is identical (svg string → Uint8Array, failures → DiagramPngError). If the bundle (014) needs WASM for portability, the swap is isolated to the import + a memoized `initWasm`. Native build has NO `initWasm`, so the §4.2 memoization note does not apply here.
+- `@resvg/resvg-js` API: `new Resvg(svg, opts)` exposes `.width`/`.height` (intrinsic SVG px); `.render()` → `RenderedImage` with `.asPng():Buffer` and `.width`/`.height` (raster px). Set `font.loadSystemFonts:false` — the SVG embeds its own subset font (§3.6).
+- Dimension assertion (§4.3): expected = round(intrinsic × scale); `Math.abs(actual-expected) <= 2` per axis, else DiagramPngError.
+- resvg DOES throw synchronously in `new Resvg(...)` on malformed SVG (e.g. `<not-svg/>`, `<svg this is not valid`) — wrapped as DiagramPngError. Test reads PNG IHDR (bytes 16–23) for raster dims rather than decoding.
+- 4 png tests; full suite 259 pass; tsc clean.
