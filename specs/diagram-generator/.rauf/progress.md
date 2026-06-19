@@ -55,3 +55,10 @@
 - Output is pre-a11y/pre-font raw SVG (has viewBox/width/height; no <title>/<desc>/role=img yet — those are svg-postprocess 009's job).
 - GOTCHA: `noUncheckedIndexedAccess` is on — `rowY[m]`/`messages[k]` are `T | undefined`; cast with `as number`/`as Message` where index validity is structurally guaranteed.
 - New text escaping helper `escapeXml` (&,<,>,") — distinct from dot-emit's `escapeDot`; SVG/XML grammar, not DOT grammar.
+
+## Item 008 — theme.ts (done)
+- `src/diagram/theme.ts`: transcribed 04 §1–2 verbatim. Exports `RoleColors`, `ResolvedPalette`, and `resolveTheme(theme, accent?)`. `ResolvedPalette` lives HERE (internal render-only type), not in schema.ts (00 only fixes the KEYS).
+- Light/dark `PALETTES` table holds the exact §2.1/§2.2 hex values; `roles` map is total over all 11 NodeRole keys.
+- Accent override (§2.3): sets `accent`, `edge`, and `roles.default.stroke` only — semantic role fills stay stable. Omitted accent → variant defaults (light `#2563eb`, dark `#60a5fa`).
+- `structuredClone` returns a deep copy so the frozen source is never mutated; `resolveTheme` is pure, never throws.
+- 6 tests pass; tsc clean.
