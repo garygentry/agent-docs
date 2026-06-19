@@ -37,3 +37,10 @@
 - Containers → `subgraph "cluster_<id>" { label; class="container"; <children nodes>; <nested clusters by parent> }`. Top-level nodes (not in any container.children) emitted after clusters in spec.nodes order. Node ids quoted everywhere → dashes safe; cluster names quoted too.
 - Escaping: `\`→`\\`, `"`→`\"`, newline→`\n`. Output ends with trailing `\n`.
 - 15 dot-emit tests; full suite 226 pass; tsc clean.
+
+## Item 006 — graph-render.ts (done)
+- `src/diagram/graph-render.ts`: `renderGraph(dot)` per 03 §3.2 verbatim. Memoized `getViz()` caches the `@viz-js/viz` instance for the process.
+- `@viz-js/viz` 3.28.0 API confirmed against `node_modules/@viz-js/viz/types/index.d.ts`: `instance(): Promise<Viz>`; `Viz.renderString(input, options?: RenderOptions): string` — DOES throw on render failure (unlike `render()` which returns a FailureResult). So the spec's try/catch → DiagramRenderError pattern works as written with `{ format: "svg", engine: "dot" }`.
+- Graphviz output is byte-identical across calls for identical DOT in-process (test asserts byte-equality). Cross-run determinism still relies on 04 canonicalization, but within a process it's stable.
+- Graphviz emits an XML/doctype preamble before `<svg>`; tests slice from `<svg` to assert the root element.
+- 4 graph-render tests; full suite 230 pass; tsc clean.

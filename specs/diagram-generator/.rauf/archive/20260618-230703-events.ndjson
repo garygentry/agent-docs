@@ -235,3 +235,47 @@
 {"type":"llm_exited","timestamp":"2026-06-19T03:19:10.180Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"005","provider":"claude-cli","exitCode":0,"timedOut":false,"durationMs":151949,"seq":234,"schemaVersion":"1"}
 {"type":"signal_parsed","timestamp":"2026-06-19T03:19:10.181Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"005","signal":"done","seq":235,"schemaVersion":"1"}
 {"type":"item_completed","timestamp":"2026-06-19T03:19:10.183Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"005","title":"Implement DOT emitter — dot-emit.ts (DiagramSpec → tier-2 Graphviz DOT)","seq":236,"schemaVersion":"1"}
+{"type":"iteration_start","timestamp":"2026-06-19T03:19:10.200Z","projectPath":"/home/gary/workspace/agent-docs","iteration":7,"maxIterations":27,"seq":237,"schemaVersion":"1"}
+{"type":"item_selected","timestamp":"2026-06-19T03:19:10.201Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","title":"Implement graph render — graph-render.ts (DOT → SVG via @viz-js/viz)","priority":1,"seq":238,"schemaVersion":"1"}
+{"type":"llm_spawned","timestamp":"2026-06-19T03:19:10.203Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","provider":"claude-cli","model":"opus","timeoutMinutes":60,"seq":239,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:19:15.361Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":16401,"outputTokens":5,"seq":240,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:15.548Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Read","phase":"start","seq":241,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:15.548Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":242,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:15.890Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Read","phase":"start","seq":243,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:15.890Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":244,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:19:20.718Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":2,"seq":245,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:22.217Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Bash","phase":"start","seq":246,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:22.217Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":247,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:24.786Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Bash","phase":"start","seq":248,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:24.786Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":249,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:19:31.806Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":3,"seq":250,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:33.620Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Bash","phase":"start","seq":251,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:33.621Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":252,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:19:41.371Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":6,"seq":253,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:19:49.773Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":6,"seq":254,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:49.773Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Write","phase":"start","seq":255,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:19:49.773Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":256,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:20:00.216Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":55,"seq":257,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:00.216Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Write","phase":"start","seq":258,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:00.216Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":259,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:03.319Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Bash","phase":"start","seq":260,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:03.319Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":261,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:20:08.737Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":1,"seq":262,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:09.042Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Bash","phase":"start","seq":263,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:09.042Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":264,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:20:15.429Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":4,"seq":265,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:20:21.417Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":4,"seq":266,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:21.418Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Edit","phase":"start","seq":267,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:21.418Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":268,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:25.719Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Read","phase":"start","seq":269,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:25.719Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":270,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:20:28.648Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":66,"seq":271,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:28.648Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Read","phase":"start","seq":272,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:28.648Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":273,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:20:35.042Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":2,"outputTokens":68,"seq":274,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:35.042Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"Edit","phase":"start","seq":275,"schemaVersion":"1"}
+{"type":"llm_tool_activity","timestamp":"2026-06-19T03:20:35.042Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","toolName":"unknown","phase":"end","seq":276,"schemaVersion":"1"}
+{"type":"llm_token_update","timestamp":"2026-06-19T03:20:41.655Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","inputTokens":18842,"outputTokens":4706,"seq":277,"schemaVersion":"1"}
+{"type":"llm_exited","timestamp":"2026-06-19T03:20:42.097Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","provider":"claude-cli","exitCode":0,"timedOut":false,"durationMs":91894,"seq":278,"schemaVersion":"1"}
+{"type":"signal_parsed","timestamp":"2026-06-19T03:20:42.098Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","signal":"done","seq":279,"schemaVersion":"1"}
+{"type":"item_completed","timestamp":"2026-06-19T03:20:42.102Z","projectPath":"/home/gary/workspace/agent-docs","itemId":"006","title":"Implement graph render — graph-render.ts (DOT → SVG via @viz-js/viz)","seq":280,"schemaVersion":"1"}
