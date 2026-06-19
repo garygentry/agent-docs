@@ -34,6 +34,13 @@
       ],
       "completedAt": "2026-06-19T00:00:00Z",
       "commit": "25b79f9"
+    },
+    "forge-verify-tech": {
+      "status": "findings-applied",
+      "findingsFile": ".verification/VERIFY-tech-2026-06-19.md",
+      "findingsCount": 5,
+      "verifiedAt": "2026-06-19T00:00:00Z",
+      "fixedAt": "2026-06-19T00:00:00Z"
     }
   }
 }
