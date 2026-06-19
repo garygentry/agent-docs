@@ -195,8 +195,8 @@
         "Every {{TOKEN}} used across these templates is one of the 17 canonical tokens (GitHub Actions ${{ }} expressions are not flagged as tokens)",
         "bun run gate passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T18:45:21.675Z",
       "dependsOn": [
         "001",
         "004"
