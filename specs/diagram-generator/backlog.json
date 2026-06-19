@@ -308,8 +308,8 @@
         "`--format png` (or `both`) with no output target (which would stream binary PNG to stdout) is refused with DiagramUsageError → exit code USAGE_ERROR (64); no binary is written to stdout",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T03:39:09.961Z",
       "dependsOn": [
         "011",
         "010",

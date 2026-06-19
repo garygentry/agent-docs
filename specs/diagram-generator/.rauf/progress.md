@@ -93,3 +93,15 @@
 - RenderResult dims/slug come from postProcess (single dimension owner, REQ-OUT-02). slug e.g. "Web App" → "web-app".
 - No input re-validation (REQ-REL-01) — render trusts the typed spec; CLI (012) owns parseSpec. No png import (PNG is CLI's job).
 - render.test.ts: all 6 types render end-to-end & pass assertOutputValid; light/dark distinct; width/height match svg attrs; parseSpec rejects bad spec (DiagramInputError); malformed output → DiagramOutputError. 13 tests; full suite 272 pass; tsc clean.
+
+## Item 012 — cli.ts (done)
+- `src/diagram/cli.ts`: `parseArgs`, `resolveOutputPaths`, `readInput`, `writeArtifact`, `main(argv): Promise<number>`, transcribed from 05 §2–3. Imports limited to schema/errors/validate(parseSpec)/render/png — no schema-gen/build-check (stay out of bundle).
+- `parseArgs`: hand-rolled; VALUE_FLAGS consume next token. enum flags validated via `DiagramType/Theme/HexColor.safeParse`. `--version` short-circuits the input-required + output-conflict checks. Conflicts (out-file+out-dir/out-name; out-name w/o out-dir; two inputs; unknown flag) → DiagramUsageError(64).
+- `--type` override applied to the RAW JSON object BEFORE `parseSpec`, so a disagreeing `--type` (e.g. sequence vs a nodes-bearing spec) fails as DiagramInputError via cross-field validation (§2.2), not silently.
+- JSON.parse failure wrapped as DiagramInputError (exit 2). parseSpec takes the already-parsed object (validate.ts:246 `parseSpec(raw: unknown)`).
+- Output order: resolve ALL format targets first (so png→stdout DiagramUsageError fires before any write), then write svg then png. For `both`, svg writes before png renders → matches "single variant never half-written; png failure leaves the already-written svg".
+- `resolveOutputPaths(args,result,format)` precedence out-file > out-dir+out-name > out-dir+slug > stdout. `withExtension` swaps/appends ext. png→stdout throws DiagramUsageError.
+- `writeArtifact(root, dest, bytes)`: confinement = `resolve(dest) === resolve(root) || startsWith(root+sep)`, checked BEFORE mkdir/writeFile; escape → DiagramIoError(6). Root = dirname(out-file) for out-file, else resolve(out-dir).
+- Top-level runner guarded by `if (import.meta.main)` (same as schema-gen.ts) so the test suite can import without executing; top-level await is fine in ESM.
+- TEST GOTCHA: spying `process.stdout.write` with `mockImplementation` — annotate the impl as `(chunk: string|Uint8Array)=>boolean` and cast `as typeof process.stdout.write`; a bare `(chunk: unknown)` impl fails tsc against write's overloads. stdin faked via `Readable.from([...])` + `Object.defineProperty(process,'stdin',...)`.
+- 34 cli tests; full suite 306 pass; tsc clean.
