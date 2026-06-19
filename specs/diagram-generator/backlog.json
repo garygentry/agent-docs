@@ -474,8 +474,8 @@
         "An emission/gate guard test asserts the skill lands in all five targets",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T04:05:13.871Z",
       "dependsOn": [
         "012",
         "014"

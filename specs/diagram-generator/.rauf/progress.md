@@ -135,3 +135,11 @@
 - `determinism.test.ts` (§5): two in-process renders byte-equal (incl width/height) for all 6 types + each render matches its committed golden for all 12 type×theme.
 - `png-smoke.test.ts` (§6): renders architectureFixture via render.ts then renderPng; asserts PNG magic + dims = intrinsic×2 within ±2px. Named `png-smoke` to avoid clashing with item 010's existing `png.test.ts` (the §6 filename is taken).
 - Full suite 414 pass; tsc clean.
+
+## Item 018 — CLI contract tests + emission/gate guard (done)
+- Item 012 already authored `cli.test.ts` (per-flag unit coverage). Item 018 adds the CONTRACT-level half in two NEW files rather than rewriting:
+  - `src/diagram/cli-contract.test.ts` (19 tests): §7.4 every `--type` over shared `FIXTURES` + `--format svg|png|both`; per-class `DiagramError`→`EXIT_CODES` mapping table (all 6 classes); OUTPUT_INVALID proven at the validator boundary (synthetic `<foreignObject>` → `assertOutputValid` throws DiagramOutputError, exit 4 — render never emits one, per 08 §7.4 note); §7.5 `--version`; §7.6 path confinement; §7.7 in-process vs committed-bundle parity (spawn `bun <bundle.mjs>` via execFileSync, byte-compare SVG to `main()` output — identical).
+  - `src/test/emission-guard.test.ts` (11 tests): §8 REQ-PORT-02 — emits the manifest and asserts the diagram-generator SKILL transform lands in every target's `result.files` (via SAMPLE_RELPATHS) AND the verbatim bundle `.mjs` lands in every target's `result.verbatim`.
+- GOTCHA (emission guard): the verbatim bundle relpath is RELOCATED per target — claude/codex/gemini `skills/diagram-generator/scripts/diagram-render.mjs`, copilot `instructions/diagram-generator/scripts/…`, cursor `rules/diagram-generator/scripts/…`. Match by leaf suffix (`diagram-generator/scripts/diagram-render.mjs`), not a fixed `skills/` prefix.
+- architectureFixture title is "Web Service" → slug `web-service` (cli.test.ts's local fixture is "Web App" → `web-app`); naming assertions differ between the two files accordingly.
+- Full suite 444 pass (was 414); `bun run gate` green (exit 0, incl. schema:check:diagram + build:diagram:check).
