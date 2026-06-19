@@ -127,3 +127,11 @@
 - Cleared the deferred gate debt: prefer-const fix at svg-postprocess.ts:153 (split `let [minX,minY,vbW,vbH]` → const minX/minY + let vbW/vbH from init vars), and `prettier --write .` cleared repo-wide format debt (specs, src/diagram, skill md). Prettier reformatting src/diagram/*.ts SHIFTED the minified bundle bytes → had to `bun run build:diagram` + `\cp -f` to `__bundle_golden__/` + `bun run build` (re-emit adapters). NOTE: `cp` is aliased to `cp -i`; use `\cp -f` in non-interactive scripts.
 - Regen order after any skill-source/format change: build:diagram → cp golden → build (adapters) → regenerate-goldens.ts → gate.
 - `bun run gate` fully green (307 tests, schema:check:diagram + build:diagram:check included).
+
+## Item 017 — Property + determinism + PNG smoke tests (done)
+- Added 3 cross-cutting test files (no new production module): `property.test.ts`, `determinism.test.ts`, `png-smoke.test.ts`.
+- `property.test.ts`: reuses the 003 validators VERBATIM (assertOutputValid + each of assertWellFormed/Tier2/Structural/FontPortable/A11y) over all 12 goldens (08 §4.2); architecture §4.3 props; theme+accent §4.4.
+- GOTCHA (§4.3 z-order regex): the spec's `/class="node"/` / `/class="edge"/` literals DON'T match — postProcess emits `class="node role-backend"` (role appended). Use `/class="node[\s"]/` and `/class="edge[\s"]/`. Confirmed via `grep -o 'class="[^"]*"'` on a golden.
+- `determinism.test.ts` (§5): two in-process renders byte-equal (incl width/height) for all 6 types + each render matches its committed golden for all 12 type×theme.
+- `png-smoke.test.ts` (§6): renders architectureFixture via render.ts then renderPng; asserts PNG magic + dims = intrinsic×2 within ±2px. Named `png-smoke` to avoid clashing with item 010's existing `png.test.ts` (the §6 filename is taken).
+- Full suite 414 pass; tsc clean.

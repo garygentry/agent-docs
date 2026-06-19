@@ -447,8 +447,8 @@
         "A PNG smoke test produces a valid PNG within the documented dimension tolerance",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T04:01:13.009Z",
       "dependsOn": [
         "016",
         "010"
