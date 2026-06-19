@@ -145,13 +145,26 @@ describe("doc-site-plugin manifest schema (Draft 2020-12 fixtures)", () => {
     expect(ok, JSON.stringify(validate.errors)).toBe(true);
   });
 
+  // Each reject fixture isolates exactly one 00 §2.2 rule. Assert not just that
+  // validation fails, but that it fails for the INTENDED reason (keyword), so a future
+  // schema edit can't make a fixture start rejecting for an unrelated reason while the
+  // test stays green (which would silently erode rule-discrimination coverage).
   it.each([
-    "invalid-symlink-missing-from",
-    "invalid-native-with-from",
-    "invalid-missing-source",
-    "invalid-unknown-key",
-  ])("rejects %s", (name) => {
-    expect(validate(load(name))).toBe(false);
+    // [fixture, ajv error keyword that proves the intended rule fired]
+    ["invalid-symlink-missing-from", "required"], // symlink page must have `from`
+    ["invalid-native-with-from", "not"], // native page must NOT have `from`
+    ["invalid-missing-source", "required"], // page must have `source`
+    ["invalid-unknown-key", "additionalProperties"], // no unknown keys
+  ] as const)("rejects %s for the intended rule", (name, expectedKeyword) => {
+    const ok = validate(load(name));
+    expect(ok).toBe(false);
+    const keywords = (validate.errors ?? []).map((e) => e.keyword);
+    expect(
+      keywords.includes(expectedKeyword),
+      `expected keyword "${expectedKeyword}" but got ${JSON.stringify(
+        keywords,
+      )} — ${JSON.stringify(validate.errors)}`,
+    ).toBe(true);
   });
 
   // 10 §4.3 caveat: JSON Schema cannot express slug-uniqueness across array items

@@ -23,10 +23,9 @@
         },
         "social": {
           "type": "object",
-          "description": "Starlight social links. Keys are Starlight social-icon names; values are URLs.",
+          "description": "Starlight social links. Keys are Starlight social-icon names; values are URLs. URL shape is advisory only and not schema-validated (validators run ajv without ajv-formats).",
           "additionalProperties": {
-            "type": "string",
-            "format": "uri"
+            "type": "string"
           }
         }
       }
