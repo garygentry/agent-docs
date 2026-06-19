@@ -4,6 +4,7 @@
 schemas/
 adapters/
 src/test/__golden__/
+src/diagram/__golden__/
 .claude-plugin/
 dist/
 bun.lock

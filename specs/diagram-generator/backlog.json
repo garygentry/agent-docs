@@ -413,8 +413,8 @@
         "One minimal valid DiagramSpec fixture exists per diagram type and is shared with the CLI tests (017/018)",
         "vitest run && tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T03:59:11.525Z",
       "dependsOn": [
         "011"
       ],
