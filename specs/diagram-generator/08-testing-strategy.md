@@ -27,6 +27,7 @@ test section that proves it.
 | --- | --- | --- |
 | Each diagram type renders successfully from text | REQ-COV-01, REQ-COV-02 | 3 (golden), 7.2 (fixtures) |
 | Structured spec produces a valid, well-formed artifact | REQ-IN-02, REQ-REL-01 | 3, 4 |
+| Natural-language description produces a valid artifact (the NL half of PRD §8's first criterion) | REQ-IN-01, REQ-INV-01, REQ-USE-01 | 10 (out of automated-test scope — non-deterministic LLM step) |
 | SVG opens correctly everywhere — tier-2 (`<text>`, no `<foreignObject>`) | REQ-OUT-01 | 4.2 |
 | SVG declares explicit `viewBox` + width/height | REQ-OUT-02 | 4.2 |
 | SVG renders with no network access; embedded font, no external URL | REQ-OUT-04, REQ-SEC-02 | 4.2 |
@@ -83,9 +84,11 @@ One committed golden per **diagram type × theme**: the six types of REQ-COV-01/
 that type (`§7.2`) and is the exact, byte-for-byte output of the render pipeline
 after the `04 §3` post-process (color + a11y + font + canonicalization). Because the
 SVGs are canonicalized (`04 §3.7`, `SVG_COORD_PRECISION` from `00 §6`), they are
-byte-stable and safe to commit and diff (REQ-REPRO-01). The bundle `.mjs` is **not**
-a golden here — per tech-spec OTQ-1, byte-fidelity of the bundle is owned by
-`build:diagram:check`; goldens cover the rendered SVG only.
+byte-stable and safe to commit and diff (REQ-REPRO-01). These diagram goldens cover
+the **rendered SVG only** — the bundle `.mjs` is not among them. (The bundle `.mjs`
+does carry a committed byte golden, but in the separate *emitter* golden suite
+`src/test/__golden__/` per OTQ-1 / `06 §4.3`, alongside the `build:diagram:check`
+drift guard — see §8; it is unrelated to this `src/diagram/__golden__/` SVG set.)
 
 ### 2.2 What the golden proves
 
@@ -604,7 +607,10 @@ export const sequenceFixture: DiagramFixture = {
 
 // flowchartFixture, erFixture, stateFixture, dataflowFixture follow the same
 // graph shape as architectureFixture (nodes/edges, empty sequence fields), each
-// minimal for its type. Omitted here for brevity; all six are exported in FIXTURES.
+// minimal for its type. Their full literals are omitted here for brevity, but each
+// MUST satisfy the per-type minimal-validity + type-distinctive contract below so its
+// golden actually exercises the type (not just an architecture clone). All six are
+// exported in FIXTURES.
 
 /** Every fixture, in stable order (drives the table-driven golden/property loops). */
 export const FIXTURES: readonly DiagramFixture[] = [
@@ -616,6 +622,25 @@ export const FIXTURES: readonly DiagramFixture[] = [
   dataflowFixture,
 ];
 ```
+
+#### Per-type fixture contract for the four deferred fixtures
+
+Each deferred fixture is **graph-shaped** (`nodes`/`edges` populated; `participants`/
+`messages` empty — `02 §2.5`) and must carry the minimal required fields per its type's
+`02 §2` cross-field invariants **plus** one type-distinctive feature, so its 2 goldens
+genuinely exercise the type rather than re-rendering an architecture graph:
+
+| Fixture | Minimal required (per `02 §2`) | Type-distinctive feature it MUST include |
+| --- | --- | --- |
+| `flowchartFixture` | ≥1 node, ≥1 edge | a decision node (`shape: "diamond"`, `03 §2.2`) with ≥2 outgoing edges (branch labels) |
+| `erFixture` | ≥2 entity nodes, ≥1 edge | a relationship edge carrying a cardinality label (e.g. `label: "1..*"`) between two entities (`03 §2.3`) |
+| `stateFixture` | ≥1 node, ≥1 edge | an initial state and a final state (mapped via `Node.shape`, `03 §2.2` `point`/`doublecircle`) plus ≥1 transition edge |
+| `dataflowFixture` | ≥1 node, ≥1 edge | a data store (`shape: "cylinder"`) and a process node with a directed flow edge between them (`03 §2.2`) |
+
+Each MUST also set distinct `title`/`description` (a11y, REQ-A11Y-01) and parse against
+`00 §2` + `02 §2`. These contracts are load-bearing: `FIXTURES` drives the golden (§3),
+property (§4.2), determinism (§5), and CLI-types (§7.4) suites — 8 goldens for these four
+types alone.
 
 ### 7.3 Output paths & precedence (dimension 2, REQ-INV-03, tech v2 V-007)
 
@@ -682,6 +707,22 @@ describe("CLI invocable types (REQ-INV-03 dimension 3)", () => {
       expect(code).toBe(0);
     });
   }
+
+  // The loop above passes --type EQUAL to the spec's diagramType, so it only proves
+  // the flag is accepted. This case proves --type actually TAKES EFFECT (05 §2.2:
+  // effective type = args.type ?? spec.diagramType, i.e. --type REPLACES
+  // diagramType). The architecture fixture carries `nodes` (a graph-shaped spec);
+  // forcing `--type sequence` replaces diagramType with "sequence", which then trips
+  // the 02 §2.5 cross-field rule ("sequence" must not populate nodes/edges/containers)
+  // → INPUT_INVALID. If --type were silently ignored, the spec would render at exit 0.
+  it("--type that disagrees with the spec's fields takes effect (→ INPUT_INVALID, not silently ignored)", async () => {
+    const dir = tmpDir(); created.push(dir);
+    const input = path.join(dir, "arch.json");
+    fs.writeFileSync(input, JSON.stringify(architectureFixture.spec)); // diagramType: "architecture", has nodes
+    const code = await main([input, "--type", "sequence", "--out-dir", dir]);
+    expect(code).toBe(EXIT_CODES.INPUT_INVALID); // 2 — proves --type overrode diagramType (05 §2.2)
+    expect(fs.readdirSync(dir)).toEqual(["arch.json"]); // nothing emitted
+  });
 });
 
 describe("CLI exit signaling (REQ-INV-03 dimension 4, REQ-REL-02)", () => {
@@ -786,8 +827,11 @@ golden machinery rather than adding diagram-local tests, per
 3. **Bundle drift.** `build:diagram:check` (`01 §5`,
    `06-integration-and-packaging.md` §4) re-bundles `src/diagram/cli.ts` in memory
    and fails on any difference from the committed
-   `skills/diagram-generator/scripts/diagram-render.mjs`. This owns bundle bytes
-   (tech-spec OTQ-1); goldens do not byte-compare the bundle.
+   `skills/diagram-generator/scripts/diagram-render.mjs`. Bundle bytes are pinned in
+   **two** places that move together (OTQ-1, `06 §4.3`): this drift guard, and the
+   committed `.mjs` byte golden in the emitter golden suite (`src/test/__golden__/`,
+   point 1) that `golden.test.ts`'s three-way set equality byte-compares like any
+   other emitted file. Regenerate both together when the bundle legitimately changes.
 
 All three are wired into the extended `gate` script (`01 §5`):
 `… && schema:check:diagram && … && test && build:check && build:diagram:check`. A
@@ -812,6 +856,29 @@ No formal global coverage-percentage gate is added beyond what the repo already
 enforces; the bar is **behavioral**: every PRD §8 criterion has a named test
 (`Requirement Coverage` table), every `EXIT_CODES` entry is asserted at least once
 (§7.4–§7.6), and every diagram type has a golden + property + determinism case.
+
+## 10. Out of automated-test scope — the natural-language path
+
+PRD §8's first success criterion (`PRD.md:200`) requires that *"a natural-language
+description AND an equivalent structured spec each produce a valid, well-formed
+diagram artifact."* This suite proves the **structured-spec** half exhaustively
+(§3–§7). The **natural-language** half — **REQ-IN-01** (infer structure from prose),
+**REQ-INV-01** (conversational invocation), and **REQ-USE-01** (keep simple diagrams
+simple, no DSL) — is the prose→`DiagramSpec` inference step in `05 §4` (the SKILL.md
+procedure). It is **deliberately not covered by Vitest**, for the same reason
+REQ-REPRO-01 carves out the prose path (PRD §4.3 caveat) and OQ-1 declines auto-retry:
+
+- The inference step is **LLM-driven and non-deterministic** — the same prompt can
+  yield different (all-valid) specs across runs, so there is no stable artifact to
+  assert byte- or structure-equality against.
+- What *is* deterministic once a spec exists — that the spec renders to a valid,
+  well-formed, tier-2 artifact — is already fully covered by §3–§5 over `FIXTURES`.
+
+Instead, the NL path is validated by the **SKILL.md procedure and human review**: the
+authoring guidance in `05 §4` (including the REQ-IN-03 "depict only what the user
+described" discipline, `02 §4`) is exercised conversationally and reviewed by a human,
+not by an automated test. This exclusion is explicit, not an oversight — the coverage
+table's "Natural-language description produces a valid artifact" row points here.
 
 ## Dependencies
 

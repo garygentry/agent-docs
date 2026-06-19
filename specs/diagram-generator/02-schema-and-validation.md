@@ -21,7 +21,7 @@ placement in `01-architecture-layout.md`; nothing here redefines a shared type.
 | REQ-OUT-02 | Explicit viewBox + width/height, well-formed coordinates | 3.4 |
 | REQ-OUT-04 | No external font/CDN; embedded data-URI font | 3.5 |
 | REQ-A11Y-01 | `<title>`/`<desc>`/`role="img"` present | 3.6 |
-| REQ-DISC-03 (analog) | JSON Schema generation + drift guard | 5 |
+| REQ-IN-02 | Committed JSON Schema generation + drift guard for the engine-neutral input | 5 |
 
 > **Cross-document note (REQ-OUT-01):** the tier-2-clean assertion (§3.3) checks the
 > property mandated by REQ-OUT-01 (plain `<text>`, no `<foreignObject>`). REQ-OUT-01
@@ -377,13 +377,15 @@ export function assertOutputValid(svg: string): void {
 
 `assertWellFormed` returns the parsed document so the structural and a11y checks
 reuse the tree rather than re-parsing. `parseXml`'s return type is
-`import("@rgrove/parse-xml").Document` (verified export: the package's default API
-is `parseXml(xml: string, options?): Document`, throwing on malformed input).
+`import("@rgrove/parse-xml").XmlDocument` — the same `XmlDocument` name used in the
+§3.2 code (the package's API is `parseXml(xml: string, options?): XmlDocument`,
+throwing on malformed input). `XmlDocument` and `XmlElement` (used in §3.4/§3.6) are
+the authoritative exported names; see the §3.2 verification note.
 
 ### 3.2 `assertWellFormed`
 
 ```typescript
-import { parseXml, type XmlDocument } from "@rgrove/parse-xml";
+import { parseXml, type XmlDocument, type XmlElement } from "@rgrove/parse-xml";
 
 /**
  * Assert the SVG string is well-formed XML by parsing it with `@rgrove/parse-xml`.
@@ -407,9 +409,14 @@ export function assertWellFormed(svg: string): XmlDocument {
 }
 ```
 
-> **WARNING:** confirm `@rgrove/parse-xml` exports `XmlDocument` as a named type. If
-> the installed version names it `Document` instead, import that name. Verify before
-> implementing — the package was not present in `node_modules` at spec time.
+> **WARNING — verify external type names against the installed `@rgrove/parse-xml`.**
+> This document uses the v4 named exports `XmlDocument` (return of `parseXml`, §3.1/§3.2)
+> and `XmlElement` (parameter type in `assertStructural` §3.4 and `hasDescendant` §3.6),
+> the node discriminant `node.type === "element"`, and the accessors `.root`, `.name`,
+> `.attributes` (`Record<string, string>`), and `.children`. Confirm all of these
+> against the pinned version before implementing; if a name differs (e.g. `Document`
+> instead of `XmlDocument`), import the actual name and adjust uniformly. The package
+> was not present in `node_modules` at spec time.
 
 ### 3.3 `assertTier2` (proves REQ-OUT-01)
 
@@ -589,10 +596,15 @@ See `05-cli-and-invocation.md` §4 for the SKILL.md guidance that discharges REQ
 
 ---
 
-## 5. Diagram input JSON Schema generation — `schema-gen.ts` (REQ-DISC-03 analog, REQ-IN-02)
+## 5. Diagram input JSON Schema generation — `schema-gen.ts` (REQ-IN-02)
 
 `schemas/diagram-input.schema.json` is the committed JSON Schema for the
-engine-neutral input, generated from the Zod `DiagramSpec`. Per tech-spec §3.2, the
+engine-neutral input, generated from the Zod `DiagramSpec`. The PRD requirement
+discharged here is **REQ-IN-02** (engine-neutral structured spec). The pattern
+mirrors the host emitter's own manifest schema-gen requirement (`agent-docs`
+REQ-DISC-03) — an **external** host-repo requirement ID, not a diagram-generator PRD
+requirement — but this section carries no `REQ-DISC-03` PRD-coverage weight. Per
+tech-spec §3.2, the
 existing `src/schema-gen.ts` is **not parameterized** (it hardwires `Manifest` and a
 single output path), so this is a **sibling generator** that mirrors that file's
 shape exactly — reusing only the `zodToJsonSchema` import. Do not refactor

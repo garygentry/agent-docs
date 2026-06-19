@@ -25,13 +25,21 @@ module tree, dependency table, and `package.json` script set) and references
 | REQ-PORT-02 | Agent-agnostic — verbatim emission to all 5 targets | 5 |
 | REQ-OUT-04 | Build determinism — committed bundle byte-stable, drift-guarded | 3, 4 |
 | REQ-REPRO-01 | Deterministic bundle build + drift guard owns bundle bytes | 4 |
-| OTQ-1 | Golden strategy for the bundle — RESOLVED (relpath presence only) | 4.3 |
+| OTQ-1 | Golden strategy for the bundle — RESOLVED (committed byte golden) | 4.3 |
 
 ## 2. Manifest registration (CON-01)
 
 The skill becomes canonical by appending **exactly one** `ToolEntry` to the
 `tools[]` array of `tools.manifest.json`. The `ToolEntry` Zod shape is verified at
 `src/model.ts:37-48`:
+
+> **External reference note.** The `REQ-TOOLS-*` and `REQ-DISC-*` IDs that appear in
+> the verbatim `src/model.ts` excerpt below (e.g. `REQ-TOOLS-01..04` on the `type`
+> field, `REQ-DISC-01` on `targets`) are the **host `agent-docs` emitter's own**
+> requirement vocabulary — a different namespace from this feature's PRD. They are
+> reproduced verbatim from the existing source comment and are **not**
+> diagram-generator PRD requirements (mirroring the external-label precedent for
+> REQ-DIAG-02 in `TRACEABILITY.md`). Do not edit the verbatim code comment.
 
 ```typescript
 // src/model.ts:37-48 (verbatim shape — do NOT redefine; this is the existing schema)
@@ -217,34 +225,42 @@ if (import.meta.main) {
 > to memory (via `Bun.build(...).outputs[0].text()`) — **never** to a temp file on
 > disk — so the guard has no filesystem side effects.
 
-### 4.3 OTQ-1 RESOLVED — goldens assert relpath PRESENCE only
+### 4.3 OTQ-1 RESOLVED — commit a byte golden for the bundle
 
-**Decision:** the emission goldens (`src/test/__golden__/`, `08`) assert that the
-bundle's **relpath is present** in each target tree — they do **NOT** byte-compare
-the `.mjs` content. Byte-fidelity of the committed bundle is owned exclusively by
-`build:diagram:check` (§4.2) and, downstream, the adapter drift guard that verifies
-verbatim copies match their canonical source.
+**Decision:** the emission goldens (`src/test/__golden__/`, `08`) include a
+**committed byte golden** for `diagram-render.mjs` in each target tree, exactly like
+every other emitted file. This is the only mechanism that satisfies the real
+`golden.test.ts` three-way set equality (see below); the earlier "presence-only / no
+byte compare" framing was incompatible with the actual test and is dropped.
 
-**Rationale:**
-1. The `.mjs` inlines a large, opaque WASM blob (Graphviz compiled to
-   WebAssembly, base64) plus a base64 subset font. Byte-comparing it inside the
-   golden suite would make every dependency bump or toolchain change a noisy
-   golden churn unrelated to emitter behavior.
-2. The golden suite's job is to prove the **emitter** maps a skill to the correct
-   per-target relpaths and transforms (`golden.test.ts:70-78`) — not to re-verify
-   the bundler. Separation of concerns: `build:diagram:check` owns bundle bytes;
-   goldens own the emit topology.
-3. `golden.test.ts:70-72` byte-compares only files returned by `readGolden(target)`
-   and present in `wanted`. By registering the `.mjs` relpath in
-   `SAMPLE_RELPATHS` (§5.3) **but not committing a `.mjs` golden file**, the
-   `wanted`-set equality (`golden.test.ts:78`) still requires the relpath to be
-   emitted, while no byte assertion is made on the bundle.
+**Why this is the correct (and only passing) option:** `golden.test.ts` enforces a
+strict three-way equality `emitted == golden == wanted` over the sample-scoped
+relpaths. Concretely, with `wanted = SAMPLE_RELPATHS[target]`:
+- line 64 keeps only emitted files whose relpath is in `wanted`;
+- lines 70-71 byte-compare **every committed golden** against the emitted content;
+- line 76 asserts `emitted.keys() === golden.keys()`;
+- line 78 asserts `golden.keys() === wanted`.
 
-> Mechanically: the relpath appears in `SAMPLE_RELPATHS[target]` (so
-> `golden.test.ts:78` requires it to be emitted and `:76` requires the emitter to
-> produce exactly that set), and `readGolden(target)` returns no entry for the
-> `.mjs`, so `golden.test.ts:70-72` performs no byte check on it. This is the
-> intended split — verify presence in goldens, bytes in `build:diagram:check`.
+So registering the `.mjs` relpath in `SAMPLE_RELPATHS` (§5.3) **without** committing
+a `.mjs` golden makes line 78 fail (golden omits it, wanted has it) and line 76 fail
+(emitted has it, golden omits it). The only way for the relpath to live in `wanted`
+is to commit its golden — which is byte-compared at lines 70-71. There is no
+"presence without bytes" path through this test.
+
+**Accepted trade-off (dependency-bump churn):** committing the `.mjs` golden means a
+dependency bump or toolchain change that alters the bundle bytes produces a golden
+diff that must be regenerated (`bun run src/test/regenerate-goldens.ts`, `08 §6.3`).
+This is acceptable and already the norm for the repo: `build:diagram:check` (§4.2)
+pins the same bytes via the drift guard, so the bundle bytes are committed-and-checked
+in two places that move together. When the bundle legitimately changes, both the
+committed `.mjs` and its golden are regenerated in the same commit.
+
+> Mechanically: the `.mjs` relpath appears in `SAMPLE_RELPATHS[target]` (so
+> `golden.test.ts:78` requires it and `:76` requires the emitter to produce exactly
+> that set), and `readGolden(target)` returns a committed golden for it, so
+> `golden.test.ts:70-71` byte-compares the emitted bundle against that golden — the
+> standard path every emitted file takes. Byte-fidelity is thus enforced in both the
+> golden suite and `build:diagram:check` (§4.2).
 
 ### 4.4 Both checks wired into `gate` (from `01-architecture-layout.md` §5)
 
@@ -357,7 +373,7 @@ rules/diagram-generator/scripts/diagram-render.mjs
 > `skillVerbatimRecords` directly. The gemini aggregate `gemini-extension.json` is
 > the only aggregate this skill contributes (a skill has no `agents/` entry, so
 > codex emits no `agents/openai.yaml`), consistent with the
-> `SAMPLE_RELPATHS` note at `src/test/golden.shared.ts:30-33`.
+> `SAMPLE_RELPATHS` note at `src/test/golden.shared.ts:31-32`.
 
 ### 5.3 `SAMPLE_RELPATHS` registration (`src/test/golden.shared.ts`)
 
@@ -412,13 +428,13 @@ export const SAMPLE_RELPATHS: Record<Target, string[]> = {
 
 > The existing `gemini-extension.json` golden is regenerated by the sample build
 > when `diagram-generator` is added to the sample manifest; its golden content
-> updates accordingly (it is the only file in §5.2 with a committed byte golden for
-> the bundle-bearing skill — and it does NOT contain bundle bytes, only the
-> aggregate manifest). For the `.mjs` and `references/*.md` relpaths, register them
-> in `SAMPLE_RELPATHS` but do **not** commit byte goldens for the `.mjs` (§4.3,
-> OTQ-1). Whether to commit byte goldens for the small `references/*.md` is the
-> golden suite's existing convention (`08`); they are deterministic text and MAY be
-> committed — only the `.mjs` is intentionally presence-only.
+> updates accordingly (it does NOT contain bundle bytes, only the aggregate
+> manifest). Every relpath added to `SAMPLE_RELPATHS` — including the `.mjs`, the
+> `references/*.md`, and the SKILL file — MUST have a committed byte golden, because
+> `golden.test.ts`'s three-way set equality (`:76`/`:78`) requires `golden.keys()`
+> to equal `wanted` exactly (§4.3, OTQ-1). The `.mjs` golden is byte-compared like
+> any other file (`:70-71`); regenerate it together with the committed bundle
+> whenever `src/diagram/` changes.
 
 ### 5.4 If a transform differs
 
@@ -489,8 +505,9 @@ Implement these first:
 - [ ] `SAMPLE_RELPATHS` (`src/test/golden.shared.ts`) is extended with the exact
       per-target relpath sets in §5.2/§5.3; `golden.test.ts` three-way set equality
       (`:76-78`) passes (no missing, no extra relpath).
-- [ ] No committed byte golden exists for `diagram-render.mjs` (OTQ-1, §4.3); its
-      relpath is present in `SAMPLE_RELPATHS` only.
+- [ ] A committed byte golden exists for `diagram-render.mjs` in each target tree
+      (OTQ-1, §4.3); it is byte-compared by `golden.test.ts:70-71` and regenerated
+      together with the committed bundle whenever `src/diagram/` changes.
 - [ ] `bun run gate` runs both new diagram checks and stays green (§4.4).
 - [ ] New external packages are in `devDependencies`, not `dependencies`
       (`01-architecture-layout.md` §4).

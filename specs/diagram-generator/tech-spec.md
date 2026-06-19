@@ -37,6 +37,11 @@ Render source lives in the repo's central `src/` tree (typechecked, linted, and
 unit-tested with everything else); the **bundled** output is committed into the
 skill so it travels to every target.
 
+> **Indicative, not authoritative.** The tree below sketches the principal modules;
+> it omits the standalone `schema-gen.ts` and `build-check.ts` scripts and the
+> `assets/` directory. The **authoritative full layout** is
+> `01-architecture-layout.md` §1 — defer to it for file placement.
+
 ```
 src/diagram/
   schema.ts          # Zod DiagramSpec (engine-neutral) + inferred types         (REQ-IN-02)

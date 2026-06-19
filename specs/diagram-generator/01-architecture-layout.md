@@ -34,6 +34,7 @@ agent-docs/
 │       ├── png.ts                   # SVG → PNG via @resvg/resvg-js           (04 §4)
 │       ├── render.ts                # orchestration: spec → RenderResult      (03 §5)
 │       ├── schema-gen.ts            # DiagramSpec Zod → JSON Schema + drift    (02 §4)
+│       ├── build-check.ts           # bundle drift guard (re-bundle in mem, diff) (06 §4.2)
 │       ├── cli.ts                   # arg parse, IO, exit codes, --version    (05 §2,§3)
 │       ├── assets/
 │       │   └── font.subset.ts       # base64 data-URI subset font (generated) (04 §3)
@@ -115,12 +116,16 @@ schema.ts ─┬─────────────► validate.ts ──┐
 errors.ts ─┘    theme.ts ─► svg-postprocess.ts ──┘        ▲
                 png.ts ───────────────────────────────────┘
 schema.ts ─► schema-gen.ts   (standalone generator, not imported by cli.ts)
+build-check.ts               (standalone drift guard, not imported by cli.ts)
 ```
 
 - `schema.ts` and `errors.ts` (`00`) are leaves everyone imports.
 - `cli.ts` is the bundle entry (`bun build --target=node src/diagram/cli.ts`).
 - `schema-gen.ts` is a standalone script (run by `schema:gen:diagram`), **not**
   part of the CLI bundle — keeps `zod-to-json-schema` out of the shipped `.mjs`.
+- `build-check.ts` is a standalone script (run by `build:diagram:check`, `06` §4.2),
+  **not** imported by `cli.ts`; it re-bundles `cli.ts` in memory and diffs the
+  committed `.mjs`.
 
 ## 4. Dependencies
 
@@ -181,9 +186,11 @@ Add to `scripts` (existing `gate` is extended, not replaced):
 - The bundle target is `node` (Bun-compatible) so the same `.mjs` runs under both
   Bun and Node in consuming repos.
 - Determinism (REQ-REPRO-01): the committed bundle must be byte-stable for a fixed
-  toolchain + pinned deps; the `build:diagram:check` drift guard owns bundle bytes
-  (per OTQ-1 resolution in `06` §4 — goldens assert relpath presence, not bundle
-  bytes).
+  toolchain + pinned deps. Bundle bytes are pinned in two places that move together
+  (per OTQ-1 resolution in `06` §4): the `build:diagram:check` drift guard
+  (`src/diagram/build-check.ts`) re-bundles in memory and diffs the committed `.mjs`,
+  and the golden suite commits a byte golden for the emitted `.mjs` per target. Both
+  are regenerated in the same commit when the bundle legitimately changes.
 
 ## Dependencies
 

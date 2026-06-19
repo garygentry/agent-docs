@@ -50,7 +50,7 @@ contract is the CLI, `05-cli-and-invocation.md`). It therefore lives **here** in
 > `00` would be reasonable; for now it is defined and exported here as internal.
 
 ```typescript
-import type { HexColor, NodeRole, Theme } from "./schema";
+import type { HexColor, NodeRole, Theme } from "./schema.js";
 
 /** The three inlined colors applied to one node by its semantic role (REQ-COV-01). */
 export interface RoleColors {
@@ -181,8 +181,8 @@ brand tint, not a destruction of the semantic palette.
 ### 2.4 Implementation
 
 ```typescript
-import type { NodeRole, Theme } from "./schema";
-import type { ResolvedPalette } from "./theme"; // RoleColors/ResolvedPalette declared §1, same module
+import type { HexColor, NodeRole, Theme } from "./schema.js";
+// RoleColors/ResolvedPalette are declared in §1 of this same module (theme.ts).
 
 /** Frozen light/dark token tables — the §2.1/§2.2 values. Internal constant. */
 const PALETTES: Record<Theme, ResolvedPalette> = {
@@ -203,12 +203,12 @@ const PALETTES: Record<Theme, ResolvedPalette> = {
  * @returns A deep-cloned, total `ResolvedPalette`; the caller may not mutate the
  *   frozen `PALETTES` source.
  */
-export function resolveTheme(theme: Theme, accent?: string): ResolvedPalette {
+export function resolveTheme(theme: Theme, accent?: HexColor): ResolvedPalette {
   const base = structuredClone(PALETTES[theme]);
   if (accent !== undefined) {
-    base.accent = accent as ResolvedPalette["accent"];
-    base.edge = accent as ResolvedPalette["edge"];
-    base.roles.default.stroke = accent as ResolvedPalette["edge"];
+    base.accent = accent;
+    base.edge = accent;
+    base.roles.default.stroke = accent;
   }
   return base;
 }
@@ -233,32 +233,62 @@ p.background;          // "#020617"
 
 ## 3. `src/diagram/svg-postprocess.ts` — the post-process passes
 
-`postProcess` is the single entry point. It applies the passes **in the order
-below** — color/z-order/legend/a11y/font are content passes; canonicalization is
-the **final** pass so it normalizes everything the earlier passes added, producing a
-byte-stable result (REQ-REPRO-01). Output assertions (`02` §3) run afterward, in
+`postProcess` is the single entry point. It first resolves the color palette
+internally — `const palette = resolveTheme(opts.theme, opts.accent ?? opts.spec.accent)`
+(§2) — so callers pass a theme, not a palette; the `palette.*` references in the
+passes below are this internally-resolved value. It then applies the passes **in the
+order below** — color/z-order/legend/a11y/font are content passes; canonicalization
+is the **final** pass so it normalizes everything the earlier passes added, producing
+a byte-stable result (REQ-REPRO-01). Output assertions (`02` §3) run afterward, in
 `render.ts`.
 
 ```typescript
-import type { DiagramSpec } from "./schema";
-import type { ResolvedPalette } from "./theme";
-import { DiagramOutputError } from "./errors";
+import type { DiagramSpec, HexColor, Theme } from "./schema.js";
+import { resolveTheme } from "./theme.js"; // §2 — postProcess resolves the palette internally
+import { DiagramOutputError } from "./errors.js";
+
+/** Options for one post-process call (one theme variant). */
+export interface PostProcessOptions {
+  /** The theme variant to bake (REQ-THEME-01); used to resolve the palette (§2). */
+  theme: Theme;
+  /** Optional validated accent override; falls back to the variant default (§2.3). */
+  accent?: HexColor;
+  /** The validated DiagramSpec; `title`/`description` feed a11y (§3.5), `nodes`/`containers` the legend (§3.4). */
+  spec: DiagramSpec;
+  /** Intrinsic width from the render path (sequence path supplies it; graph path passes 0 and §3.4/§3.7 derive it from the SVG). */
+  width: number;
+  /** Intrinsic height (same convention as `width`). */
+  height: number;
+}
+
+/** The post-process result: final SVG plus its authoritative dimensions and slug. */
+export interface PostProcessResult {
+  /** The final tier-2-portable, canonicalized SVG markup. */
+  svg: string;
+  /** Authoritative artifact width after legend expansion/canonicalization (REQ-OUT-02). */
+  width: number;
+  /** Authoritative artifact height (REQ-OUT-02). */
+  height: number;
+  /** Filename slug derived from `spec.title` (00 §3.2 / 05 §3 slug rule). */
+  slug: string;
+}
 
 /**
  * Transform the raw, structure-only SVG from the render path
  * (03-rendering-engine.md) into the final tier-2-portable SVG: semantic color
  * baked inline, z-order enforced, legend placed, `<title>`/`<desc>`/`role="img"`
  * injected, the subset font embedded as a data-URI, and the document canonicalized
- * for determinism. The result still must pass output validation (02 §3) — this
- * function produces, it does not assert.
+ * for determinism. It resolves the color palette internally via `resolveTheme`
+ * (§2) from `opts.theme`/`opts.accent` — callers pass the theme, not a palette. The
+ * result still must pass output validation (02 §3) — this function produces, it does
+ * not assert.
  *
  * @param rawSvg - A single `<svg>…</svg>` document with plain `<text>`, carrying
  *   `class="role-<role>"` on nodes and `class="container"` on clusters
  *   (03 §2.5, §4.1). No color, font, or a11y nodes yet.
- * @param spec - The validated DiagramSpec; `title`/`description` feed a11y (§3.5),
- *   `nodes`/`containers` inform legend contents (§3.4).
- * @param palette - The resolved color set for the baked theme (§2, REQ-THEME-01).
- * @returns The final tier-2-portable, canonicalized SVG markup.
+ * @param opts - `{ theme, accent?, spec, width, height }` (see `PostProcessOptions`).
+ * @returns `{ svg, width, height, slug }` — the final SVG, its authoritative
+ *   dimensions (after legend expansion + canonicalization), and the artifact slug.
  * @throws {DiagramOutputError} (code `OUTPUT_INVALID`) only if the raw SVG cannot
  *   be parsed into a DOM for processing (a structural failure upstream). Content
  *   passes do not throw; the dedicated output assertions (02 §3) report tier-2 /
@@ -266,9 +296,8 @@ import { DiagramOutputError } from "./errors";
  */
 export function postProcess(
   rawSvg: string,
-  spec: DiagramSpec,
-  palette: ResolvedPalette,
-): string;
+  opts: PostProcessOptions,
+): PostProcessResult;
 ```
 
 The passes operate on a parsed SVG DOM (the bundled XML parser, `@rgrove/parse-xml`,
@@ -409,7 +438,7 @@ offline. Instead the **subset font is embedded as a base64 data-URI**:
   any stragglers and guarantees no other family leaks.
 
 ```typescript
-import { FONT_SUBSET_DATA_URI } from "./assets/font.subset";
+import { FONT_SUBSET_DATA_URI } from "./assets/font.subset.js";
 
 /** The single embedded face name; matches the render-path placeholder (03 §4.2). */
 const EMBEDDED_FONT_FAMILY = "DiagramSans" as const;
@@ -461,7 +490,7 @@ the string returned by `postProcess`. The exact rules:
    non-empty never; a single consistent rule.
 
 ```typescript
-import { SVG_COORD_PRECISION } from "./schema";
+import { SVG_COORD_PRECISION } from "./schema.js";
 
 /**
  * Round one numeric token to the fixed determinism precision (00 §6). Round-half-
@@ -519,7 +548,7 @@ implementation time and pin whatever exact version is chosen — never a `^` ran
 ### 4.2 Signature
 
 ```typescript
-import { DiagramPngError } from "./errors";
+import { DiagramPngError } from "./errors.js";
 
 /** Options for PNG rasterization. */
 export interface RenderPngOptions {
@@ -608,8 +637,9 @@ External / asset dependencies:
 
 Consumed by:
 
-- `render.ts` (`03` §5) calls `resolveTheme` → render path → `postProcess` → output
-  validation → optionally `renderPng`.
+- `render.ts` (`03` §5) runs the render path → `postProcess` (which resolves the
+  palette internally via `resolveTheme`, so `render.ts` does **not** call
+  `resolveTheme`) → output validation → optionally `renderPng`.
 - `02-schema-and-validation.md` §3 asserts the properties these passes produce.
 
 ## Verification

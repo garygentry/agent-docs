@@ -40,7 +40,7 @@ overlap) is resolved in §4.
 ## 1. Position in the pipeline
 
 ```
-DiagramSpec ──validate(02)──► render(spec,opts)                       (§5)
+DiagramSpec ──parseSpec(02, at CLI)──► render(spec,opts)              (§5)
                                   │
               diagramType==="sequence" ? ──► renderSequence(spec)     (§4)
                                   │                  │  {svg,width,height}
@@ -200,7 +200,7 @@ for labels containing angle brackets.
 ### 2.8 Signature
 
 ```typescript
-import type { DiagramSpec, Node } from "./schema";
+import type { DiagramSpec, Node } from "./schema.js";
 
 /**
  * Compile an engine-neutral `DiagramSpec` into a Graphviz DOT string for one of
@@ -269,7 +269,7 @@ short-lived and single-spec, but memoization avoids re-instantiating WASM if
 
 ```typescript
 import { instance } from "@viz-js/viz";
-import { DiagramRenderError } from "./errors";
+import { DiagramRenderError } from "./errors.js";
 
 /**
  * Cached Graphviz-WASM instance. `@viz-js/viz`'s `instance()` resolves a `Viz`
@@ -462,7 +462,7 @@ toward the `to` lifeline. Direction is left→right or right→left based on the
 ### 4.7 Signature & error handling
 
 ```typescript
-import type { DiagramSpec } from "./schema";
+import type { DiagramSpec } from "./schema.js";
 
 /**
  * Lay out a `sequence` `DiagramSpec` directly as plain-`<text>` SVG (OTQ-3).
@@ -500,8 +500,10 @@ variant. It owns the dispatch, the post-process call, and the output assertion.
 
 ### 5.1 Dispatch flow
 
-1. **Validate input** (REQ-REL-01) — call into `02` (`validateSpec`, 02 §2). On
-   failure a `DiagramInputError` propagates (caller catches; §5.4).
+1. **Input already validated upstream** (REQ-REL-01) — `render` receives a
+   `DiagramSpec` that the CLI already produced and validated via `parseSpec`
+   (`02 §2`, called at the CLI boundary `05 §3.1`). `render` does **not** re-validate;
+   it trusts the typed `DiagramSpec` and proceeds straight to dispatch.
 2. **Branch on `diagramType`:**
    - `"sequence"` → `renderSequence(spec)` (§4) → `{ svg, width, height }`.
    - else → `emitDot(spec)` (§2) → `renderGraph(dot)` (§3) → raw SVG (geometry
@@ -517,40 +519,38 @@ variant. It owns the dispatch, the post-process call, and the output assertion.
    `slug` is derived from `spec.title` (see 00 §3.2 / 05 §3 for the slug rule).
 
 ```typescript
-import type { DiagramSpec, RenderResult, Theme } from "./schema";
-import { DiagramRenderError } from "./errors";
-import { validateSpec } from "./validate";      // 02 §2
-import { assertOutputValid } from "./validate"; // 02 §3
-import { emitDot } from "./dot-emit";           // §2
-import { renderGraph } from "./graph-render";   // §3
-import { renderSequence } from "./sequence-svg"; // §4
-import { postProcess } from "./svg-postprocess"; // 04 §3
+import type { DiagramSpec, HexColor, RenderResult, Theme } from "./schema.js";
+import { assertOutputValid } from "./validate.js"; // 02 §3
+import { emitDot } from "./dot-emit.js";           // §2
+import { renderGraph } from "./graph-render.js";   // §3
+import { renderSequence } from "./sequence-svg.js"; // §4
+import { postProcess } from "./svg-postprocess.js"; // 04 §3
 
 /** Options that override `DiagramSpec` defaults for one render (theme baked per call). */
 export interface RenderOptions {
   /** The theme variant to bake into this artifact (REQ-THEME-01). */
   theme: Theme;
-  /** Optional accent/brand color override (`#rrggbb`); falls back to `spec.accent`. */
-  accent?: string;
+  /** Optional accent/brand color override (validated `HexColor`); falls back to `spec.accent`. */
+  accent?: HexColor;
 }
 
 /**
  * Render one validated `DiagramSpec` into one theme variant as a tier-2-portable
  * SVG `RenderResult` (00 §3.2). This is the single orchestration entry the CLI
- * calls per theme. Flow: validate input (02 §2) → branch on `diagramType`
+ * calls per theme. Flow: branch on `diagramType`
  * (`sequence` → `renderSequence` §4; else `emitDot`→`renderGraph` §2/§3) →
  * `postProcess` (04 §3: color, font, a11y, canonicalize) → `assertOutputValid`
- * (02 §3) → `RenderResult`.
+ * (02 §3) → `RenderResult`. Input validation is NOT re-done here — the CLI already
+ * validated the spec via `parseSpec` (02 §2 / 05 §3.1) before calling `render`.
  *
  * PNG is produced separately by the CLI via `png.ts` (04 §4) from `result.svg` —
  * this function never rasterizes (REQ-OUT-03 is owned downstream).
  *
- * @param spec - The engine-neutral diagram spec (already JSON-parsed; this
- *   function runs the structural/cross-field validation).
+ * @param spec - The engine-neutral diagram spec, already parsed AND validated by
+ *   the CLI's `parseSpec` (02 §2); `render` trusts it as a typed `DiagramSpec`.
  * @param opts - `{ theme, accent? }` — the variant to bake (REQ-THEME-01).
  * @returns A `RenderResult` with validated `svg`, intrinsic `width`/`height`,
  *   the baked `theme`, and a `slug` (00 §3.2).
- * @throws {DiagramInputError} If validation fails (02 §2, exit 2).
  * @throws {DiagramRenderError} If DOT/Graphviz or sequence layout fails (§3/§4, exit 3).
  * @throws {DiagramOutputError} If the post-processed SVG fails tier-2 / viewBox /
  *   font / a11y assertions (02 §3, exit 4).
@@ -559,8 +559,8 @@ export async function render(
   spec: DiagramSpec,
   opts: RenderOptions,
 ): Promise<RenderResult> {
-  // 1. Input validation (REQ-REL-01) — throws DiagramInputError on failure.
-  validateSpec(spec);
+  // 1. Input already validated by the CLI via parseSpec (02 §2 / 05 §3.1);
+  //    render trusts the typed DiagramSpec and does not re-validate (REQ-REL-01).
 
   // 2. Branch on diagram type.
   let rawSvg: string;
@@ -616,11 +616,14 @@ export async function render(
 
 ### 5.2 Validation placement (REQ-REL-01/02)
 
-Input validation runs **first** (step 1) so a bad spec never reaches the engine;
-output assertion runs **last** (step 4) so a broken SVG is never returned to the
-CLI for writing. Both live in `validate.ts` (`02`); `render.ts` only sequences
-them. This satisfies "validate before emit, fail loudly, no partial artifact" (REQ-
-REL-01/02, tech-spec §3.5).
+Input validation runs at the **CLI boundary** via `parseSpec` (`02 §2`, `05 §3.1`),
+**before** `render` is called — so a bad spec never reaches the engine, and `render`
+does not re-validate (a single parse at the boundary, no redundant second pass). The
+output assertion runs **last** (step 4) inside `render` so a broken SVG is never
+returned to the CLI for writing. Both `parseSpec` and `assertOutputValid` live in
+`validate.ts` (`02`); `render.ts` only sequences the engine + the output assertion.
+This satisfies "validate before emit, fail loudly, no partial artifact" (REQ-REL-01/02,
+tech-spec §3.5).
 
 ### 5.3 Tier-2 / viewBox enforcement (REQ-OUT-01/02)
 
@@ -658,8 +661,9 @@ Implement in this order:
    `SVG_COORD_PRECISION`. **Required before any module here.**
 2. `01-architecture-layout.md` — module placement (`src/diagram/`), the import
    graph, and the bundled `@viz-js/viz` devDependency.
-3. `02-schema-and-validation.md` — `validateSpec` (input, 02 §2) and
-   `assertOutputValid` (output, 02 §3), both called by `render.ts` (§5).
+3. `02-schema-and-validation.md` — `parseSpec` (input, 02 §2; called by the CLI at
+   the boundary, `05 §3.1`, NOT by `render`) and `assertOutputValid` (output, 02 §3;
+   called by `render.ts` step 4, §5).
 4. `04-theme-postprocess-png.md` — `postProcess` (color, font, a11y,
    canonicalization; the role→color map / OTQ-2; the canon rules / OTQ-6) called by
    `render.ts` (§5); `png.ts` is invoked by the CLI, not here.
@@ -691,9 +695,10 @@ import graph is acyclic (`01 §3`).
       distinctly and renders a self-message as a loop; lifelines do not overlap.
 - [ ] `render` dispatches `sequence` to `renderSequence` and all other types to
       `emitDot`→`renderGraph` (assert via spies in `render.test.ts`).
-- [ ] `render` calls `validateSpec` before any engine work and `assertOutputValid`
-      before returning; a forced `<foreignObject>` leak yields `DiagramOutputError`
-      and no `RenderResult`.
+- [ ] `render` does NOT re-validate the spec (no `parseSpec`/`validateSpec` call —
+      validation is the CLI's job via `parseSpec`, 05 §3.1) and calls
+      `assertOutputValid` before returning; a forced `<foreignObject>` leak yields
+      `DiagramOutputError` and no `RenderResult`.
 - [ ] `render` returns a `RenderResult` whose `svg` has explicit `viewBox` +
       width/height and `<title>`/`<desc>`/`role="img"` (post-process applied) —
       REQ-OUT-02, REQ-A11Y-01.
