@@ -75,8 +75,10 @@
       ]
     },
     "forge-4-backlog": {
-      "status": "in-progress",
+      "status": "complete",
       "version": 1,
+      "completedAt": "2026-06-19T14:00:00Z",
+      "commit": "eb10747",
       "basedOnVersions": {
         "forge-1-prd": 2,
         "forge-2-tech": 1,
