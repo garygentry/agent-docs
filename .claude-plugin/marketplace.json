@@ -1,14 +1,14 @@
 {
-  "name": "agent-docs-scaffold",
-  "description": "Agent-agnostic tool adapters generated from canonical Claude-native sources.",
+  "name": "agent-docs",
+  "description": "Agent skills for project documentation: scaffold an Astro 5 + Starlight docs site from an interview, generate portable SVG/PNG diagrams, and write house-style docs. Authored once in Claude-native form and emitted to Claude, Codex, Copilot, Cursor, and Gemini.",
   "owner": {
-    "name": "agent-docs-scaffold"
+    "name": "Gary Gentry"
   },
   "plugins": [
     {
-      "name": "agent-docs-scaffold",
+      "name": "agent-docs",
       "source": ".",
-      "description": "Agent-agnostic tool adapters generated from canonical Claude-native sources.",
+      "description": "Agent skills for project documentation: scaffold an Astro 5 + Starlight docs site from an interview, generate portable SVG/PNG diagrams, and write house-style docs. Authored once in Claude-native form and emitted to Claude, Codex, Copilot, Cursor, and Gemini.",
       "version": "0.1.0"
     }
   ]

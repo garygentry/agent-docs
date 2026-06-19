@@ -1,6 +1,16 @@
 {
-  "name": "agent-docs-scaffold",
+  "name": "agent-docs",
   "version": "0.1.0",
+  "description": "Agent skills for project documentation: scaffold an Astro 5 + Starlight docs site from an interview, generate portable SVG/PNG diagrams, and write house-style docs. Authored once in Claude-native form and emitted to Claude, Codex, Copilot, Cursor, and Gemini.",
+  "author": "Gary Gentry",
+  "keywords": [
+    "documentation",
+    "astro",
+    "starlight",
+    "diagrams",
+    "scaffold",
+    "claude-plugin"
+  ],
   "type": "module",
   "private": true,
   "main": "dist/index.js",

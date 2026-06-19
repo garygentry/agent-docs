@@ -3,7 +3,7 @@
     "source": "skills/*",
     "regenerate": "bun run build"
   },
-  "name": "agent-docs-scaffold",
+  "name": "agent-docs",
   "version": "0.1.0",
   "skills": [
     {
