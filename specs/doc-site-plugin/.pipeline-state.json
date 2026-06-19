@@ -43,10 +43,10 @@
       "fixedAt": "2026-06-19T00:00:00Z"
     },
     "forge-verify-specs": {
-      "status": "findings-applied",
-      "findingsFile": ".verification/VERIFY-specs-2026-06-19.md",
-      "findingsCount": 8,
-      "verifiedAt": "2026-06-19T13:00:00Z",
+      "status": "passed",
+      "findingsFile": ".verification/VERIFY-specs-2026-06-19-reverify.md",
+      "findingsCount": 0,
+      "verifiedAt": "2026-06-19T13:30:00Z",
       "fixedAt": "2026-06-19T13:15:00Z",
       "commit": "21388df"
     },
