@@ -8,18 +8,18 @@
       "type": "chore",
       "priority": 1,
       "title": "Scaffold src/diagram tree, package.json devDeps + scripts, embedded font asset",
-      "description": "Lay the foundation for the diagram-generator feature. 1) package.json: add three NEW devDependencies (NOT runtime dependencies) pinned to EXACT versions (no ^ or ~): @viz-js/viz, @resvg/resvg-js, @rgrove/parse-xml. zod and zod-to-json-schema already exist as runtime deps — do not move or duplicate them. 2) package.json scripts: add `build:diagram` = `bun build src/diagram/cli.ts --target=node --minify --outfile skills/diagram-generator/scripts/diagram-render.mjs`, `build:diagram:check` = `bun run src/diagram/build-check.ts`, `schema:gen:diagram` = `bun run src/diagram/schema-gen.ts`, `schema:check:diagram` = `bun run src/diagram/schema-gen.ts --check`. Extend the EXISTING `gate` script (do not replace it) so it also runs `schema:check:diagram` and `build:diagram:check` in addition to the checks it already runs. 3) Create the src/diagram/ directory and src/diagram/assets/font.subset.ts — a generated module exporting a base64 data-URI string of a subset libre sans font (e.g. DejaVu Sans / IBM Plex subset) for later embedding into SVG (REQ-OUT-04). The export should be `export const SUBSET_FONT_DATA_URI: string` of the form `data:font/woff2;base64,...`. Do NOT implement other modules in this item — referenced scripts (build-check.ts, schema-gen.ts, cli.ts) are created by later items, so `gate` itself need not pass yet, only `tsc --noEmit`. See 01-architecture-layout.md §4 (dependencies, pin policy) and §5 (scripts), and 04-theme-postprocess-png.md §3.6 (font embedding).",
+      "description": "Lay the foundation for the diagram-generator feature. 1) package.json: add three NEW devDependencies (NOT runtime dependencies) pinned to EXACT versions (no ^ or ~): @viz-js/viz, @resvg/resvg-js, @rgrove/parse-xml. zod and zod-to-json-schema already exist as runtime deps — do not move or duplicate them. 2) package.json scripts: add `build:diagram` = `bun build src/diagram/cli.ts --target=node --minify --outfile skills/diagram-generator/scripts/diagram-render.mjs`, `build:diagram:check` = `bun run src/diagram/build-check.ts`, `schema:gen:diagram` = `bun run src/diagram/schema-gen.ts`, `schema:check:diagram` = `bun run src/diagram/schema-gen.ts --check`. Extend the EXISTING `gate` script (do not replace it) so it also runs `schema:check:diagram` and `build:diagram:check` in addition to the checks it already runs. 3) Create the src/diagram/ directory and src/diagram/assets/font.subset.ts — a generated module exporting a base64 data-URI string of a subset libre sans font (e.g. DejaVu Sans / IBM Plex subset) for later embedding into SVG (REQ-OUT-04). The export should be `export const FONT_SUBSET_DATA_URI: string` of the form `data:font/woff2;base64,...` (this exact name is imported by svg-postprocess.ts per 04 §3.6). Do NOT implement other modules in this item — referenced scripts (build-check.ts, schema-gen.ts, cli.ts) are created by later items, so `gate` itself need not pass yet, only `tsc --noEmit`. See 01-architecture-layout.md §4 (dependencies, pin policy) and §5 (scripts), and 04-theme-postprocess-png.md §3.6 (font embedding).",
       "acceptanceCriteria": [
         "@viz-js/viz, @resvg/resvg-js, @rgrove/parse-xml appear in package.json devDependencies (not dependencies), each pinned to an exact version with no ^ or ~",
         "package.json scripts contain build:diagram, build:diagram:check, schema:gen:diagram, schema:check:diagram with the commands described",
         "The existing gate script is extended to include schema:check:diagram and build:diagram:check (existing checks retained)",
-        "src/diagram/assets/font.subset.ts exports SUBSET_FONT_DATA_URI as a base64 data-URI string beginning with 'data:font/'",
+        "src/diagram/assets/font.subset.ts exports FONT_SUBSET_DATA_URI as a base64 data-URI string beginning with 'data:font/'",
         "tsc --noEmit passes"
       ],
       "status": "pending",
       "completedAt": null,
       "dependsOn": [],
-      "notes": "Foundation item — lays groundwork for items 002–018. The font asset is consumed by svg-postprocess.ts (009) and must be a real subset (small) so the committed bundle stays manageable. Pins are required because @viz-js/viz and @resvg/resvg-js output bytes feed the determinism (017) and PNG smoke tests.",
+      "notes": "Foundation item — lays groundwork for items 002–018. The font asset is consumed by svg-postprocess.ts (009) and must be a real subset (small) so the committed bundle stays manageable. Pins are required because @viz-js/viz and @resvg/resvg-js output bytes feed the determinism (017) and PNG smoke tests. Requirements satisfied: REQ-OUT-04 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -44,8 +44,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001"],
-      "notes": "00-core-definitions.md contains the authoritative code for almost every symbol — transcribe it, do not redesign. schema.ts and errors.ts are leaf modules imported by everything downstream (see 01 §3 import graph).",
+      "dependsOn": [
+        "001"
+      ],
+      "notes": "00-core-definitions.md contains the authoritative code for almost every symbol — transcribe it, do not redesign. schema.ts and errors.ts are leaf modules imported by everything downstream (see 01 §3 import graph). Requirements satisfied: REQ-IN-02 REQ-REL-02 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -57,7 +59,7 @@
       "type": "feature",
       "priority": 1,
       "title": "Implement input + output validation — validate.ts",
-      "description": "Create src/diagram/validate.ts per 02-schema-and-validation.md §2–3. Two responsibilities: (A) INPUT — export diagramSuperRefine and parseSpec(json: unknown): DiagramSpec. parseSpec runs DiagramSpec.parse then applies diagramSuperRefine, which enforces the three cross-field invariants from 00 §3.1 / 02 §2: (1) referential integrity — every Edge.from/Edge.to, Container.children[], Container.parent, Message.from/Message.to references an id that exists in its collection; (2) unique ids across nodes, containers, participants with no node/container namespace collision; (3) type/field agreement per the 00 §2.5 table (sequence ⇒ participants/messages populated and nodes/edges/containers empty; the five graph types ⇒ the inverse). Failures throw DiagramInputError with the offending JSON path in `detail`. (B) OUTPUT — export assertOutputValid(svg, {width,height}) which aggregates: assertWellFormed (parse with @rgrove/parse-xml, throw DiagramOutputError on malformed XML), assertTier2 (no <foreignObject>, labels are plain <text>), assertStructural (root <svg> has explicit viewBox + width + height matching the result), assertFontPortable (any embedded font is a data-URI, no external/network href), assertA11y (<title>, <desc>, role=\"img\" present). Each sub-assertion throws DiagramOutputError with a named detail. Author validate.test.ts covering accept + each reject path.",
+      "description": "Create src/diagram/validate.ts per 02-schema-and-validation.md §2–3. Two responsibilities: (A) INPUT — export diagramSuperRefine and parseSpec(json: unknown): DiagramSpec. parseSpec runs DiagramSpec.parse then applies diagramSuperRefine, which enforces the three cross-field invariants from 00 §3.1 / 02 §2: (1) referential integrity — every Edge.from/Edge.to, Container.children[], Container.parent, Message.from/Message.to references an id that exists in its collection; (2) unique ids across nodes, containers, participants with no node/container namespace collision; (3) type/field agreement per the 00 §2.5 table (sequence ⇒ participants/messages populated and nodes/edges/containers empty; the five graph types ⇒ the inverse). Failures throw DiagramInputError with the offending JSON path in `detail`. (B) OUTPUT — export assertOutputValid(svg: string): void (single arg; it parses the SVG internally — do NOT pass a {width,height} object) which aggregates: assertWellFormed (parse with @rgrove/parse-xml, throw DiagramOutputError on malformed XML), assertTier2 (no <foreignObject>, labels are plain <text>), assertStructural(svg, doc) (root <svg> has explicit viewBox + width + height read from the SVG markup itself), assertFontPortable (any embedded font is a data-URI, no external/network href), assertA11y (<title>, <desc>, role=\"img\" present). Each sub-assertion throws DiagramOutputError with a named detail. Author validate.test.ts covering accept + each reject path.",
       "acceptanceCriteria": [
         "parseSpec rejects an edge referencing a missing node id with DiagramInputError whose detail names the JSON path",
         "parseSpec rejects duplicate ids and node/container id collisions",
@@ -68,8 +70,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002"],
-      "notes": "These same output validators are reused by render.ts (011) and the property tests (017) — keep them individually exported, not just the aggregator. 02 §2.3 has a worked rejected-input example to mirror in tests.",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "These same output validators are reused by render.ts (011) and the property tests (017) — keep them individually exported, not just the aggregator. 02 §2.3 has a worked rejected-input example to mirror in tests. Requirements satisfied: REQ-IN-02 REQ-REL-01 REQ-REL-02 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -82,7 +86,7 @@
       "type": "feature",
       "priority": 1,
       "title": "Implement JSON Schema generator — schema-gen.ts + diagram-input.schema.json",
-      "description": "Create src/diagram/schema-gen.ts per 02-schema-and-validation.md §4–5 and 06-integration-and-packaging.md §3. It is a STANDALONE script (not imported by cli.ts, so zod-to-json-schema stays out of the shipped bundle). Default run: convert the DiagramSpec Zod schema (from src/diagram/schema.ts) via zod-to-json-schema and write schemas/diagram-input.schema.json (pretty-printed, deterministic key order). With a `--check` argument: regenerate in memory and diff against the committed schemas/diagram-input.schema.json — exit 0 if identical, non-zero (printing a drift message) if they differ. This mirrors the existing manifest schema-gen `--check` drift pattern already in the repo. The package.json scripts schema:gen:diagram / schema:check:diagram (added in 001) invoke this. Run `bun run schema:gen:diagram` once to commit the generated schemas/diagram-input.schema.json. No unit test file required, but the --check behavior must be demonstrably correct.",
+      "description": "Create src/diagram/schema-gen.ts per 02-schema-and-validation.md §5 and 06-integration-and-packaging.md §3. It is a STANDALONE script (not imported by cli.ts, so zod-to-json-schema stays out of the shipped bundle). Default run: convert the DiagramSpec Zod schema (from src/diagram/schema.ts) via zod-to-json-schema and write schemas/diagram-input.schema.json (pretty-printed, deterministic key order). With a `--check` argument: regenerate in memory and diff against the committed schemas/diagram-input.schema.json — exit 0 if identical, non-zero (printing a drift message) if they differ. This mirrors the existing manifest schema-gen `--check` drift pattern already in the repo. The package.json scripts schema:gen:diagram / schema:check:diagram (added in 001) invoke this. Run `bun run schema:gen:diagram` once to commit the generated schemas/diagram-input.schema.json. No unit test file required, but the --check behavior must be demonstrably correct.",
       "acceptanceCriteria": [
         "bun run schema:gen:diagram writes schemas/diagram-input.schema.json derived from DiagramSpec",
         "bun run schema:check:diagram exits 0 when the committed schema matches the Zod source",
@@ -92,8 +96,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002"],
-      "notes": "Reference the existing repo schema-gen/--check pattern (the tools.manifest schema generator) for output formatting and drift-diff style so gate behavior is consistent.",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "Reference the existing repo schema-gen/--check pattern (the tools.manifest schema generator) for output formatting and drift-diff style so gate behavior is consistent. Requirements satisfied: REQ-IN-02 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -117,8 +123,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002"],
-      "notes": "DOT is an INTERNAL compile target only — never surfaced to users. Role color deliberately deferred to svg-postprocess (009) to keep DOT engine-neutral and tier-2-clean.",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "DOT is an INTERNAL compile target only — never surfaced to users. Role color deliberately deferred to svg-postprocess (009) to keep DOT engine-neutral and tier-2-clean. Requirements satisfied: REQ-COV-01 REQ-COV-02 REQ-OUT-01 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -141,8 +149,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["005"],
-      "notes": "@viz-js/viz init is async and somewhat slow — cache/reuse the instance across calls within a process if the spec's pattern allows. The raw SVG here is pre-color/pre-a11y; svg-postprocess (009) finishes it.",
+      "dependsOn": [
+        "005"
+      ],
+      "notes": "@viz-js/viz init is async and somewhat slow — cache/reuse the instance across calls within a process if the spec's pattern allows. The raw SVG here is pre-color/pre-a11y; svg-postprocess (009) finishes it. Requirements satisfied: REQ-COV-02 REQ-OUT-01 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -164,8 +174,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002"],
-      "notes": "Use the concrete layout constants chosen in 03 §4.2 so geometry is deterministic. This is the one render path that bypasses Graphviz entirely.",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "Use the concrete layout constants chosen in 03 §4.2 so geometry is deterministic. This is the one render path that bypasses Graphviz entirely. Requirements satisfied: REQ-COV-02 REQ-OUT-02 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -186,8 +198,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002"],
-      "notes": "00 fixes only the palette KEYS (NodeRole/Theme); this item supplies the VALUES. Seed from the research Cocoon palette referenced in 04 §2.",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "00 fixes only the palette KEYS (NodeRole/Theme); this item supplies the VALUES. Seed from the research Cocoon palette referenced in 04 §2. Requirements satisfied: REQ-THEME-01 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -211,9 +225,13 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["008", "003"],
-      "notes": "This is the finishing stage shared by BOTH render paths. Reuse @rgrove/parse-xml (already a devDep) for parsing if helpful. Canonicalization is the linchpin of REQ-REPRO-01 byte-determinism — keep it last.",
-      "estimatedIterations": 1,
+      "dependsOn": [
+        "008",
+        "003",
+        "001"
+      ],
+      "notes": "This is the finishing stage shared by BOTH render paths and the largest single module (7 ordered passes). It imports FONT_SUBSET_DATA_URI from src/diagram/assets/font.subset.ts (item 001) for §3.6 font embedding — hence the direct 001 dependency. Reuse @rgrove/parse-xml (already a devDep) for parsing if helpful. Canonicalization (§3.7) is the linchpin of REQ-REPRO-01 byte-determinism — keep it last; if byte-determinism is not achieved on the first pass it may warrant a follow-up iteration. Requirements satisfied: REQ-COV-01 REQ-A11Y-01 REQ-OUT-04 REQ-REPRO-01 REQ-PORT-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 2,
       "model": "opus",
       "specReferences": [
         "specs/diagram-generator/04-theme-postprocess-png.md",
@@ -235,8 +253,11 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002", "001"],
-      "notes": "PNG is a REQUIRED v1 artifact (REQ-OUT-03). resvg is pinned (001) so PNG drift is bounded; tests stay smoke-only because exact rasterized bytes vary by platform.",
+      "dependsOn": [
+        "002",
+        "001"
+      ],
+      "notes": "PNG is a REQUIRED v1 artifact (REQ-OUT-03). resvg is pinned (001) so PNG drift is bounded; tests stay smoke-only because exact rasterized bytes vary by platform. Requirements satisfied: REQ-OUT-03 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -248,18 +269,23 @@
       "type": "feature",
       "priority": 1,
       "title": "Implement orchestration — render.ts (spec → RenderResult)",
-      "description": "Create src/diagram/render.ts per 03-rendering-engine.md §5 — the pipeline orchestrator that ties the modules together. Export an async function render(spec: DiagramSpec, theme: Theme, accent?: HexColor): Promise<RenderResult>. Dispatch flow (§5.1): if diagramType === 'sequence', call sequence-svg.ts; otherwise dot-emit.ts → graph-render.ts. Then resolve the palette via theme.ts and run svg-postprocess.ts to finish color/z-order/legend/a11y/font/canonicalization. Validation placement (§5.2, REQ-REL-01/02): parse/validate input BEFORE rendering (via parseSpec from validate.ts) and run assertOutputValid AFTER post-processing; enforce tier-2/viewBox there too (§5.3). On failure, propagate the typed DiagramError unchanged (§5.4) and NEVER return/write a partial artifact. Honor the determinism boundary (§5.5). Return a RenderResult (svg, width, height, theme, slug) with slug derived from spec.title. Author render.test.ts: each of the six diagram types renders end-to-end to a RenderResult whose svg passes assertOutputValid; an invalid spec throws DiagramInputError; both themes render.",
+      "description": "Create src/diagram/render.ts per 03-rendering-engine.md §5 — the pipeline orchestrator that ties the modules together. Export an async function render(spec: DiagramSpec, opts: RenderOptions): Promise<RenderResult>, where RenderOptions = { theme: Theme; accent?: HexColor } (a single options object — NOT positional theme/accent args; transcribe the exact §5 signature). Dispatch flow (§5.1): if diagramType === 'sequence', call sequence-svg.ts; otherwise dot-emit.ts → graph-render.ts. Then resolve the palette via theme.ts and run svg-postprocess.ts to finish color/z-order/legend/a11y/font/canonicalization. Validation placement (§5.2, REQ-REL-01/02): render() does NOT re-validate input — it trusts the typed DiagramSpec it is given (the CLI calls parseSpec at the boundary, item 012). Run assertOutputValid AFTER post-processing; enforce tier-2/viewBox there too (§5.3). On failure, propagate the typed DiagramError unchanged (§5.4) and NEVER return/write a partial artifact. Honor the determinism boundary (§5.5). Return a RenderResult (svg, width, height, theme, slug) with slug derived from spec.title. Author render.test.ts: each of the six diagram types renders end-to-end to a RenderResult whose svg passes assertOutputValid; an invalid spec throws DiagramInputError; both themes render.",
       "acceptanceCriteria": [
         "render() dispatches sequence specs to sequence-svg and the five graph types through dot-emit → graph-render",
-        "All six diagram types render end-to-end to a RenderResult whose svg passes assertOutputValid",
-        "Input is validated before rendering; an invalid spec throws DiagramInputError and no SVG is produced",
+        "All six diagram types render end-to-end (called as render(spec, { theme })) to a RenderResult whose svg passes assertOutputValid",
+        "render() does not re-validate input; assertOutputValid runs AFTER post-processing and a malformed output throws DiagramOutputError (never a partial artifact)",
         "RenderResult.width/height match the SVG and slug is derived from the title; light and dark both render",
         "vitest run && tsc --noEmit passes"
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["006", "007", "009", "010", "003"],
-      "notes": "This is the single integration point of the render tree (see 01 §3 import graph). render.ts itself does no file IO — that is the CLI's job (012). PNG is produced by the CLI from the RenderResult.svg, not inside render(); confirm against 03 §5 / 05 §3.2 whether png.ts is invoked here or in cli.ts and follow the spec.",
+      "dependsOn": [
+        "006",
+        "007",
+        "009",
+        "003"
+      ],
+      "notes": "This is the single integration point of the render tree (see 01 §3 import graph). render.ts itself does no file IO — that is the CLI's job (012). render.ts does NOT import or invoke png.ts: PNG is produced by the CLI (012) from RenderResult.svg, not inside render() (03 §5 L546-547, 05 §3.3). Therefore png.ts (010) is a dependency of item 012, not this item. Requirements satisfied: REQ-REL-01 REQ-REL-02 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -272,19 +298,24 @@
       "type": "feature",
       "priority": 1,
       "title": "Implement CLI — cli.ts (the scriptable contract)",
-      "description": "Create src/diagram/cli.ts per 05-cli-and-invocation.md §2–3 — the only consumer-facing surface and the bundle entry point. Export `async function main(argv: string[]): Promise<number>` returning an exit code, plus a thin top-level runner. Flags (§2.1): --type <DiagramType>, --theme light|dark, --accent <#rrggbb>, --format svg|png|both, --out-dir <dir>, --out-file <path>, --out-name <name>, --version. Input (§3.1, dimension 1): read the DiagramSpec JSON from a positional file path or '-' for stdin. Type/spec selection (§2.2): --type overrides spec.diagramType when given. Render per requested theme(s) (§3.2) via render.ts. Output-path resolution & precedence (§2.3, dimension 2): --out-file > --out-dir + --out-name > --out-dir + slug > stdout; deterministic file names <slug>.<theme>.<ext>. Writes MUST be path-confined (§3.3, REQ-SEC-01) — refuse to write outside the resolved out dir/file, throwing DiagramIoError. --version (§2.4) prints CONTRACT_VERSION and exits 0. Stdout & exit signaling (§3.4, dimension 4): map caught DiagramError to its exitCode; print message to stderr; exit 0 on success. No network (§2.5). Produce PNG via png.ts when --format is png|both. Author cli.test.ts covering input forms, format/theme combinations, path precedence, --version, and exit codes for each error class.",
+      "description": "Create src/diagram/cli.ts per 05-cli-and-invocation.md §2–3 — the only consumer-facing surface and the bundle entry point. Export `async function main(argv: string[]): Promise<number>` returning an exit code, plus a thin top-level runner. Flags (§2.1): --type <DiagramType>, --theme light|dark, --accent <#rrggbb>, --format svg|png|both, --out-dir <dir>, --out-file <path>, --out-name <name>, --version. Input (§3.1, dimension 1): read the DiagramSpec JSON from a positional file path or '-' for stdin. Type/spec selection (§2.2): --type overrides spec.diagramType when given. Render per requested theme(s) (§3.2) via render.ts. Output-path resolution & precedence (§2.3, dimension 2): --out-file > --out-dir + --out-name > --out-dir + slug > stdout; deterministic file names <slug>.<theme>.<ext>. A binary PNG must never be streamed to a text stdout: `--format png` (or `both`) with no resolved file target is refused with DiagramUsageError → exit USAGE_ERROR (64) (§2.3/§3.4). Writes MUST be path-confined (§3.3, REQ-SEC-01) — refuse to write outside the resolved out dir/file, throwing DiagramIoError. --version (§2.4) prints CONTRACT_VERSION and exits 0. Stdout & exit signaling (§3.4, dimension 4): map caught DiagramError to its exitCode; print message to stderr; exit 0 on success. No network (§2.5). Produce PNG via png.ts when --format is png|both. Author cli.test.ts covering input forms, format/theme combinations, path precedence, --version, and exit codes for each error class.",
       "acceptanceCriteria": [
         "main() reads a spec from a file path and from stdin ('-'); --type overrides spec.diagramType",
         "--format svg|png|both writes the right artifacts with names <slug>.<theme>.<ext>; output-path precedence is --out-file > --out-dir+--out-name > --out-dir+slug > stdout",
         "--version prints CONTRACT_VERSION and returns exit code 0",
         "Errors return their mapped exit codes (INPUT_INVALID=2, RENDER_FAILED=3, OUTPUT_INVALID=4, PNG_FAILED=5, IO_ERROR=6, USAGE_ERROR=64) with message on stderr and no partial artifact",
         "An attempt to write outside the resolved output location throws DiagramIoError (path confinement)",
+        "`--format png` (or `both`) with no output target (which would stream binary PNG to stdout) is refused with DiagramUsageError → exit code USAGE_ERROR (64); no binary is written to stdout",
         "vitest run && tsc --noEmit passes"
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["011", "002"],
-      "notes": "cli.ts is the bundle entry (`bun build --target=node src/diagram/cli.ts`). Keep its imports limited to render.ts, png.ts, schema.ts, errors.ts — do NOT import schema-gen.ts or build-check.ts (they must stay out of the shipped .mjs). The flag/path/exit contract is FROZEN and versioned (CONTRACT_VERSION); doc-site-plugin pins against it.",
+      "dependsOn": [
+        "011",
+        "010",
+        "002"
+      ],
+      "notes": "cli.ts is the bundle entry (`bun build --target=node src/diagram/cli.ts`). Keep its imports limited to render.ts, png.ts, schema.ts, errors.ts — do NOT import schema-gen.ts or build-check.ts (they must stay out of the shipped .mjs). The flag/path/exit contract is FROZEN and versioned (CONTRACT_VERSION); doc-site-plugin pins against it. Requirements satisfied: REQ-INV-02 REQ-INV-03 REQ-INV-04 REQ-SEC-01 (see TRACEABILITY.md).",
       "estimatedIterations": 2,
       "model": "opus",
       "specReferences": [
@@ -306,8 +337,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["012"],
-      "notes": "REQ-IN-03 ('MUST NOT invent semantic content') is not machine-validatable (02 §4) — its enforcement home is this SKILL.md prompt discipline. Match the frontmatter/description style of existing skills so the emitter picks it up.",
+      "dependsOn": [
+        "012"
+      ],
+      "notes": "REQ-IN-03 ('MUST NOT invent semantic content') is not machine-validatable (02 §4) — its enforcement home is this SKILL.md prompt discipline. Match the frontmatter/description style of existing skills so the emitter picks it up. Requirements satisfied: REQ-IN-01 REQ-IN-03 REQ-INV-01 REQ-USE-01 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -330,8 +363,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["012"],
-      "notes": "Mirrors the existing schema-gen --check and adapter drift-guard patterns. The bundle is the ONLY artifact that ships to targets; build-check.ts must stay out of the bundle itself.",
+      "dependsOn": [
+        "012"
+      ],
+      "notes": "Mirrors the existing schema-gen --check and adapter drift-guard patterns. The bundle is the ONLY artifact that ships to targets; build-check.ts must stay out of the bundle itself. Requirements satisfied: REQ-PORT-02 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -354,8 +389,11 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["013", "014"],
-      "notes": "Depends on 013 (skill content) and 014 (the committed bundle) because emission copies both. The backlog schema and rauf contract are unchanged (REQ-COMPAT-03) — this is host-emitter wiring only.",
+      "dependsOn": [
+        "013",
+        "014"
+      ],
+      "notes": "Depends on 013 (skill content) and 014 (the committed bundle) because emission copies both. The backlog schema and rauf contract are unchanged (REQ-COMPAT-03) — this is host-emitter wiring only. Requirements satisfied: REQ-PORT-02 CON-01 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -377,8 +415,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["011"],
-      "notes": "Goldens depend only on render.ts (011), not the CLI/bundle. Keep fixtures in a shared module so items 017 and 018 reuse them. Determinism (byte-equality) is asserted more strictly in 017.",
+      "dependsOn": [
+        "011"
+      ],
+      "notes": "Goldens depend only on render.ts (011), not the CLI/bundle. Keep fixtures in a shared module so items 017 and 018 reuse them. Determinism (byte-equality) is asserted more strictly in 017. Requirements satisfied: REQ-COV-01 REQ-COV-02 REQ-THEME-01 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "agentDelegation": {
@@ -409,8 +449,11 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["016", "010"],
-      "notes": "Property tests are the machine-checkable proof of the portability/a11y requirements; they consume the goldens from 016 and the validators from 003. PNG stays smoke-level per 08 §6 because rasterized bytes vary by platform.",
+      "dependsOn": [
+        "016",
+        "010"
+      ],
+      "notes": "Property tests are the machine-checkable proof of the portability/a11y requirements; they consume the goldens from 016 and the validators from 003. PNG stays smoke-level per 08 §6 because rasterized bytes vary by platform. Requirements satisfied: REQ-OUT-01 REQ-OUT-02 REQ-OUT-04 REQ-A11Y-01 REQ-REPRO-01 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -433,8 +476,11 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["012", "014"],
-      "notes": "Depends on 012 (CLI) and 014 (committed bundle) for the in-process-vs-bundle parity check. Reuses the shared fixtures (016). This locks the contract doc-site-plugin pins against (CON-02, REQ-INV-04).",
+      "dependsOn": [
+        "012",
+        "014"
+      ],
+      "notes": "Depends on 012 (CLI) and 014 (committed bundle) for the in-process-vs-bundle parity check. Reuses the shared fixtures (016). This locks the contract doc-site-plugin pins against (CON-02, REQ-INV-04). Requirements satisfied: REQ-INV-04 REQ-SEC-01 REQ-PORT-02 CON-02 (see TRACEABILITY.md).",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [

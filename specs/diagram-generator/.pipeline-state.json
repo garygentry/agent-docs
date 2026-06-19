@@ -81,6 +81,14 @@
       ],
       "completedAt": "2026-06-18T00:00:00Z",
       "commit": "52ff89d"
+    },
+    "forge-verify-backlog": {
+      "status": "findings-applied",
+      "findingsFile": ".verification/VERIFY-backlog-2026-06-18.md",
+      "findingsCount": 12,
+      "verifiedAt": "2026-06-18T00:00:00Z",
+      "fixedAt": "2026-06-18T00:00:00Z",
+      "fixCommit": "90507b1"
     }
   }
 }

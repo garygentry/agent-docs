@@ -27,13 +27,13 @@ agent-docs/
 │       ├── errors.ts                # error hierarchy + EXIT_CODES            (00 §5)
 │       ├── validate.ts              # input superRefine + output assertions   (02 §2,§3)
 │       ├── dot-emit.ts              # DiagramSpec → Graphviz DOT              (03 §2)
-│       ├── graph-render.ts          # DOT → SVG via @viz-js/viz               (03 §2)
-│       ├── sequence-svg.ts          # direct-SVG sequence layout              (03 §3)
+│       ├── graph-render.ts          # DOT → SVG via @viz-js/viz               (03 §3)
+│       ├── sequence-svg.ts          # direct-SVG sequence layout              (03 §4)
 │       ├── theme.ts                 # palette + light/dark tokens + accent    (04 §2)
 │       ├── svg-postprocess.ts       # color/z-order/legend/a11y/font/canon    (04 §3)
 │       ├── png.ts                   # SVG → PNG via @resvg/resvg-js           (04 §4)
 │       ├── render.ts                # orchestration: spec → RenderResult      (03 §5)
-│       ├── schema-gen.ts            # DiagramSpec Zod → JSON Schema + drift    (02 §4)
+│       ├── schema-gen.ts            # DiagramSpec Zod → JSON Schema + drift    (02 §5)
 │       ├── build-check.ts           # bundle drift guard (re-bundle in mem, diff) (06 §4.2)
 │       ├── cli.ts                   # arg parse, IO, exit codes, --version    (05 §2,§3)
 │       ├── assets/
@@ -65,7 +65,7 @@ agent-docs/
 │
 ├── schemas/
 │   ├── tools.manifest.schema.json   # existing
-│   └── diagram-input.schema.json    # NEW: generated from src/diagram/schema.ts (02 §4)
+│   └── diagram-input.schema.json    # NEW: generated from src/diagram/schema.ts (02 §5)
 │
 ├── tools.manifest.json              # +1 ToolEntry for the skill               (06 §2)
 └── package.json                     # +devDeps, +scripts                       (§4,§5)
@@ -141,7 +141,7 @@ unchanged; `zod` is reused for `DiagramSpec`.
 | `@rgrove/parse-xml` | devDep (bundled) | output XML well-formedness check (02 §3). |
 | subset font asset | bundled asset | a libre sans (e.g. DejaVu Sans / IBM Plex subset) embedded as base64 data-URI (04 §3, REQ-OUT-04). |
 | `zod` | existing runtime | `DiagramSpec` schema (reused, `00`). |
-| `zod-to-json-schema` | existing runtime | generate `diagram-input.schema.json` (02 §4). |
+| `zod-to-json-schema` | existing runtime | generate `diagram-input.schema.json` (02 §5). |
 
 > **Pin policy:** `@viz-js/viz` and `@resvg/resvg-js` are pinned to exact versions
 > (no `^`) because their output bytes feed the determinism test (08 §4) and the PNG
