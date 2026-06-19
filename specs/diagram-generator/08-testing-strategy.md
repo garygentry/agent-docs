@@ -744,14 +744,18 @@ describe("CLI exit signaling (REQ-INV-03 dimension 4, REQ-REL-02)", () => {
     expect(fs.readdirSync(dir)).toEqual(["bad.json"]); // nothing emitted
   });
 
-  it("forced <foreignObject> leak → OUTPUT_INVALID", async () => {
-    // 02 §3.3 / 04 §3: inject a foreignObject into the render path so the output
-    // assertion fires. The harness uses a fault-injecting spec/env hook (see note);
-    // the assertion under test is `render`'s assertOutputValid gate (03 §5).
-    await expect(renderWithForcedForeignObject()).rejects.toMatchObject({
-      code: "OUTPUT_INVALID",
-      exitCode: EXIT_CODES.OUTPUT_INVALID, // 4
-    });
+  it("forced <foreignObject> leak → OUTPUT_INVALID", () => {
+    // 02 §3.3 / 04 §3: `render` never emits a <foreignObject> on any real path
+    // (03 §2.1 forbids it in DOT), so OUTPUT_INVALID is proven at the validator
+    // boundary — feed a synthetic SVG carrying <foreignObject> directly to
+    // assertOutputValid, the same gate render.ts calls (03 §5). See note below.
+    const leaked = synthSvgWithForeignObject(); // minimal tier-2-violating SVG
+    expect(() => assertOutputValid(leaked)).toThrow(
+      expect.objectContaining({
+        code: "OUTPUT_INVALID",
+        exitCode: EXIT_CODES.OUTPUT_INVALID, // 4
+      }),
+    );
   });
 
   it("bad usage (unknown flag) → USAGE_ERROR (64)", async () => {

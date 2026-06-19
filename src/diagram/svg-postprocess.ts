@@ -645,7 +645,18 @@ function canonNumber(n: number): string {
   return s;
 }
 
-/** Round every numeric token inside a string value (for `points`/`d`/`transform`). */
+/**
+ * Round every numeric token inside a string value (for `points`/`d`/`transform`).
+ *
+ * NOTE: this rounds ALL numeric tokens positionally and assumes the `d` attribute
+ * contains NO elliptical-arc commands (`A`/`a`). In an arc command the large-arc-flag
+ * and sweep-flag are single, position-significant digits that may appear without
+ * separators (e.g. `a5 5 0 0014 0`); re-tokenizing/rounding them would corrupt the
+ * path. This is safe here because the only `d` producer is Graphviz (`dot-emit.ts` →
+ * `graph-render.ts`), whose output for the in-scope shapes (box/ellipse/diamond/
+ * cylinder/polygon edges) never emits `A`/`a` arcs. If a future render path can emit
+ * arcs, exclude `d` from GEOMETRY_ATTRS and round path coordinates at emission time.
+ */
 function canonNumberTokens(value: string): string {
   return value.replace(/-?\d*\.?\d+(?:[eE][-+]?\d+)?/g, (tok) => canonNumber(Number(tok)));
 }

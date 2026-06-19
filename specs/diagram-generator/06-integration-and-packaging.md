@@ -17,15 +17,15 @@ module tree, dependency table, and `package.json` script set) and references
 
 ## Requirement Coverage
 
-| REQ / item   | Requirement                                                       | Section |
-| ------------ | ----------------------------------------------------------------- | ------- |
-| CON-01       | Authored as a canonical skill, registered in the manifest         | 2       |
-| CON-02       | Shared dependency — frozen scriptable contract for consumers      | 6       |
-| REQ-INV-04   | Versioned contract surface that consumers pin against             | 6       |
-| REQ-PORT-02  | Agent-agnostic — verbatim emission to all 5 targets               | 5       |
-| REQ-OUT-04   | Build determinism — committed bundle byte-stable, drift-guarded   | 3, 4    |
-| REQ-REPRO-01 | Deterministic bundle build + drift guard owns bundle bytes        | 4       |
-| OTQ-1        | Golden strategy for the bundle — RESOLVED (committed byte golden) | 4.3     |
+| REQ / item   | Requirement                                                            | Section |
+| ------------ | ---------------------------------------------------------------------- | ------- |
+| CON-01       | Authored as a canonical skill, registered in the manifest              | 2       |
+| CON-02       | Shared dependency — frozen scriptable contract for consumers           | 6       |
+| REQ-INV-04   | Versioned contract surface that consumers pin against                  | 6       |
+| REQ-PORT-02  | Agent-agnostic — verbatim emission to all 5 targets                    | 5       |
+| REQ-OUT-04   | Build determinism — committed bundle byte-stable, drift-guarded        | 3, 4    |
+| REQ-REPRO-01 | Deterministic bundle build + drift guard owns bundle bytes             | 4       |
+| OTQ-1        | Bundle byte-fidelity — RESOLVED (drift guard + whole-tree build:check) | 4.3     |
 
 ## 2. Manifest registration (CON-01)
 
@@ -224,43 +224,36 @@ if (import.meta.main) {
 > to memory (via `Bun.build(...).outputs[0].text()`) — **never** to a temp file on
 > disk — so the guard has no filesystem side effects.
 
-### 4.3 OTQ-1 RESOLVED — commit a byte golden for the bundle
+### 4.3 OTQ-1 RESOLVED — bundle byte-fidelity via the drift guard + whole-tree `build:check`
 
-**Decision:** the emission goldens (`src/test/__golden__/`, `08`) include a
-**committed byte golden** for `diagram-render.mjs` in each target tree, exactly like
-every other emitted file. This is the only mechanism that satisfies the real
-`golden.test.ts` three-way set equality (see below); the earlier "presence-only / no
-byte compare" framing was incompatible with the actual test and is dropped.
+**Decision:** bundle byte-fidelity is pinned by **two guards that move together** —
+`build:diagram:check` (§4.2, re-bundles `cli.ts` in memory and byte-diffs the committed
+`skills/diagram-generator/scripts/diagram-render.mjs`) and the whole-tree `build:check`
+(byte-diffs the committed `adapters/<target>/` trees, including each emitted
+`scripts/diagram-render.mjs` and its executable mode). The `.mjs` relpath is **not**
+registered in `SAMPLE_RELPATHS` and has **no** entry in the `src/test/__golden__/`
+emission golden — that golden suite scopes to _transformed_ outputs only (see below).
 
-**Why this is the correct (and only passing) option:** `golden.test.ts` enforces a
-strict three-way equality `emitted == golden == wanted` over the sample-scoped
-relpaths. Concretely, with `wanted = SAMPLE_RELPATHS[target]`:
+**Why this is the correct split (verified against the implementation):**
+`golden.test.ts` asserts over `emit().files`, which holds only the **transformed**
+per-target outputs (the rebased SKILL file, plus the gemini aggregate manifest). A
+skill's verbatim **owned subtree** — `references/*.md` and `scripts/diagram-render.mjs`
+— is carried in `emit().verbatim`, **not** `files`, so it is out of scope for the
+golden suite by construction (the authoritative rationale lives at
+`src/test/golden.shared.ts:34-40`). Registering the `.mjs` in `SAMPLE_RELPATHS` would
+therefore make the three-way set equality fail (`wanted` would contain a relpath the
+emitter never puts in `files`). Per **§5.4**, the actual emitter output is the source
+of truth for the sample set — so `SAMPLE_RELPATHS` lists only the transformed SKILL
+relpath per target.
 
-- line 64 keeps only emitted files whose relpath is in `wanted`;
-- lines 70-71 byte-compare **every committed golden** against the emitted content;
-- line 76 asserts `emitted.keys() === golden.keys()`;
-- line 78 asserts `golden.keys() === wanted`.
-
-So registering the `.mjs` relpath in `SAMPLE_RELPATHS` (§5.3) **without** committing
-a `.mjs` golden makes line 78 fail (golden omits it, wanted has it) and line 76 fail
-(emitted has it, golden omits it). The only way for the relpath to live in `wanted`
-is to commit its golden — which is byte-compared at lines 70-71. There is no
-"presence without bytes" path through this test.
-
-**Accepted trade-off (dependency-bump churn):** committing the `.mjs` golden means a
-dependency bump or toolchain change that alters the bundle bytes produces a golden
-diff that must be regenerated (`bun run src/test/regenerate-goldens.ts`, `08 §6.3`).
-This is acceptable and already the norm for the repo: `build:diagram:check` (§4.2)
-pins the same bytes via the drift guard, so the bundle bytes are committed-and-checked
-in two places that move together. When the bundle legitimately changes, both the
-committed `.mjs` and its golden are regenerated in the same commit.
-
-> Mechanically: the `.mjs` relpath appears in `SAMPLE_RELPATHS[target]` (so
-> `golden.test.ts:78` requires it and `:76` requires the emitter to produce exactly
-> that set), and `readGolden(target)` returns a committed golden for it, so
-> `golden.test.ts:70-71` byte-compares the emitted bundle against that golden — the
-> standard path every emitted file takes. Byte-fidelity is thus enforced in both the
-> golden suite and `build:diagram:check` (§4.2).
+**Where the bundle bytes ARE pinned:** the verbatim subtree (refs + `.mjs`) and its
+mode-preserving copy are byte-checked by the whole-tree `build:check` against the
+committed `adapters/<target>/` trees, and the source-of-truth bundle is independently
+byte-checked by `build:diagram:check` (§4.2). A dependency bump or toolchain change
+that alters the bundle bytes surfaces as a diff in **both** guards and is regenerated
+in the same commit (`bun run build:diagram` + refresh the adapter trees). There is no
+byte-fidelity gap — the `.mjs` is committed-and-checked in two places that move
+together; it simply isn't routed through the transformed-output golden suite.
 
 ### 4.4 Both checks wired into `gate` (from `01-architecture-layout.md` §5)
 
@@ -388,57 +381,44 @@ fails CI. The diagram-generator relpaths from §5.2 MUST be added to the
 per-target arrays in `SAMPLE_RELPATHS` (`src/test/golden.shared.ts:34-40`),
 alongside the existing docs-helper entries:
 
+Register **only the transformed SKILL relpath** per target. The golden suite asserts
+over `emit().files` (transformed outputs); a skill's verbatim owned subtree
+(`references/*.md`, `scripts/diagram-render.mjs`) is carried in `emit().verbatim`, not
+`files`, so it is **not** registered here — its bytes and executable mode are pinned by
+the whole-tree `build:check` instead (§4.3). Per §5.4 the actual emitter output is the
+source of truth for this set:
+
 ```typescript
-// src/test/golden.shared.ts — extend each target with diagram-generator relpaths
+// src/test/golden.shared.ts — extend each target with the transformed SKILL relpath only
 export const SAMPLE_RELPATHS: Record<Target, string[]> = {
   claude: [
     "skills/docs-helper/SKILL.md",
-    "skills/diagram-generator/SKILL.md",
-    "skills/diagram-generator/references/schema-guide.md",
-    "skills/diagram-generator/references/diagram-craft.md",
-    "skills/diagram-generator/scripts/diagram-render.mjs",
+    "skills/diagram-generator/SKILL.md", // SKILL transform; refs/scripts are verbatim (emit().verbatim)
   ],
-  codex: [
-    "skills/docs-helper/SKILL.md",
-    "skills/diagram-generator/SKILL.md",
-    "skills/diagram-generator/references/schema-guide.md",
-    "skills/diagram-generator/references/diagram-craft.md",
-    "skills/diagram-generator/scripts/diagram-render.mjs",
-  ],
+  codex: ["skills/docs-helper/SKILL.md", "skills/diagram-generator/SKILL.md"],
   copilot: [
     "instructions/docs-helper.instructions.md",
     "instructions/diagram-generator.instructions.md",
-    "instructions/diagram-generator/references/schema-guide.md",
-    "instructions/diagram-generator/references/diagram-craft.md",
-    "instructions/diagram-generator/scripts/diagram-render.mjs",
   ],
-  cursor: [
-    "rules/docs-helper.mdc",
-    "rules/diagram-generator.mdc",
-    "rules/diagram-generator/references/schema-guide.md",
-    "rules/diagram-generator/references/diagram-craft.md",
-    "rules/diagram-generator/scripts/diagram-render.mjs",
-  ],
+  cursor: ["rules/docs-helper.mdc", "rules/diagram-generator.mdc"],
   gemini: [
     "skills/docs-helper/docs-helper.md",
     "gemini-extension.json",
     "skills/diagram-generator/diagram-generator.md",
-    "skills/diagram-generator/references/schema-guide.md",
-    "skills/diagram-generator/references/diagram-craft.md",
-    "skills/diagram-generator/scripts/diagram-render.mjs",
   ],
 };
 ```
 
-> The existing `gemini-extension.json` golden is regenerated by the sample build
-> when `diagram-generator` is added to the sample manifest; its golden content
-> updates accordingly (it does NOT contain bundle bytes, only the aggregate
-> manifest). Every relpath added to `SAMPLE_RELPATHS` — including the `.mjs`, the
-> `references/*.md`, and the SKILL file — MUST have a committed byte golden, because
-> `golden.test.ts`'s three-way set equality (`:76`/`:78`) requires `golden.keys()`
-> to equal `wanted` exactly (§4.3, OTQ-1). The `.mjs` golden is byte-compared like
-> any other file (`:70-71`); regenerate it together with the committed bundle
-> whenever `src/diagram/` changes.
+> The existing `gemini-extension.json` golden is regenerated by the sample build when
+> `diagram-generator` is added to the sample manifest; its golden content updates
+> accordingly (it contains only the aggregate manifest, no bundle bytes). The
+> `references/*.md` and `scripts/diagram-render.mjs` files are **not** in
+> `SAMPLE_RELPATHS` and have no entry in `src/test/__golden__/` — they travel in
+> `emit().verbatim` and their bytes (and the `.mjs` executable mode) are byte-checked
+> by the whole-tree `build:check` against the committed `adapters/<target>/` trees,
+> with the bundle additionally pinned by `build:diagram:check` (§4.2/§4.3). Regenerate
+> the committed bundle and refresh the adapter trees together whenever `src/diagram/`
+> changes.
 
 ### 5.4 If a transform differs
 

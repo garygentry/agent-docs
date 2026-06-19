@@ -148,6 +148,33 @@ describe("DiagramError exit-code mapping (08 §7.4, dimension 4)", () => {
       expect((err as DiagramOutputError).exitCode).toBe(EXIT_CODES.OUTPUT_INVALID);
     }
   });
+
+  // RENDER_FAILED has no cheap real trigger (Graphviz / sequence layout rarely fail on
+  // a valid spec), so prove the WIRING end-to-end: a DiagramRenderError thrown by the
+  // render layer must surface through main()'s catch as exit 3 — with no partial
+  // artifact written. The render module is mocked only for this test (isolated via
+  // resetModules + a dynamic cli import), so the rest of the suite uses the real render.
+  it("a render-layer failure propagates through main() → exit RENDER_FAILED (3)", async () => {
+    vi.resetModules();
+    vi.doMock("./render.js", async () => {
+      const { DiagramRenderError } = await import("./errors.js");
+      return {
+        render: async () => {
+          throw new DiagramRenderError("forced render failure");
+        },
+      };
+    });
+    try {
+      const { main: mainWithFailingRender } = await import("./cli.js");
+      const p = await writeSpec(architectureFixture.spec);
+      const code = await mainWithFailingRender([p, "--out-dir", workDir]);
+      expect(code).toBe(EXIT_CODES.RENDER_FAILED);
+      expect(await readdir(workDir)).toEqual(["spec.json"]); // no partial artifact
+    } finally {
+      vi.doUnmock("./render.js");
+      vi.resetModules();
+    }
+  });
 });
 
 // ===========================================================================
