@@ -29,3 +29,11 @@
 - Generated/committed `schemas/diagram-input.schema.json` (draft-07, `$refStrategy: "none"`, 2-space + trailing newline). `--check` diffs in-memory regen vs committed; exit 0 in sync, exit 1 + drift message on stale.
 - Standalone: not imported anywhere (cli.ts not yet created); guarded by `import.meta.main`.
 - tsc clean.
+
+## Item 005 — dot-emit.ts (done)
+- `src/diagram/dot-emit.ts`: `emitDot(spec)` per 03 §2. Pure/deterministic; throws `DiagramRenderError` for sequence + defensive dangling-id guards (edges, container children, container parent).
+- Tier-2: only quoted `label="…"`, never `label=<…>` / `shape=record`. Role carried as `class="role-<role>"` (default `role-default`); NO fillcolor/style=filled (deferred to 009).
+- `TYPE_DEFAULTS` per diagramType: rankdir (LR/TB), defaultShape (state→rounded), defaultEdgeDir (er→none else forward). Node.shape overrides via `SHAPE_MAP`.
+- Containers → `subgraph "cluster_<id>" { label; class="container"; <children nodes>; <nested clusters by parent> }`. Top-level nodes (not in any container.children) emitted after clusters in spec.nodes order. Node ids quoted everywhere → dashes safe; cluster names quoted too.
+- Escaping: `\`→`\\`, `"`→`\"`, newline→`\n`. Output ends with trailing `\n`.
+- 15 dot-emit tests; full suite 226 pass; tsc clean.
