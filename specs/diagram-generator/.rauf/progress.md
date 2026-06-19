@@ -14,3 +14,12 @@
 - Import extension convention is `.js` (moduleResolution: bundler) — matches src/*.ts.
 - Cross-field invariants deliberately NOT here — they live in validate.ts (item 003).
 - 13 tests pass; tsc --noEmit clean.
+
+## Item 003 — validate.ts (done)
+- `src/diagram/validate.ts`: transcribed 02 §2–3. Input: `diagramSuperRefine`, `GRAPH_DIAGRAM_TYPES`, `parseSpec`. Output: `assertOutputValid` aggregator + individually exported `assertWellFormed`/`assertTier2`/`assertStructural`/`assertFontPortable`/`assertA11y` (kept exported for reuse by render.ts/017).
+- schema.ts keeps the BASE `.strict()` schema (no superRefine attached). `parseSpec` applies the refine via a module-local `RefinedDiagramSpec = DiagramSpec.superRefine(diagramSuperRefine)` then `.safeParse`. Avoids the 02 §2.1 import cycle while satisfying item 003's "parse then apply refine" wording.
+- `@rgrove/parse-xml` v4.2.0 API confirmed: exports `parseXml`, `XmlDocument`, `XmlElement`; `.root` (XmlElement|null), `.name`, `.attributes` (Record<string,string>), `.children`. The `.type` getter returns plain `string` (NOT a literal union) so it does NOT narrow TS — use `child instanceof XmlElement` (import XmlElement as a VALUE) for the descendant DFS.
+- Had to run `bun install` (item 001 deferred it) — the three devDeps now resolved in the lockfile.
+- TEST GOTCHA: vitest `toThrow(/re/)` matches `error.message`, NOT `error.detail`. JSON paths live in `DiagramInputError.detail`, so assert paths via a `detailOf()` helper, not the regex form of toThrow.
+- `assertStructural(svg, doc)` has an unused `svg` param (matches spec signature); tsc passes because `noUnusedParameters` is off (only `strict: true`).
+- 39 validate tests pass; full suite 211 pass; tsc clean.
