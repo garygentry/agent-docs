@@ -1,9 +1,9 @@
 {
   "feature": "diagram-generator",
   "pipelineStatus": "active",
-  "currentStage": "forge-4-backlog",
+  "currentStage": "forge-5-loop",
   "createdAt": "2026-06-18T00:00:00Z",
-  "updatedAt": "2026-06-18T12:00:00Z",
+  "updatedAt": "2026-06-18T00:00:00Z",
   "notes": "Text-to-diagram skill authored in THIS repo (skills/diagram-generator/), registered in tools.manifest.json, emitted to all 5 agent targets via bun run build (CON-01). SHARED DEPENDENCY: consumed by doc-site-plugin's diagram component (doc-site-plugin REQ-DIAG-02 / CON-05); scriptable contract must be stable for that consumer (CON-02). DECISIONS: output = tier-2 portable SVG (plain <text>, no foreignObject, opens anywhere: browser/Inkscape/Office/LaTeX/PDF) + PNG now a REQUIRED v1 artifact (V-003 resolved; doc-site consumes SVG, PNG for non-SVG destinations); NO runtime renderer, NO view-time network (no CDN fonts/scripts), fonts system-stack or embedded (REQ-OUT-01..04, REQ-SEC-02). Input = natural-language OR structured spec (REQ-IN-01/02); structured spec = ENGINE-NEUTRAL schema (nodes/edges/containers), NOT engine DSL, decoupled from OQ-2 (V-006 resolved); never invents content (REQ-IN-03). Coverage = architecture/box-arrow-flow + flowchart/sequence/ER/state/data-flow (REQ-COV-01/02). Reliability = validate well-formed + fail loudly, NO auto-retry for v1 (REQ-REL-01/02, OQ-1). Theming = light+dark + configurable accent (REQ-THEME-01). A11y = title/desc/role=img REQUIRED (REQ-A11Y-01). Invocation = conversational AND scriptable both P0; scriptable contract covers 4 dimensions (input, output paths+formats, invocable diagram types, exit codes) + is a documented STABLE/VERSIONED interface (REQ-INV-01..04; V-001/V-002 resolved). PRD v2 after forge-verify-prd: 6 findings applied (V-001..006), all 4 Step-A decisions resolved. TECH SPEC v1 (OQ-2/OQ-3 resolved): ENGINE = @viz-js/viz (Graphviz-WASM) for graph-shaped types (architecture/flowchart/er/state/dataflow) + direct-SVG for sequence; PNG = @resvg/resvg-js; all in-process, no system binary/browser/network. Input = engine-neutral Zod DiagramSpec -> generated schemas/diagram-input.schema.json (NOT DOT; DOT is internal compile target). Deliverable = pre-bundled single-file CLI committed at skills/diagram-generator/scripts/diagram-render.mjs (WASM inlined), ships verbatim to all 5 targets (publish.ts:118 preserves mode), zero-install in consuming repos. Theme baked per-variant (light/dark + accent). CONTRACT (closes doc-site OQ-4): `diagram-render <input.json|-> --type --theme --accent --format svg|png|both --out-dir` deterministic names <slug>.<theme>.<ext>; exit 0/non-zero; --version = CONTRACT_VERSION (REQ-INV-04 versioned). Validation 2-stage: Zod input + output XML well-formed/tier-2-clean(<text>,no foreignObject)/a11y(title,desc,role). Bundle built via `build:diagram` + `build:diagram:check` drift guard wired into gate (mirrors adapters). Tests: golden SVG/type + property assertions + byte-determinism (SVG); PNG smoke-only (resvg pinned). Source in src/diagram/; new devDeps @viz-js/viz,@resvg/resvg-js,@rgrove/parse-xml (bundled, not repo runtime deps). MUST update SAMPLE_RELPATHS + goldens or gate fails. OPEN TECH Qs for specs: OTQ-1 golden strategy for big WASM bundle (lean presence-only + drift guard owns bytes), OTQ-2 palette/theme tokens (seed Cocoon), OTQ-3 sequence layout details, OTQ-4 --theme/--format both convenience, OTQ-5 resvg pin + PNG dimension tolerance, OTQ-6 SVG canonicalization rules for byte-determinism. TECH v2 after forge-verify-tech: 7 findings applied (V-001..007). Decisions: FONTS = subset font embedded as base64 data-URI (V-005); OUTPUT PATHS = explicit --out-file/--out-name flag w/ --out-dir+slug convenience default, precedence --out-file > --out-dir+--out-name > --out-dir+slug > stdout (V-007). Corrected: schema-gen.ts is NOT parameterized (needs new generator+scripts, V-001); config is Manifest-level not ToolEntry (V-002). Added validation/assertions for REQ-OUT-02 viewBox+wh and REQ-OUT-04 embedded font (V-004/005). REQ-IN-03 home = SKILL.md guidance (V-006). Determinism needs @viz-js/viz pin + svg canonicalization pass (V-003/OTQ-6). forge-3-specs MUST register per-target golden relpaths (not just claude shape). DEFERRED TO TECH SPEC: generation strategy + engine (text-DSL-to-SVG vs direct-SVG; D2/Graphviz/hand-built) and build-time dependency footprint (OQ-2); exact scriptable contract args/naming/exit codes that closes doc-site-plugin OQ-4 (OQ-3). OUT OF SCOPE: cloud-provider icon sets, interactive/animated diagrams, editing/round-tripping existing diagrams, authoring semantic content. Research of record: .reference/research.md (recommends text-DSL-to-SVG default: D2 for web, Graphviz for opens-anywhere; mine Cocoon-AI craft rules; svg-precision validate loop).",
   "stages": {
     "forge-1-prd": {
@@ -68,6 +68,19 @@
       "verifiedAt": "2026-06-18T00:00:00Z",
       "fixedAt": "2026-06-18T00:00:00Z",
       "fixCommit": "330529280df0ec0c7e058d1a55630ca086bb8abc"
+    },
+    "forge-4-backlog": {
+      "status": "complete",
+      "basedOnVersions": {
+        "forge-1-prd": 2,
+        "forge-2-tech": 2,
+        "forge-3-specs": 1
+      },
+      "artifacts": [
+        "backlog.json"
+      ],
+      "completedAt": "2026-06-18T00:00:00Z",
+      "commit": "2b4130a"
     }
   }
 }
