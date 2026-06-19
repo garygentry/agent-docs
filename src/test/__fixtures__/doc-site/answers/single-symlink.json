@@ -1,0 +1,28 @@
+{
+  "tokens": {
+    "SITE_TITLE": "Acme Docs",
+    "SITE_DESC": "Documentation for the Acme project.",
+    "SITE_URL": "https://acme.github.io",
+    "BASE_PATH": "/acme",
+    "REPO_SLUG": "acme-org/acme",
+    "GITHUB_URL": "https://github.com/acme-org/acme",
+    "PKG_MANAGER": "pnpm",
+    "RUNTIME": "node",
+    "DOCS_PKG_DIR": "docs",
+    "IMAGES_SRC_DIR": "../docs/images",
+    "ACCENT_LIGHT": "#2563eb",
+    "ACCENT_DARK": "#60a5fa",
+    "DEFAULT_BRANCH": "main",
+    "ASTRO_VERSION": "5.6.1",
+    "STARLIGHT_VERSION": "0.32.2",
+    "DOCS_PKG_DIR_TO_ROOT": "..",
+    "SYMLINK_PAGE_LINES": "link_file \"../docs/getting-started.md\" \"getting-started\"\nlink_file \"../docs/guides/usage.md\" \"guides/usage\""
+  },
+  "selection": {
+    "contentMode": "symlink",
+    "diagrams": false,
+    "deploy": ["github-pages"],
+    "driftGuard": true,
+    "monorepo": false
+  }
+}

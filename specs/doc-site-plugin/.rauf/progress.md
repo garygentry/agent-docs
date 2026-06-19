@@ -29,3 +29,18 @@
   src/test/regenerate-goldens.ts` must be re-run (item 010's adapters/goldens).
 - Schema-fixture: duplicate-slug reject case is `it.skip` per 10 §4.3 (JSON Schema
   can't express cross-item slug-uniqueness; symlinker/drift-guard own it).
+
+## Item 012 — scaffold-output goldens (learnings)
+
+- resolveTree lives in src/test/doc-site-scaffold.shared.ts (shared by the test +
+  the deliberate regenerate-scaffold-goldens.ts writer), mirroring the
+  golden.shared.ts / regenerate-goldens.ts split.
+- GATE GOTCHA: resolved `.tmpl` goldens strip the extension, so
+  __scaffold_golden__ contains real `content.config.ts` (+ .json) files. tsc,
+  eslint, and prettier all pick these up. Excluded the tree in THREE places:
+  tsconfig.json `exclude`, eslint.config.mjs `ignores`, and .prettierignore.
+  (eslint already ignored `**/*.mjs`, covering check-docs.mjs.)
+- Added a 4th answer set static-host.json (deploy:[static-netlify]) to cover the
+  deploy/static group — the coverage meta-test enforces it. ANSWER_SETS has 4.
+- Goldens regenerated only via `bun run src/test/regenerate-scaffold-goldens.ts`
+  (rm -rf each set first so removed templates leave no stale golden).

@@ -1,0 +1,28 @@
+{
+  "tokens": {
+    "SITE_TITLE": "Static Host Docs",
+    "SITE_DESC": "Documentation deployed to a static host.",
+    "SITE_URL": "https://static.example.net",
+    "BASE_PATH": "/docs",
+    "REPO_SLUG": "static-org/static",
+    "GITHUB_URL": "https://github.com/static-org/static",
+    "PKG_MANAGER": "npm",
+    "RUNTIME": "node",
+    "DOCS_PKG_DIR": "site",
+    "IMAGES_SRC_DIR": "../docs/images",
+    "ACCENT_LIGHT": "#16a34a",
+    "ACCENT_DARK": "#4ade80",
+    "DEFAULT_BRANCH": "main",
+    "ASTRO_VERSION": "5.6.1",
+    "STARLIGHT_VERSION": "0.32.2",
+    "DOCS_PKG_DIR_TO_ROOT": "..",
+    "SYMLINK_PAGE_LINES": "link_file \"../docs/home.md\" \"home\""
+  },
+  "selection": {
+    "contentMode": "symlink",
+    "diagrams": false,
+    "deploy": ["static-netlify"],
+    "driftGuard": false,
+    "monorepo": false
+  }
+}

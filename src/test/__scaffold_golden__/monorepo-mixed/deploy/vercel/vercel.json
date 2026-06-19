@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter ./packages/docs build",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "outputDirectory": "packages/docs/dist",
+  "framework": "astro",
+  "build": {
+    "env": {
+      "SITE": "https://docs.widget.dev",
+      "BASE_PATH": ""
+    }
+  }
+}

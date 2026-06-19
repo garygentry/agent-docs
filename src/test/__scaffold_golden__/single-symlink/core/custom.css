@@ -1,0 +1,14 @@
+/* Accent-color theming only (matches canon custom.css). No component overrides.
+   #2563eb / #60a5fa are the only tokens — see 00 §4.1. */
+:root {
+  /* dark theme (Starlight default) */
+  --sl-color-accent-low: color-mix(in srgb, #60a5fa 30%, black);
+  --sl-color-accent: #60a5fa;
+  --sl-color-accent-high: color-mix(in srgb, #60a5fa 40%, white);
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: color-mix(in srgb, #2563eb 40%, white);
+  --sl-color-accent: #2563eb;
+  --sl-color-accent-high: color-mix(in srgb, #2563eb 30%, black);
+}

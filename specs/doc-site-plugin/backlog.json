@@ -358,8 +358,8 @@
         "No Astro/Starlight build, diagram render, or network call occurs in any test",
         "bun run gate passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T18:59:43.947Z",
       "dependsOn": [
         "009"
       ],
