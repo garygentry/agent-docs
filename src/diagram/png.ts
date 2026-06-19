@@ -2,22 +2,38 @@
  * `png.ts` — rasterize a final, post-processed tier-2 SVG to PNG bytes
  * in-process (REQ-OUT-03), per 04-theme-postprocess-png.md §4.
  *
- * Rasterization runs entirely in-process via `@resvg/resvg-js` (pinned, 001) —
+ * Rasterization runs entirely in-process via `@resvg/resvg-wasm` (pinned) —
  * no browser, no network, no system Graphviz/rsvg binary. The embedded data-URI
  * font (§3.6) means resvg needs no system fonts, so text renders identically to
  * the SVG. On any resvg failure a {@link DiagramPngError} is thrown (§4.4); no
  * partial bytes are ever returned.
  *
- * Note on engine choice: 04 §4.1 prefers the WASM build (`@resvg/resvg-wasm`)
- * so the committed bundle (014) can inline the `.wasm`. This module is written
- * against the native `@resvg/resvg-js` build that is actually pinned in 001; the
- * contract it owes the pipeline (`svg: string → Uint8Array PNG`, failures wrapped
- * as `DiagramPngError`) is identical either way, and the swap is isolated to the
- * import + (for WASM) a memoized `initWasm` call.
+ * Engine choice: the WASM build (`@resvg/resvg-wasm`, 04 §4.1) so the committed
+ * bundle (014) inlines the `.wasm` and stays fully self-contained — no native
+ * `.node` addon to resolve at runtime (`01` §5 caveat). The WASM bytes are inlined
+ * via `assets/resvg-wasm.ts` (base64) and passed to `initWasm` once per process
+ * (memoized, like `getViz` in `03` §3.2). The contract this module owes the pipeline
+ * (`svg: string → Uint8Array PNG`, failures wrapped as `DiagramPngError`) is
+ * unchanged from the native build.
  */
-import { Resvg } from "@resvg/resvg-js";
+import { initWasm, Resvg } from "@resvg/resvg-wasm";
 
+import { RESVG_WASM_BYTES } from "./assets/resvg-wasm.js";
 import { DiagramPngError } from "./errors.js";
+
+/** WASM init is one-shot per process; guard so repeated calls init once (§4.2). */
+let wasmInited = false;
+
+/** Initialize the resvg WASM engine once per process from the inlined bytes. */
+async function ensureWasm(): Promise<void> {
+  if (wasmInited) return;
+  try {
+    await initWasm(RESVG_WASM_BYTES);
+  } catch (cause) {
+    throw new DiagramPngError("PNG engine failed to initialize", messageOf(cause));
+  }
+  wasmInited = true;
+}
 
 /** Options for PNG rasterization. */
 export interface RenderPngOptions {
@@ -40,7 +56,7 @@ const DIMENSION_TOLERANCE_PX = 2 as const;
 
 /**
  * Rasterize a final, post-processed tier-2 SVG to PNG bytes, fully in-process via
- * `@resvg/resvg-js` (REQ-OUT-03). The embedded data-URI font (§3.6) means resvg
+ * `@resvg/resvg-wasm` (REQ-OUT-03). The embedded data-URI font (§3.6) means resvg
  * needs no system fonts — text renders identically to the SVG.
  *
  * @param svg - The final SVG markup (post `postProcess`, §3). MUST carry explicit
@@ -50,13 +66,12 @@ const DIMENSION_TOLERANCE_PX = 2 as const;
  * @throws {DiagramPngError} (code `PNG_FAILED`, exit 5) if rasterization fails — the
  *   underlying resvg message is wrapped into `detail`. No partial bytes.
  */
-export async function renderPng(
-  svg: string,
-  opts?: RenderPngOptions,
-): Promise<Uint8Array> {
+export async function renderPng(svg: string, opts?: RenderPngOptions): Promise<Uint8Array> {
   const scale = opts?.scale ?? DEFAULT_PNG_SCALE;
 
-  let resvg: Resvg;
+  await ensureWasm();
+
+  let resvg: InstanceType<typeof Resvg>;
   try {
     resvg = new Resvg(svg, {
       // The SVG embeds its own subset font (§3.6); never depend on system fonts.
@@ -64,24 +79,21 @@ export async function renderPng(
       fitTo: { mode: "zoom", value: scale },
     });
   } catch (cause) {
-    throw new DiagramPngError(
-      "PNG rasterization rejected the SVG",
-      messageOf(cause),
-    );
+    throw new DiagramPngError("PNG rasterization rejected the SVG", messageOf(cause));
   }
 
   // Intrinsic SVG dimensions (px), read from the SVG markup itself.
   const intrinsicWidth = resvg.width;
   const intrinsicHeight = resvg.height;
 
-  let png: { asPng(): Buffer; width: number; height: number };
+  let png: { asPng(): Uint8Array; width: number; height: number };
   try {
     png = resvg.render();
   } catch (cause) {
     throw new DiagramPngError("PNG rasterization failed", messageOf(cause));
   }
 
-  let bytes: Buffer;
+  let bytes: Uint8Array;
   try {
     bytes = png.asPng();
   } catch (cause) {

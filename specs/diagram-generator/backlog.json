@@ -361,8 +361,8 @@
         "A byte golden for the bundle is committed per 06 §4.3",
         "tsc --noEmit passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T03:51:02.949Z",
       "dependsOn": [
         "012"
       ],

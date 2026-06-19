@@ -7,6 +7,12 @@ adapters/
 dist/
 bun.lock
 
+# Committed CLI bundle + its byte golden — minified, deterministic build output
+# pinned by build:diagram:check (06 §4.2) and the bundle byte golden (06 §4.3).
+# Prettier must not touch them.
+skills/diagram-generator/scripts/
+src/diagram/__bundle_golden__/
+
 # Runner / pipeline state — owned by the rauf loop runner and the forge
 # pipeline, not hand-formatted. Reformatting them fights the tools that write
 # them (and backlog.json must never be modified by an iteration).

@@ -105,3 +105,17 @@
 - Top-level runner guarded by `if (import.meta.main)` (same as schema-gen.ts) so the test suite can import without executing; top-level await is fine in ESM.
 - TEST GOTCHA: spying `process.stdout.write` with `mockImplementation` — annotate the impl as `(chunk: string|Uint8Array)=>boolean` and cast `as typeof process.stdout.write`; a bare `(chunk: unknown)` impl fails tsc against write's overloads. stdin faked via `Readable.from([...])` + `Object.defineProperty(process,'stdin',...)`.
 - 34 cli tests; full suite 306 pass; tsc clean.
+
+## Item 014 — Bundle + build-check + byte golden (done)
+- BLOCKER RESOLVED: `bun build` with png.ts importing the NATIVE `@resvg/resvg-js` fails ("cannot write multiple output files without an output directory") because the native `.node` addon emits extra outputs. Per 04 §4.1 (OTQ-5, authoritative) the engine MUST be the WASM build `@resvg/resvg-wasm`. Specs 01/06 still say resvg-js (stale) — 04 §4.1 wins.
+- Added devDep `@resvg/resvg-wasm@2.6.2` (kept native `@resvg/resvg-js` too — item 001 invariant; now unused but harmless).
+- New generated asset `src/diagram/assets/resvg-wasm.ts` — base64 of `index_bg.wasm` (~3.15MB b64) → `RESVG_WASM_BYTES: Uint8Array`. Regenerate via `bun run src/diagram/assets/gen-resvg-wasm.ts`.
+- Rewrote png.ts: `import { initWasm, Resvg } from "@resvg/resvg-wasm"`; memoized `ensureWasm()` (module-level `let wasmInited`) calls `initWasm(RESVG_WASM_BYTES)` once/process (§4.2). `Resvg` is a const, type via `InstanceType<typeof Resvg>`; `.asPng()` returns `Uint8Array` (not Buffer). API contract identical to native build.
+- Bundle: `bun run build:diagram` → 9.17MB self-contained .mjs. Verified standalone from /tmp (svg-only AND `--format both` PNG) with no node_modules.
+- `src/diagram/build-check.ts`: transcribed 06 §4.2. `buildBundleText(repoRoot)` uses `Bun.build({...}).outputs[0]!.text()` (the `!` for noUncheckedIndexedAccess). `Bun.build` output byte-matches `bun build --outfile`, so drift guard exits 0 when current, 1 when stale.
+- GOTCHA: `Bun` global is undefined under vitest/node runtime — the in-memory rebuild check can ONLY run as the `bun run build:diagram:check` CLI (in gate), NOT in a vitest test. So `build-check.test.ts` only byte-compares committed bundle vs the byte golden; the rebuild-parity is the gate's CLI job.
+- Byte golden (06 §4.3, OTQ-1): committed `src/diagram/__bundle_golden__/diagram-render.mjs` (a 2nd copy) + `build-check.test.ts` byte-compares it to the shipped bundle. Decoupled from the EMISSION golden tree (src/test/__golden__/<target>/) which needs manifest+SAMPLE_RELPATHS registration = item 015. golden.test.ts only walks per-TARGET dirs so `__bundle_golden__` and a `bundle/` sibling are ignored by it.
+- Prettier: added `skills/diagram-generator/scripts/` + `src/diagram/__bundle_golden__/` to `.prettierignore` (minified, can't be formatted).
+- ESLint: `*.mjs` → `**/*.mjs` (flat-config glob only matched root before) + ignore `src/diagram/__bundle_golden__/`, else eslint lints the minified .mjs (257 phantom errors).
+- PRE-EXISTING lint debt (NOT fixed, out of 014 scope): `svg-postprocess.ts:153` prefer-const on minX/minY (item 009 destructure with reassigned vbW/vbH). gate's `lint` step will need this fixed by item 015 (which requires gate green) or a cleanup pass.
+- When the bundle legitimately changes: `bun run build:diagram` THEN `cp skills/diagram-generator/scripts/diagram-render.mjs src/diagram/__bundle_golden__/diagram-render.mjs` in the same commit.

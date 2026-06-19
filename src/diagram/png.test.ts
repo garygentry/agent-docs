@@ -12,7 +12,7 @@ const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] as const;
  */
 const VALID_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80" role="img"><title>t</title><desc>d</desc><rect x="10" y="10" width="100" height="60" fill="#2563eb" stroke="#1e3a8a"/></svg>`;
 
-describe("renderPng — SVG → PNG via @resvg/resvg-js (REQ-OUT-03)", () => {
+describe("renderPng — SVG → PNG via @resvg/resvg-wasm (REQ-OUT-03)", () => {
   it("rasterizes a finished SVG to a non-empty PNG beginning with the magic bytes", async () => {
     const png = await renderPng(VALID_SVG);
     expect(png).toBeInstanceOf(Uint8Array);
