@@ -62,3 +62,18 @@
 - Accent override (§2.3): sets `accent`, `edge`, and `roles.default.stroke` only — semantic role fills stay stable. Omitted accent → variant defaults (light `#2563eb`, dark `#60a5fa`).
 - `structuredClone` returns a deep copy so the frozen source is never mutated; `resolveTheme` is pure, never throws.
 - 6 tests pass; tsc clean.
+
+## Item 009 — svg-postprocess.ts (done)
+- `src/diagram/svg-postprocess.ts`: `postProcess(rawSvg, opts)` per 04 §3. Resolves palette internally via `resolveTheme(opts.theme, opts.accent ?? opts.spec.accent)` — callers pass a theme, not a palette.
+- APPROACH: parse-xml gives a read tree; I convert it to a private mutable `SNode` tree (element/text), run all 7 passes on that, and serialize ONCE with a custom minifying serializer. Full control over determinism (attr order, coord rounding, whitespace) and lets me build new elements as plain objects (no XmlElement construction).
+- Conversion DROPS comments/PIs/CDATA and any pre-existing `<title>`/`<desc>` (graphviz emits per-node `<title>` metadata) — then injects fresh a11y title/desc. Output is `<svg>…</svg>` only (XML decl/doctype discarded).
+- DRAW PARENT: graphviz wraps drawing in `<g class="graph" transform=...>`; sequence draws directly under `<svg>`. `findDrawParent` returns the graph g if present else root. Color baking + z-order operate on the draw parent's element children; legend/backdrop/title/desc/defs go on the ROOT (untransformed user space) so legend lands in the expanded right margin.
+- Root child order after passes: `[title, desc, defs(font), backdrop, drawing, legend]` — satisfies BOTH "title/desc first two children" AND "backdrop first DRAWING element" (defs paints nothing).
+- Z-order bands (back→front): other(graphviz backdrop polygon) → containers → edges → nodes(role-). Within-band order preserved → deterministic. Sequence header `g.role-*` go to node band (on top); other sequence primitives to `other`.
+- COLOR: role groups → shape fill/stroke from palette.roles, text fill=role.text; preserve explicit `fill="none"`. containers → boundary stroke + fill=none + `stroke-dasharray="6 4"`. edges → path stroke=edge, polygon/polyline fill+stroke=edge. graphviz `fill="white"` backdrop recolored to background.
+- LEGEND: non-default roles only, emitted when ≥1 present, ordered by palette role-key order. Expands viewBox WIDTH (+gutter+colWidth) and HEIGHT if needed; group appended last.
+- FONT (§3.6): `<defs><style>@font-face{…src:url(<FONT_SUBSET_DATA_URI>) format("woff2")}</style></defs>`; style text emitted RAW (CSS, not escaped). Every `font-family` rewritten to `DiagramSans`. Matches validate.ts `assertFontPortable` regex.
+- CANONICALIZATION (last): drop unreferenced ids / renumber referenced→e-N + rewrite aria-labelledby/href/url(#); round geometry attrs via `canonNumberTokens`; attrs in ATTR_PRIORITY then lexicographic; fully minified; text collapsed except title/desc preserved; empty elements self-closed. `canonNumber`=round-half-to-even to SVG_COORD_PRECISION, strip trailing zeros/dot.
+- Byte-determinism CONFIRMED across runs. width/height set numeric (graphviz emits `pt`; overwritten with viewBox dims).
+- slug derived from spec.title (lowercase, non-alnum→`-`, trim, fallback "diagram") — no shared slug helper existed; render.ts (011) can reuse this shape.
+- 11 tests; full suite 255 pass; tsc clean. Completed in one iteration.
