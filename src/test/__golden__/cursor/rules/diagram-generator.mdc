@@ -44,8 +44,16 @@ When a user asks for a diagram:
    `participants`/`messages` for `sequence`. Assign each node a semantic `role`
    from the closed `NodeRole` taxonomy **only where the user's description implies
    one** (a "Postgres database" → `database`; an unqualified "service" → omit role).
-3. **Write the JSON to a temp file** (e.g. `/tmp/diagram-spec.json`), or pipe it
-   to the CLI via `-`.
+3. **Keep the interim spec out of the user's repo.** The `DiagramSpec` JSON is a
+   throwaway intermediate — only the final rendered image is a deliverable.
+   - **Single SVG → pipe via stdin, write no file at all:** build the spec and pipe
+     it to the CLI with `-` (`… | diagram-render -`), capturing the SVG from stdout.
+   - **PNG, `both`, or multi-theme → write the spec under a system temp dir**
+     (`mktemp -d`, or `/tmp/diagram-spec.json`), never the working tree.
+     Reserve a repo-relative spec path **only** for the deliberate committed build-step
+     workflow, where `src/diagrams/*.json` is intentionally version-controlled (e.g.
+     doc-site's diagrams component). Ad-hoc/conversational diagrams must not add spec
+     files to the user's repo.
 4. **Invoke the bundled CLI** at
    `skills/diagram-generator/scripts/diagram-render.mjs` (or the adapter-relative
    path under the running target) with the appropriate flags — the exact same
@@ -101,16 +109,16 @@ on success; distinct non-zero codes per failure class with a stderr message and
 Examples:
 
 ```bash
-# Conversational: write a spec, render both variants side by side
-node skills/diagram-generator/scripts/diagram-render.mjs /tmp/spec.json \
-    --theme dark --out-dir /tmp/diagrams        # → <slug>.dark.svg
+# Ad-hoc, preferred: stdin → stdout, no file touches the repo (single SVG)
+build_spec | node skills/diagram-generator/scripts/diagram-render.mjs - > /tmp/diagram.svg
 
-# Explicit, fully caller-controlled (the build-step shape)
-node skills/diagram-generator/scripts/diagram-render.mjs spec.json \
+# Ad-hoc, PNG/both/multi-theme: spec in a temp dir, image to the user's chosen path
+node skills/diagram-generator/scripts/diagram-render.mjs "$(mktemp -d)/spec.json" \
+    --format both --out-file ~/Desktop/arch.svg   # → arch.svg + arch.png
+
+# Committed build-step ONLY: repo-relative spec is intentionally version-controlled
+node skills/diagram-generator/scripts/diagram-render.mjs src/diagrams/arch.json \
     --type architecture --format both --out-file out/arch.svg   # → out/arch.svg + out/arch.png
-
-# Stdin → stdout (single SVG)
-cat spec.json | node skills/diagram-generator/scripts/diagram-render.mjs -
 
 # Pin the contract version
 node skills/diagram-generator/scripts/diagram-render.mjs --version   # → 1.0.0
