@@ -74,6 +74,13 @@
         "TRACEABILITY.md"
       ]
     },
+    "forge-verify-backlog": {
+      "status": "findings-applied",
+      "findingsFile": ".verification/VERIFY-backlog-2026-06-19.md",
+      "findingsCount": 5,
+      "verifiedAt": "2026-06-19T14:30:00Z",
+      "fixedAt": "2026-06-19T14:45:00Z"
+    },
     "forge-4-backlog": {
       "status": "complete",
       "version": 1,

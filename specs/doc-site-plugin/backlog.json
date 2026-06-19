@@ -99,9 +99,18 @@
       "status": "pending",
       "completedAt": null,
       "dependsOn": ["001", "002"],
-      "notes": "Templates live under references/templates/** so the emitter's collectOwnedTree discovers them (09 §3). index.mdx/starter-page.mdx are authored content (source:native) — never tracked for overwrite; the other 6 core files are managed plumbing. The sidebar array is replaced wholesale at emit time by the buildSidebar result substituted into the // <<SIDEBAR>> sentinel. Item 012's single-symlink/monorepo-mixed/decline-all scaffold goldens all exercise this core group.",
+      "notes": "Templates live under references/templates/** so the emitter's collectOwnedTree discovers them (09 §3). index.mdx/starter-page.mdx are authored content (source:native) — never tracked for overwrite; the other 6 core files are managed plumbing. The sidebar array is replaced wholesale at emit time by the buildSidebar result substituted into the // <<SIDEBAR>> sentinel. Item 012's single-symlink/monorepo-mixed/decline-all scaffold goldens all exercise this core group. This item authors 10 files, so it uses agentDelegation to keep the emit surface within one iteration — the three subtasks write disjoint files and share the single bun run gate verification.",
       "estimatedIterations": 1,
       "model": "opus",
+      "agentDelegation": {
+        "recommendedConcurrency": 3,
+        "strategy": "Three sub-agents author disjoint slices of the core/ group + its docs under skills/doc-site-plugin/, all using only the 00 §4.1 canonical tokens and spec 03. They write non-overlapping files and share the single bun run gate verification.",
+        "subtasks": [
+          "Author the 6 managed plumbing core templates under references/templates/core/: astro.config.mjs.tmpl (site=process.env.SITE, base=process.env.BASE_PATH, image.service=passthroughImageService(), social array, // <<SIDEBAR>> sentinel with sidebar:[]), package.json.tmpl ({{ASTRO_VERSION}}/{{STARLIGHT_VERSION}}, dev/build/preview scripts only), tsconfig.json.tmpl, content.config.ts.tmpl (docsLoader()+docsSchema()), custom.css.tmpl ({{ACCENT_LIGHT}}/{{ACCENT_DARK}} accent vars only), favicon.svg (verbatim, no tokens). Exact bodies/target-paths per 03 §3.",
+          "Author the 2 authored-content MDX templates under references/templates/core/: index.mdx.tmpl (splash landing, source:native, {{SITE_TITLE}}/{{SITE_DESC}}) and starter-page.mdx.tmpl (authored starter page, source:native). Exact bodies per 03 §3.7-3.8.",
+          "Author references/core.md (documenting the deterministic buildSidebar algorithm from 03 §7 — group by first POSIX slug segment, titleize, exclude unmanaged, native==symlink, manifest order is sidebar order, home splash excluded — and writing docs.manifest.json + copying docs.manifest.schema.json to the target repo root) and references/manifest-schema.md (the manifest contract + unmanaged:true escape hatch per 00 §2)."
+        ]
+      },
       "specReferences": [
         "specs/doc-site-plugin/03-core-site-and-manifest.md",
         "specs/doc-site-plugin/00-core-definitions.md",
@@ -137,7 +146,7 @@
     {
       "id": "006",
       "type": "feature",
-      "priority": 2,
+      "priority": 1,
       "title": "Author diagrams/ template group + diagrams.md (delegation by vendoring)",
       "description": "Author the optional diagram component template group plus its reference doc, emitted only when diagrams:true. The generator does NOT ship a renderer — it vendors diagram-render.mjs from the already-shipped sibling diagram-generator skill. Create skills/doc-site-plugin/references/templates/diagrams/diagrams.prebuild.snippet.tmpl: a package.json script fragment (NOT a standalone file) that invokes the VENDORED renderer with predictable, slug-independent output paths via --out-file (public/diagrams/<basename>.<theme>.svg). Each spec is rendered TWICE — once --theme light with {{ACCENT_LIGHT}}, once --theme dark with {{ACCENT_DARK}} (there is NO --theme both). Chain invocations with && so any nonzero exit short-circuits and fails prebuild. Author references/diagrams.md documenting: (1) vendoring reads the renderer at the FIXED uniform sibling rel-path ../diagram-generator/scripts/diagram-render.mjs (identical across all 5 targets — no per-agent branching) and copies it to scripts/diagram-render.mjs (or {{DOCS_PKG_DIR}}/scripts/) in the target; (2) a --version pin-check against CONTRACT_VERSION 1.0.0 runs BEFORE vendoring — a match proceeds and records diagramContract:'1.0.0' + the vendored copy's sha256 in .doc-site-scaffold.json; any other version or an unavailable/missing renderer aborts the component with zero files written and NO embedded fallback (CON-05); (3) a starter DiagramSpec is emitted into src/diagrams/ if none exists so the smoke test renders for real (REQ-DIAG-03); (4) all nonzero renderer exits (2/3/4/5/6/64 per 00 §8) are surfaced as BUILD_RED, never masked (including exit 5 --format both that may leave an SVG); (5) decline-clean: diagrams:false emits zero files/hooks and no diagramContract. Use only canonical tokens ({{DOCS_PKG_DIR}}, {{ACCENT_LIGHT}}, {{ACCENT_DARK}}, {{RUNTIME}}, {{PKG_MANAGER}}).",
       "acceptanceCriteria": [
@@ -164,12 +173,12 @@
       "type": "feature",
       "priority": 1,
       "title": "Author deploy/ and monorepo/ template groups + 3 deploy reference docs",
-      "description": "Author the deploy and monorepo-portability template groups plus their reference docs, each component-gated. Templates under skills/doc-site-plugin/references/templates/: (1) deploy/github-pages/docs.yml.tmpl — a valid GitHub Actions workflow per 06 §3 with TWO named toolchain fragments (Bun+pnpm AND Node+npm) selected by fragment, NOT by in-YAML conditionals; SITE/BASE_PATH derived at runtime from actions/configure-pages outputs; path-filtered triggers ({{DOCS_PKG_DIR}}/**, docs/**, docs.manifest.json, the workflow itself) on {{DEFAULT_BRANCH}}. Note GitHub Actions ${{ }} expressions are NOT generator tokens. (2) deploy/vercel/vercel.json.tmpl — framework astro, build/install commands, outputDirectory under {{DOCS_PKG_DIR}}/dist, build.env SITE={{SITE_URL}} and BASE_PATH=\"\" (root). (3) deploy/static/netlify.toml.tmpl — [build] base={{DOCS_PKG_DIR}}, publish=dist, [build.environment] SITE={{SITE_URL}}, BASE_PATH={{BASE_PATH}}. (4) monorepo/pnpm-workspace.fragment.yaml.tmpl — packages: entry for {{DOCS_PKG_DIR}}. (5) monorepo/root-scripts.fragment.json.tmpl — workspaces membership + dev:docs/build:docs passthroughs; provide BOTH the pnpm --filter form and the npm --workspace form (fragment-selected). Reference docs: references/deploy-github-pages.md, references/deploy-vercel.md, references/deploy-static-netlify.md documenting per-target wiring, the shared env-driven SITE/BASE_PATH mechanism (REQ-DEPLOY-02, consumed from the core astro.config.mjs), and the monorepo additive-merge semantics (register membership idempotently; set dev:docs/build:docs; RERUN_SKIP on a user-edited script value, never clobber). Each group is gated by deploy[] membership / the monorepo flag; introduce no tokens beyond 00 §4.1.",
+      "description": "Author the deploy and monorepo-portability template groups plus their reference docs, each component-gated. Templates under skills/doc-site-plugin/references/templates/: (1) deploy/github-pages/docs.yml.tmpl — a valid GitHub Actions workflow per 06 §3 with TWO named toolchain fragments (Bun+pnpm AND Node+npm) selected by fragment, NOT by in-YAML conditionals; SITE/BASE_PATH derived at runtime from actions/configure-pages outputs; path-filtered triggers ({{DOCS_PKG_DIR}}/**, docs/**, docs.manifest.json, the workflow itself) on {{DEFAULT_BRANCH}}. Note GitHub Actions ${{ }} expressions are NOT generator tokens. (2) deploy/vercel/vercel.json.tmpl — framework astro, build/install commands, outputDirectory under {{DOCS_PKG_DIR}}/dist, build.env SITE={{SITE_URL}} and BASE_PATH=\"\" (root). (3) deploy/static/netlify.toml.tmpl — [build] base={{DOCS_PKG_DIR}}, publish=dist, [build.environment] SITE={{SITE_URL}}, BASE_PATH={{BASE_PATH}}. (4) monorepo/pnpm-workspace.fragment.yaml.tmpl — packages: entry for {{DOCS_PKG_DIR}}. (5) monorepo/root-scripts.fragment.json.tmpl — workspaces membership + dev:docs/build:docs passthroughs; provide BOTH the pnpm --filter form and the npm --workspace form (fragment-selected). Reference docs: references/deploy-github-pages.md, references/deploy-vercel.md, references/deploy-static-netlify.md documenting per-target wiring and the shared env-driven SITE/BASE_PATH mechanism (REQ-DEPLOY-02, consumed from the core astro.config.mjs). Author references/monorepo.md (a SEPARATE doc, NOT inside the deploy docs) documenting the monorepo additive-merge semantics (register membership idempotently; set dev:docs/build:docs; RERUN_SKIP on a user-edited script value, never clobber) per 06 §7. Each group is gated by deploy[] membership / the monorepo flag; introduce no tokens beyond 00 §4.1.",
       "acceptanceCriteria": [
         "deploy/github-pages/docs.yml.tmpl exists as valid GitHub Actions YAML with both Bun+pnpm and Node+npm toolchain fragments (no in-YAML conditionals), path-filtered triggers on {{DEFAULT_BRANCH}}, and SITE/BASE_PATH fed from configure-pages outputs",
         "deploy/vercel/vercel.json.tmpl exists with framework:astro, outputDirectory under {{DOCS_PKG_DIR}}, SITE={{SITE_URL}} and BASE_PATH empty; deploy/static/netlify.toml.tmpl exists with base={{DOCS_PKG_DIR}}, publish=dist, and SITE/BASE_PATH build env",
         "monorepo/pnpm-workspace.fragment.yaml.tmpl and monorepo/root-scripts.fragment.json.tmpl exist; the root-scripts fragment provides dev:docs/build:docs in both pnpm --filter and npm --workspace forms plus workspaces membership",
-        "references/deploy-github-pages.md, references/deploy-vercel.md, references/deploy-static-netlify.md exist and document per-target wiring, the shared env-driven SITE/BASE_PATH mechanism, and monorepo additive-merge/RERUN_SKIP semantics",
+        "references/deploy-github-pages.md, references/deploy-vercel.md, references/deploy-static-netlify.md exist and document per-target wiring and the shared env-driven SITE/BASE_PATH mechanism; a separate references/monorepo.md documents the monorepo additive-merge/RERUN_SKIP semantics",
         "Every {{TOKEN}} used across these templates is one of the 17 canonical tokens (GitHub Actions ${{ }} expressions are not flagged as tokens)",
         "bun run gate passes"
       ],
@@ -181,12 +190,12 @@
       "model": "opus",
       "agentDelegation": {
         "recommendedConcurrency": 4,
-        "strategy": "Each sub-agent authors one independent template-group + reference-doc bundle under skills/doc-site-plugin/references/. They all use only the 00 §4.1 canonical tokens and 06-deploy-and-monorepo.md but write disjoint files, so they run in parallel and share the single bun run gate verification.",
+        "strategy": "Each sub-agent authors one independent template-group + reference-doc bundle under skills/doc-site-plugin/references/, writing strictly DISJOINT files (the monorepo subtask owns its own references/monorepo.md rather than editing the deploy docs). They all use only the 00 §4.1 canonical tokens and 06-deploy-and-monorepo.md, so they run in parallel with no write conflicts and share the single bun run gate verification.",
         "subtasks": [
           "Author references/templates/deploy/github-pages/docs.yml.tmpl (valid GH Actions YAML; Bun+pnpm AND Node+npm named fragments, no in-YAML conditionals; path-filtered triggers on {{DEFAULT_BRANCH}}; SITE/BASE_PATH from actions/configure-pages outputs) and references/deploy-github-pages.md per 06 §3",
           "Author references/templates/deploy/vercel/vercel.json.tmpl (framework astro, outputDirectory under {{DOCS_PKG_DIR}}/dist, build.env SITE={{SITE_URL}}, BASE_PATH=\"\") and references/deploy-vercel.md per 06 §4",
           "Author references/templates/deploy/static/netlify.toml.tmpl ([build] base={{DOCS_PKG_DIR}}, publish=dist; [build.environment] SITE={{SITE_URL}}, BASE_PATH={{BASE_PATH}}) and references/deploy-static-netlify.md (incl. generic static-host steps) per 06 §5",
-          "Author references/templates/monorepo/pnpm-workspace.fragment.yaml.tmpl and references/templates/monorepo/root-scripts.fragment.json.tmpl (workspaces membership + dev:docs/build:docs in both pnpm --filter and npm --workspace forms) and document the additive-merge/RERUN_SKIP semantics in the deploy reference docs per 06 §7"
+          "Author references/templates/monorepo/pnpm-workspace.fragment.yaml.tmpl and references/templates/monorepo/root-scripts.fragment.json.tmpl (workspaces membership + dev:docs/build:docs in both pnpm --filter and npm --workspace forms) and author references/monorepo.md documenting the additive-merge/RERUN_SKIP semantics per 06 §7 (write this in your own monorepo.md — do NOT edit the deploy reference docs, which other subtasks own)"
         ]
       },
       "specReferences": [
@@ -288,8 +297,8 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["010"],
-      "notes": "Depends on 010 so the full repo (templates committed, adapters regenerated) is in place and the gate — which runs build:check before/with test — stays green when these tests land. The token-coverage test is what makes 00 §4.1's closed-vocabulary rule enforceable: it fails on any orphan or undefined token. Mirror the diagram-generator test patterns under src/test/.",
+      "dependsOn": ["009"],
+      "notes": "Depends on 009 — the last item that authors the skill assets these tests validate. The tests read ONLY from skills/doc-site-plugin/ (the template tree, SKILL.md, and docs.manifest.schema.json), never from adapters/ or SAMPLE_RELPATHS, so they need the authored assets (present after 009), not the emitter integration (item 010). The token-coverage test is what makes 00 §4.1's closed-vocabulary rule enforceable: it fails on any orphan or undefined token. Mirror the diagram-generator test patterns under src/test/.",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
@@ -314,8 +323,8 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["011"],
-      "notes": "This is the scaffolded-output half of REQ-PORT-02 (item 011 proves the tool-emission half + token vocabulary + schema). 10 §6 item 1 explicitly requires a static-netlify answer set so deploy/static is covered — the coverage meta-test enforces it. Goldens follow the same never-auto-overwrite discipline as the emitter golden suite. Sequenced after 011 so the gate stays green as the final verification surface lands.",
+      "dependsOn": ["009"],
+      "notes": "This is the scaffolded-output half of REQ-PORT-02 (item 011 proves the tool-emission half + token vocabulary + schema). Depends on 009 — it reads references/templates/** (present after 009) via its own resolveTree helper, answer-set fixtures, and __scaffold_golden__ trees; it consumes nothing from item 011, so 011 and 012 are independently parallelizable. 10 §6 item 1 explicitly requires a static-netlify answer set so deploy/static is covered — the coverage meta-test enforces it. Goldens follow the same never-auto-overwrite discipline as the emitter golden suite.",
       "estimatedIterations": 1,
       "model": "opus",
       "specReferences": [
