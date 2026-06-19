@@ -22,3 +22,9 @@ src/diagram/__bundle_golden__/
 **/backlog.json
 specs/**/.pipeline-state.json
 specs/**/.verification/
+
+# Forge-authored spec documents — generated/curated by the feature-forge
+# pipeline with intentional table alignment and jsonc examples. Prettier would
+# fight that alignment (and rewrite the illustrative jsonc), so they are pinned
+# by the pipeline's own verification passes, not hand-formatted.
+specs/**/*.md

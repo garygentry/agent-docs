@@ -17,8 +17,8 @@
         "tools.manifest.json is unchanged (registration deferred to item 010)",
         "bun run gate passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T18:31:27.431Z",
       "dependsOn": [],
       "notes": "Foundation item — lays groundwork for items 002-012. SKILL.md is the load-bearing procedure; per-component reference docs (detect.md, interview.md, core.md, etc.) are pulled in as needed and authored by later items. The token table here is the agent-facing mirror of 00 §4.1; keep it EXACTLY the 17 canonical tokens — item 011's token-coverage test fails on any orphan (documented-but-unused) or extra token. The skill stays unregistered until item 010, so build:check/golden tests do not yet expect it.",
       "estimatedIterations": 1,
@@ -46,7 +46,9 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001"],
+      "dependsOn": [
+        "001"
+      ],
       "notes": "This static asset is validated in-repo by item 011's vitest schema-fixture test (using ajv with the Draft 2020-12 metaschema), NOT by the schema:check gate stage (which stays hardwired to Manifest — 09 §5). Keeping it a hand-authored asset preserves the 'no new src/ module' property. The schema rides verbatim to all 5 targets once the tool is registered (item 010).",
       "estimatedIterations": 1,
       "model": "opus",
@@ -71,7 +73,9 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001"],
+      "dependsOn": [
+        "001"
+      ],
       "notes": "These reference docs ride verbatim to all 5 targets (once registered in item 010). They implement spec 02; the conversational phrasing of questions is intentionally agent-dependent and out of REQ-PORT-02 scope. No template group is tied to this item — it is pure instruction text feeding Phases 1-2.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -98,7 +102,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001", "002"],
+      "dependsOn": [
+        "001",
+        "002"
+      ],
       "notes": "Templates live under references/templates/** so the emitter's collectOwnedTree discovers them (09 §3). index.mdx/starter-page.mdx are authored content (source:native) — never tracked for overwrite; the other 6 core files are managed plumbing. The sidebar array is replaced wholesale at emit time by the buildSidebar result substituted into the // <<SIDEBAR>> sentinel. Item 012's single-symlink/monorepo-mixed/decline-all scaffold goldens all exercise this core group. This item authors 10 files, so it uses agentDelegation to keep the emit surface within one iteration — the three subtasks write disjoint files and share the single bun run gate verification.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -134,7 +141,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001", "004"],
+      "dependsOn": [
+        "001",
+        "004"
+      ],
       "notes": "Depends on 004 because symlink.md references the core package.json insertion point (predev/prebuild). The script is a managed plumbing file (sha256 tracked). When diagrams are also selected, the composed prebuild runs setup-docs first then diagram generation (the composition rule is owned by diagrams.md, item 006). Item 012's single-symlink and monorepo-mixed answer sets exercise this group.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -159,7 +169,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001", "004"],
+      "dependsOn": [
+        "001",
+        "004"
+      ],
       "notes": "diagram-generator is a HARD prerequisite already shipped and registered (tools.manifest.json) — the fixed sibling hop works because skillRefDir roots both skills under the same per-target parent (09 §4). The prebuild snippet composes with the symlink prebuild (item 005): symlink setup first, then diagram generation. Item 012's monorepo-mixed answer set exercises this group.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -184,7 +197,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001", "004"],
+      "dependsOn": [
+        "001",
+        "004"
+      ],
       "notes": "Larger item with independent template files — uses agentDelegation to author the three deploy groups + monorepo group + their docs concurrently (they share one verification step and don't touch each other's files). The env-driven SITE/BASE_PATH consumer (astro.config.mjs) is owned by item 004 — these only SUPPLY the vars. Item 012 must cover deploy/static via an added static-netlify answer set; github-pages/vercel/monorepo are covered by single-symlink/monorepo-mixed.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -220,7 +236,10 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001", "004"],
+      "dependsOn": [
+        "001",
+        "004"
+      ],
       "notes": "The guard reads docs.manifest.json + astro.config.mjs sidebar + src/content/docs/** (all owned by item 004) — it is a regression net over the core scaffold's generated sidebar and the symlinker's links (item 005). The check-docs.mjs.tmpl contains the {{DOCS_PKG_DIR}} token only inside a comment (runtime paths come from import.meta.url), so the resolved script is location-independent. node --check is a fast POSIX-free syntax validation for the resolved .mjs.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -245,7 +264,14 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["001", "004", "005", "006", "007", "008"],
+      "dependsOn": [
+        "001",
+        "004",
+        "005",
+        "006",
+        "007",
+        "008"
+      ],
       "notes": "Depends on all component items because rerun.md and the finalized SKILL.md cross-reference every component's managed files and reference docs. This is the last content item before integration. Keep the SKILL.md token table exactly 17 tokens — item 011's token-coverage test asserts the mirror.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -272,7 +298,16 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["002", "003", "004", "005", "006", "007", "008", "009"],
+      "dependsOn": [
+        "002",
+        "003",
+        "004",
+        "005",
+        "006",
+        "007",
+        "008",
+        "009"
+      ],
       "notes": "This is the integration item — it must run after ALL skill content exists so the verbatim subtree and transformed SKILL emit completely. build:check (in gate) is the exhaustive byte-identity proof across all 5 adapters; the SAMPLE_RELPATHS goldens are the fast representative spot-check. The gate chain itself is unchanged (09 §7). Per 09 §6.1, if a per-target SKILL transform differs from the guessed relpath, trust the emitter's actual emit().files output.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -297,7 +332,9 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["009"],
+      "dependsOn": [
+        "009"
+      ],
       "notes": "Depends on 009 — the last item that authors the skill assets these tests validate. The tests read ONLY from skills/doc-site-plugin/ (the template tree, SKILL.md, and docs.manifest.schema.json), never from adapters/ or SAMPLE_RELPATHS, so they need the authored assets (present after 009), not the emitter integration (item 010). The token-coverage test is what makes 00 §4.1's closed-vocabulary rule enforceable: it fails on any orphan or undefined token. Mirror the diagram-generator test patterns under src/test/.",
       "estimatedIterations": 1,
       "model": "opus",
@@ -323,7 +360,9 @@
       ],
       "status": "pending",
       "completedAt": null,
-      "dependsOn": ["009"],
+      "dependsOn": [
+        "009"
+      ],
       "notes": "This is the scaffolded-output half of REQ-PORT-02 (item 011 proves the tool-emission half + token vocabulary + schema). Depends on 009 — it reads references/templates/** (present after 009) via its own resolveTree helper, answer-set fixtures, and __scaffold_golden__ trees; it consumes nothing from item 011, so 011 and 012 are independently parallelizable. 10 §6 item 1 explicitly requires a static-netlify answer set so deploy/static is covered — the coverage meta-test enforces it. Goldens follow the same never-auto-overwrite discipline as the emitter golden suite.",
       "estimatedIterations": 1,
       "model": "opus",
