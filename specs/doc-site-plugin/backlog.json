@@ -139,8 +139,8 @@
         "After substituting the {{TOKEN}}s with sample values, sh -n on the resolved script reports no syntax errors",
         "bun run gate passes"
       ],
-      "status": "pending",
-      "completedAt": null,
+      "status": "done",
+      "completedAt": "2026-06-19T18:38:58.471Z",
       "dependsOn": [
         "001",
         "004"
