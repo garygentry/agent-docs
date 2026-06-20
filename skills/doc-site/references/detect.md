@@ -69,12 +69,22 @@ absent. A pnpm/npm lockfile with no Bun signal ⇒ `node`. Seeds `{{RUNTIME}}`.
 ```sh
 ls docs/*.md              # existing repo markdown to source as symlinked pages
 ls CONTRIBUTING.md        # a candidate top-level doc
+# frontmatter probe: how many candidate docs LACK a `title:` key?
+grep -L '^title:' docs/*.md CONTRIBUTING.md 2>/dev/null   # files printed = no title frontmatter
 ```
 
 Affirmative (any `docs/*.md` or `CONTRIBUTING.md`) ⇒ existing docs present; enumerate the
 matched files to **seed the markdown→sidebar-slug mapping** (interview question 5). Absent ⇒
 no candidate symlink sources; the default content mode leans `native`. Seeds the proposed
 `pages[]` for `docs.manifest.json` and the default `contentMode`.
+
+**Frontmatter scan (load-bearing for symlink/mixed mode).** Real-world `docs/*.md`
+written for GitHub start with a `# H1` and have **no YAML frontmatter**, but Starlight's
+`docsSchema()` **requires** `title:` and validates it at load — so a frontmatter-less
+symlinked page hard-fails the build (`InvalidContentEntryDataError: title: Required`).
+The `grep -L` above lists candidate docs missing `title:`. If **any** are missing it and
+the proposed mode is `symlink`/`mixed`, seed **interview question 5a** (the title-frontmatter
+remediation menu) and warn the user up front.
 
 ### Probe 5 — existing CI
 

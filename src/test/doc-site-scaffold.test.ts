@@ -47,11 +47,16 @@ describe("scaffold-output goldens are deterministic (REQ-PORT-02 scaffolded outp
 });
 
 describe("decline-all invariant — zero files for declined components (REQ-USE-01, 00 §5)", () => {
-  it("emits ONLY core-group files when every optional component is declined", () => {
+  it("emits ONLY the always-present groups when every optional component is declined", () => {
     const resolved = resolveTree(loadAnswers("decline-all.json"));
-    // Every resolved relpath must originate from the core/ template group.
-    const nonCore = [...resolved.keys()].filter((rel) => !rel.startsWith("core/")).sort();
-    expect(nonCore, `declined-component files leaked into a minimal site`).toEqual([]);
+    // Baseline = the core/ group PLUS exactly one content.config.ts variant. With
+    // titleShim off, that is content-config-plain/ (00 §5). Everything else is an
+    // optional component that must contribute zero files here.
+    const BASELINE = ["core/", "content-config-plain/"];
+    const leaked = [...resolved.keys()]
+      .filter((rel) => !BASELINE.some((p) => rel.startsWith(p)))
+      .sort();
+    expect(leaked, `declined-component files leaked into a minimal site`).toEqual([]);
     // And no diagram / deploy / drift / symlink / monorepo artifacts by name.
     for (const rel of resolved.keys()) {
       expect(rel).not.toMatch(/setup-docs|prebuild|docs\.yml|vercel|netlify|check-docs|workspace/);

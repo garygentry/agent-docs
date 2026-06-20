@@ -24,6 +24,7 @@
     "diagrams": false,
     "deploy": ["github-pages"],
     "driftGuard": true,
-    "monorepo": false
+    "monorepo": false,
+    "titleShim": true
   }
 }
