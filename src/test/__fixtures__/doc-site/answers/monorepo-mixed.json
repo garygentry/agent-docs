@@ -1,6 +1,7 @@
 {
   "tokens": {
     "SITE_TITLE": "Widget Monorepo Docs",
+    "SITE_TITLE_SLUG": "widget-monorepo-docs",
     "SITE_DESC": "Documentation for the Widget monorepo.",
     "SITE_URL": "https://docs.widget.dev",
     "BASE_PATH": "",

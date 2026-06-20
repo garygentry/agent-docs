@@ -1,6 +1,7 @@
 {
   "tokens": {
     "SITE_TITLE": "Minimal Docs",
+    "SITE_TITLE_SLUG": "minimal-docs",
     "SITE_DESC": "A minimal documentation site.",
     "SITE_URL": "https://example.com",
     "BASE_PATH": "",

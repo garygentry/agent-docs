@@ -12,7 +12,7 @@
     },
     {
       "name": "doc-site",
-      "description": "Scaffolds an Astro 5 + Starlight documentation site into a target repo from an agent-driven interview. Use when the user wants to add a docs site, set up Starlight/Astro documentation, wire a manifest-driven sidebar and content symlinks, or add docs deploy/diagram/drift-guard tooling to a project."
+      "description": "Scaffolds an Astro 5/6 + Starlight documentation site into a target repo from an agent-driven interview. Use when the user wants to add a docs site, set up Starlight/Astro documentation, wire a manifest-driven sidebar and content symlinks, or add docs deploy/diagram/drift-guard tooling to a project."
     },
     {
       "name": "docs-helper",

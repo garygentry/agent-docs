@@ -3,7 +3,7 @@
 // Emitted by doc-site (REQ-DRIFT-01/02). stdlib-only; runs on Node and Bun.
 // Exit 0 = clean; exit 1 = drift findings; exit 2 = guard error (bad manifest, etc).
 import { readFileSync, readdirSync, existsSync, statSync, lstatSync, realpathSync } from "node:fs";
-import { join, dirname, relative, resolve, posix } from "node:path";
+import { join, dirname, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 // ── (a) Path bootstrap ───────────────────────────────────────────

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-docs.dev/schemas/doc-site-plugin/docs.manifest.schema.json",
   "title": "docs.manifest.json",
-  "description": "Manifest contract for an Astro 5 + Starlight docs site scaffolded by the doc-site skill. Hand-authored static JSON Schema (Draft 2020-12) shipped verbatim into target repos. Encodes every rule from 00 §2.2. NOTE on slug-uniqueness (00 §2.2 rule 5 / 10 §4.3 caveat): JSON Schema cannot express 'unique slug property across array items' (uniqueItems compares whole items, not a single property), so slug-uniqueness is NOT enforced here — it is enforced by the symlinker and the drift guard at scaffold/check time. Item 011's schema-fixture test honors this by skipping the duplicate-slug reject case.",
+  "description": "Manifest contract for an Astro 5/6 + Starlight docs site scaffolded by the doc-site skill. Hand-authored static JSON Schema (Draft 2020-12) shipped verbatim into target repos. Encodes every rule from 00 §2.2. NOTE on slug-uniqueness (00 §2.2 rule 5 / 10 §4.3 caveat): JSON Schema cannot express 'unique slug property across array items' (uniqueItems compares whole items, not a single property), so slug-uniqueness is NOT enforced here — it is enforced by the symlinker and the drift guard at scaffold/check time. Item 011's schema-fixture test honors this by skipping the duplicate-slug reject case.",
   "type": "object",
   "additionalProperties": false,
   "required": ["site", "pages"],

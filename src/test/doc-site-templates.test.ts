@@ -6,7 +6,7 @@
  * never from adapters/ or the emitter:
  *
  *  (a) Token-coverage — enforces 00 §4.1's closed token vocabulary. Every
- *      {{TOKEN}} used in a template must be one of the 17 canonical tokens AND
+ *      {{TOKEN}} used in a template must be one of the 18 canonical tokens AND
  *      appear in SKILL.md (no undefined tokens); every canonical token must be
  *      exercised by at least one template (no orphan tokens); and SKILL.md's
  *      substitution table must mirror the canonical set exactly.
@@ -34,9 +34,10 @@ const MANIFEST_FIXTURES = path.join(
   "manifests",
 );
 
-/** Canonical token set — the in-test mirror of 00 §4.1 (exactly 17 tokens). */
+/** Canonical token set — the in-test mirror of 00 §4.1 (exactly 18 tokens). */
 const CANONICAL_TOKENS = [
   "SITE_TITLE",
+  "SITE_TITLE_SLUG",
   "SITE_DESC",
   "SITE_URL",
   "BASE_PATH",

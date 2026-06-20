@@ -13,6 +13,28 @@ not redefine them.
 
 ---
 
+## 0. Core asset destinations
+
+The `core/` template group emits into the docs package (`{{DOCS_PKG_DIR}}/`) at the
+paths below. Most files sit at the package root; the asset and content files use
+Astro's conventional `public/`, `src/styles/`, `src/content/` locations.
+
+| Template asset           | Target path (under `{{DOCS_PKG_DIR}}/`)                              |
+| ------------------------ | -------------------------------------------------------------------- |
+| `package.json.tmpl`      | `package.json`                                                       |
+| `tsconfig.json.tmpl`     | `tsconfig.json`                                                      |
+| `.gitignore.tmpl`        | `.gitignore`                                                         |
+| `astro.config.mjs.tmpl`  | `astro.config.mjs`                                                   |
+| `content.config.ts.tmpl` | `src/content.config.ts` (Astro 5+ root location; builds on 5 and 6)  |
+| `custom.css.tmpl`        | `src/styles/custom.css` (referenced by `astro.config.mjs`)           |
+| `favicon.svg` (verbatim) | `public/favicon.svg` (Starlight's default `/favicon.svg`)            |
+| `index.mdx.tmpl`         | `src/content/docs/index.mdx` (home splash)                           |
+| `starter-page.mdx.tmpl`  | `src/content/docs/guides/setup.mdx` (the seeded `guides/setup` page) |
+
+The two manifest files (§1) also land in `{{DOCS_PKG_DIR}}/`.
+
+---
+
 ## 1. Writing the manifest into the docs package
 
 This phase writes **two files**, and both land **inside** the docs package
@@ -62,10 +84,13 @@ locally:
 }
 ```
 
-### Native-mode default seed
+### Default seed: the `guides/setup` starter page (all modes)
 
-When detection finds no repo docs and the user picks native mode, the manifest
-seeds exactly the authored starter page:
+The `starter-page.mdx` core asset is **always emitted** to
+`src/content/docs/guides/setup.mdx`, and the home splash (`index.mdx`) hard-links to
+`guides/setup/`. So the manifest **always seeds** the matching native page entry —
+in **every** content mode, not just native — so the hero link resolves and the
+drift guard's `broken-link` rule does not fire on a missing target:
 
 ```jsonc
 "pages": [
@@ -73,10 +98,11 @@ seeds exactly the authored starter page:
 ]
 ```
 
-In symlink or mixed mode, the interview maps each repo markdown file to a slug,
-producing `{ "slug": "...", "source": "symlink", "from": "docs/..." }` entries.
-**Page order in the array is sidebar order** — the sidebar algorithm below relies
-on this.
+In **native** mode (no repo docs) this is the whole seed. In **symlink / mixed**
+mode the interview maps each repo markdown file to a slug — producing
+`{ "slug": "...", "source": "symlink", "from": "docs/..." }` entries — **in
+addition to** the always-present `guides/setup` page. **Page order in the array is
+sidebar order** — the sidebar algorithm below relies on this.
 
 ### Validate before wiring
 

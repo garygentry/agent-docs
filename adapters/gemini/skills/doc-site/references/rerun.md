@@ -237,11 +237,16 @@ pinned-fallback mode was used instead of latest.
 
 | Package              | Fallback version | Caret range in `package.json` |
 | -------------------- | ---------------- | ----------------------------- |
-| `astro`              | `5.13.2`         | `^5.13.2`                     |
-| `@astrojs/starlight` | `0.36.0`         | `^0.36.0`                     |
+| `astro`              | `6.4.8`          | `^6.4.8`                      |
+| `@astrojs/starlight` | `0.40.0`         | `^0.40.0`                     |
 
 This pair lives here (not in the spec) so it can be refreshed without touching the
-decision record.
+decision record. The scaffold is **version-agnostic across the Astro 5 and 6
+lines**: the same templates (env-driven `site`/`base`, the `astro:content` docs
+loader, the manifest-driven sidebar) build unchanged on the `5.13` / Starlight
+`0.36` line **and** the `6.4` / `0.40` line. `npm view` resolution (§4.1) stays the
+primary path; this fallback is only used when "latest" is unreachable or pinned
+reproducibility is requested.
 
 ---
 
@@ -350,6 +355,10 @@ On `OK`, print clear next steps tailored to the selection record:
   Vercel (import project), static / Netlify (publish `dist/`).
 - **Drift guard** (if `driftGuard = true`): how `check-docs.mjs` is wired into the gate
   (`drift-guard.md`).
+- **Sitemap note** (pre-empt the question): a local `build` with `site` unset logs a
+  harmless Starlight warning — _"sitemap requires the `site` astro.config option"_. It
+  is expected; `site` is supplied at deploy time via the `SITE` env var (`00 §4.1`), so
+  the sitemap generates correctly in CI/production. No action needed locally.
 - **All assumption records** collected during detection and any `RERUN_SKIP` flags (§2.1)
   so the user knows exactly what was assumed and what was left untouched.
 

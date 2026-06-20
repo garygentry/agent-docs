@@ -72,6 +72,49 @@ The `guides/setup` (native) and `legacy` (unmanaged) pages contribute no line.
 
 ---
 
+## 2.1 Choosing slugs (read before mapping docs)
+
+A page's `slug` simultaneously decides **three** coupled things, so pick it
+deliberately:
+
+1. **The route / URL** the page is served at.
+2. **The on-disk content filename** — `setup-docs.sh` writes the symlink at
+   `$CONTENT_DIR/<slug>.md`, so a slug `guides/usage` materializes
+   `src/content/docs/guides/usage.md`.
+3. **Whether the source doc's own relative links resolve** — the `broken-link`
+   drift rule is a strict on-disk check from the symlinked file's location.
+
+Guidance, learned from real runs:
+
+- **Preserve the source directory structure in slugs.** Flattening
+  `architecture/forge-bootstrap/guides/integration.md` to slug
+  `forge-bootstrap/integration` breaks that doc's own `./guides/integration.md` /
+  `../cli-reference.md` links (the guard flags them). Keeping the nested slug
+  `forge-bootstrap/guides/integration` keeps the intra-doc relative links valid.
+- **The sidebar groups by the FIRST path segment only** (`§2.2`, single level).
+  `forge-bootstrap/guides/integration` lands in the **Forge Bootstrap** group with a
+  leaf labeled from the **last** segment ("Integration"). You cannot get
+  `Architecture > Forge Bootstrap > Integration` nesting from slugs — choose the
+  first segment to be the group you want.
+- **Use lowercase, hyphenated slugs; never a capital-letter slug in the sidebar.**
+  Astro **lowercases** content slugs (`README.md` → route `readme`), so a sidebar
+  entry `slug: "forge-bootstrap/README"` throws _"reference a valid entry slug."_ But
+  the on-disk file **casing matters** for the `broken-link` disk check on
+  case-sensitive Linux. Cleanest fix for a `README` page: rename its slug to
+  `overview` and convert the now-unmatchable `./README.md` link to an absolute URL
+  (below).
+- **Out-of-site references must become absolute URLs.** Source docs that link
+  **outside** the docs site (the repo-root `README.md`, sibling `references/…`) can't
+  resolve inside `src/content/docs/`, so `broken-link` flags them. The guard
+  intentionally **skips** `https?:` / `mailto:` / anchor links, so the sanctioned fix
+  is to rewrite genuinely-external references to **absolute GitHub URLs** (which work
+  on the site **and** on GitHub). **Ask before editing committed source docs.**
+- The `broken-link` rule is **stricter than Starlight's runtime** (a static disk
+  check vs. Starlight's relative-`.md` rewriting): a page can build fine yet still be
+  flagged. Don't chase phantom build failures — reconcile the link or the slug.
+
+---
+
 ## 3. Deriving `{{DOCS_PKG_DIR_TO_ROOT}}`
 
 `{{DOCS_PKG_DIR_TO_ROOT}}` is the `../` chain from `{{DOCS_PKG_DIR}}` back up to the

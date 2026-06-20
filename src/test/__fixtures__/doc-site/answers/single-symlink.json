@@ -1,6 +1,7 @@
 {
   "tokens": {
     "SITE_TITLE": "Acme Docs",
+    "SITE_TITLE_SLUG": "acme-docs",
     "SITE_DESC": "Documentation for the Acme project.",
     "SITE_URL": "https://acme.github.io",
     "BASE_PATH": "/acme",

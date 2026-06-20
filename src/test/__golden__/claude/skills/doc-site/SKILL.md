@@ -1,7 +1,7 @@
 ---
 # GENERATED — DO NOT EDIT. Source: skills/doc-site/SKILL.md. Regenerate: bun run build
 name: doc-site
-description: Scaffolds an Astro 5 + Starlight documentation site into a target repo from an agent-driven interview. Use when the user wants to add a docs site, set up Starlight/Astro documentation, wire a manifest-driven sidebar and content symlinks, or add docs deploy/diagram/drift-guard tooling to a project.
+description: Scaffolds an Astro 5/6 + Starlight documentation site into a target repo from an agent-driven interview. Use when the user wants to add a docs site, set up Starlight/Astro documentation, wire a manifest-driven sidebar and content symlinks, or add docs deploy/diagram/drift-guard tooling to a project.
 argument-hint: "[target repo path]"
 metadata:
   argument-hint: "[target repo path]"
@@ -10,7 +10,7 @@ metadata:
 
 # doc-site
 
-Scaffold a canon-faithful **Astro 5 + Starlight** documentation site into a target
+Scaffold a canon-faithful **Astro 5/6 + Starlight** documentation site into a target
 repo. You drive a short interview, then mechanically emit a set of component-gated
 template assets: you never author plumbing file content — you read each `.tmpl`
 asset, substitute every token placeholder (table below), and write the result. Because
@@ -101,12 +101,13 @@ can see every degraded default that was applied.
 ## Substitution table (the SKILL-side mirror of `00 §4.1`)
 
 This is the single place tokens are documented for the agent. It lists **exactly**
-the 17 canonical tokens — no more, no fewer. Every token used anywhere under
+the 18 canonical tokens — no more, no fewer. Every token used anywhere under
 `references/templates/**` must appear here, and vice-versa (token-coverage test, `10`).
 
 | Token                      | Source                                                           | Default                                        |
 | -------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- |
 | `{{SITE_TITLE}}`           | interview                                                        | repo name (titlecased)                         |
+| `{{SITE_TITLE_SLUG}}`      | **derived** (slugified `{{SITE_TITLE}}`: lowercase, spaces→`-`)  | derived                                        |
 | `{{SITE_DESC}}`            | interview                                                        | `Documentation for <title>`                    |
 | `{{SITE_URL}}`             | interview / deploy target                                        | `""` (env-driven at build)                     |
 | `{{BASE_PATH}}`            | deploy target (GH Pages subpath vs root)                         | `""`                                           |

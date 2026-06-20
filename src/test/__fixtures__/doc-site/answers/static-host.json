@@ -1,6 +1,7 @@
 {
   "tokens": {
     "SITE_TITLE": "Static Host Docs",
+    "SITE_TITLE_SLUG": "static-host-docs",
     "SITE_DESC": "Documentation deployed to a static host.",
     "SITE_URL": "https://static.example.net",
     "BASE_PATH": "/docs",
