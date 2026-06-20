@@ -25,29 +25,13 @@ Astro's conventional `public/`, `src/styles/`, `src/content/` locations.
 | `tsconfig.json.tmpl`     | `tsconfig.json`                                                      |
 | `.gitignore.tmpl`        | `.gitignore`                                                         |
 | `astro.config.mjs.tmpl`  | `astro.config.mjs`                                                   |
+| `content.config.ts.tmpl` | `src/content.config.ts` (Astro 5+ root location; builds on 5 and 6)  |
 | `custom.css.tmpl`        | `src/styles/custom.css` (referenced by `astro.config.mjs`)           |
 | `favicon.svg` (verbatim) | `public/favicon.svg` (Starlight's default `/favicon.svg`)            |
 | `index.mdx.tmpl`         | `src/content/docs/index.mdx` (home splash)                           |
 | `starter-page.mdx.tmpl`  | `src/content/docs/guides/setup.mdx` (the seeded `guides/setup` page) |
 
-The two manifest files (§1) also land in `{{DOCS_PKG_DIR}}/`. `content.config.ts` is
-emitted from a **separate group** — see §0a.
-
-## 0a. `content.config.ts` — plain vs. title-injection shim
-
-`content.config.ts` (target `{{DOCS_PKG_DIR}}/src/content.config.ts`, the Astro 5+ root
-location; builds on 5 and 6) is **not** in the `core/` group. It is emitted from exactly
-one of two mutually-exclusive variant groups, selected by the `titleShim` field
-(interview §5a):
-
-| Variant group           | Emitted when                 | What it ships                                                                                                                                                                                  |
-| ----------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `content-config-plain/` | `titleShim: false` (default) | Stock `defineCollection({ loader: docsLoader(), schema: docsSchema() })`.                                                                                                                      |
-| `content-config-shim/`  | `titleShim: true`            | A loader wrapping `docsLoader()` that fills `title` from the first `# H1` before validation, so frontmatter-less symlinked source docs build (schema unchanged → version-stable on Astro 5/6). |
-
-Exactly one emits, so only one `content.config.ts` ever lands in the target. The shim is
-offered only in symlink/mixed mode when source docs lack `title:` frontmatter; see
-`drift-guard.md` §2.2 for how it reconciles with the `missing-frontmatter` rule.
+The two manifest files (§1) also land in `{{DOCS_PKG_DIR}}/`.
 
 ---
 

@@ -84,7 +84,7 @@ written for GitHub start with a `# H1` and have **no YAML frontmatter**, but Sta
 symlinked page hard-fails the build (`InvalidContentEntryDataError: title: Required`).
 The `grep -L` above lists candidate docs missing `title:`. If **any** are missing it and
 the proposed mode is `symlink`/`mixed`, seed **interview question 5a** (the title-frontmatter
-remediation menu) and warn the user up front.
+remediation) and warn the user up front.
 
 ### Probe 5 — existing CI
 

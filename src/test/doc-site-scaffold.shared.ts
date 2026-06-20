@@ -35,14 +35,6 @@ export interface ScaffoldAnswers {
     readonly deploy: ReadonlyArray<"github-pages" | "vercel" | "static-netlify">;
     readonly driftGuard: boolean;
     readonly monorepo: boolean;
-    /**
-     * Title-injection shim (00 §5). When true, `content.config.ts` is emitted from
-     * the `content-config-shim/` variant (a loader that fills `title` from the first
-     * `# H1`) so frontmatter-less symlinked source docs build; when false/absent the
-     * plain `content-config-plain/` variant is used. Offered only in symlink/mixed
-     * mode when source docs lack `title:` frontmatter.
-     */
-    readonly titleShim?: boolean;
   };
 }
 
@@ -52,11 +44,6 @@ export const GROUPS: Array<{
   emit: (s: ScaffoldAnswers["selection"]) => boolean;
 }> = [
   { dir: "core", emit: () => true }, // always (01 §2.2)
-  // content.config.ts — exactly one variant emits (mutually exclusive predicates),
-  // carved out of core/ so the title-injection shim can swap it without a second
-  // file landing at the same target path (00 §5).
-  { dir: "content-config-plain", emit: (s) => !s.titleShim },
-  { dir: "content-config-shim", emit: (s) => s.titleShim === true },
   { dir: "symlink", emit: (s) => s.contentMode === "symlink" || s.contentMode === "mixed" },
   { dir: "diagrams", emit: (s) => s.diagrams },
   { dir: "deploy/github-pages", emit: (s) => s.deploy.includes("github-pages") },

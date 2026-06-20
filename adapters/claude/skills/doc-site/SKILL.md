@@ -63,16 +63,13 @@ Resolve the component-selection record:
 
 ```jsonc
 { "contentMode": "symlink"|"native"|"mixed", "diagrams": false,
-  "deploy": [], "driftGuard": false, "monorepo": false, "titleShim": false }
+  "deploy": [], "driftGuard": false, "monorepo": false }
 ```
 
 This record alone decides which template groups emit. Declining a component emits
-**zero** of its files (the decline-all invariant): `core/` always; exactly one of
-`content-config-plain/` (`!titleShim`) or `content-config-shim/` (`titleShim`);
-`symlink/` when `contentMode ∈ {symlink, mixed}`; `diagrams/` when `diagrams`;
-`deploy/*` per `deploy[]`; `drift-guard/` when `driftGuard`; `monorepo/` when
-`monorepo`. `titleShim` is set by interview §5a (the title-frontmatter menu) and
-defaults to `false`.
+**zero** of its files (the decline-all invariant): `core/` always; `symlink/` when
+`contentMode ∈ {symlink, mixed}`; `diagrams/` when `diagrams`; `deploy/*` per
+`deploy[]`; `drift-guard/` when `driftGuard`; `monorepo/` when `monorepo`.
 
 ### Phase 4 — emit (`references/core.md`, `symlink.md`, `diagrams.md`, `deploy-*.md`, `monorepo.md`, `drift-guard.md`)
 

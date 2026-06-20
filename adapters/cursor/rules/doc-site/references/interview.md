@@ -56,19 +56,18 @@ without a destination; no token in `00 §4.1` lacks a source.
     filenames (Probe 4) and let the user rename. **Page order in the array is sidebar order.**
 
 **Title frontmatter (question 5a — symlink/mixed only, when Probe 4's frontmatter scan
-found docs missing `title:`):** Starlight requires `title:` and fails the build without it,
-so present a menu and **ask** before doing anything to tracked files:
+found docs missing `title:`):** Starlight's `docsSchema()` **requires** `title:` and
+validates it at load (before remark), so a frontmatter-less symlinked page hard-fails the
+build with `InvalidContentEntryDataError: title: Required`. The remediation is to **add a
+`title:` frontmatter key to each source doc, derived from its first `# H1`** (fall back to
+the slug's last segment if there is no H1).
 
-- **(a) Add `title:` frontmatter to the source docs** (derived from each doc's first
-  `# H1`). Keeps the drift guard's `title` check meaningful. Edits committed files →
-  **confirm first**. Sets selection field `titleShim: false`.
-- **(b) Install the title-injection loader shim** — emits `content.config.ts` from the
-  `content-config-shim/` variant (a loader that fills `title` from the first `# H1` at
-  load time), so the **source docs stay pristine** for GitHub. Sets `titleShim: true`.
-  See `core.md` §0a and the drift-guard reconciliation in `drift-guard.md` §2.2.
-
-`titleShim` defaults to `false` (plain `content.config.ts`). It is only ever `true` after
-the user explicitly picks option (b).
+This edits **committed source docs**, so **ask the user first** and show which files will
+change. A site-only loader/remark shim is **not** a viable alternative: Starlight enforces
+`title` inline in its content loader, and `docsSchema({ extend })` cannot relax it — both
+were verified to still fail the build — so injecting the key into the source is the
+reliable fix. (If the user truly cannot edit the source docs, the page must instead be
+authored natively or marked `unmanaged`.)
 
 **Deploy (question 6):**
 
@@ -121,8 +120,7 @@ The selection record this phase produces:
   "diagrams": false,                                 // default declined
   "deploy": [],                                      // default declined (opt-in subset)
   "driftGuard": false,                               // default declined
-  "monorepo": false,                                 // detection-seeded (Probe 1)
-  "titleShim": false                                 // question 5a; true only if user picks the loader shim
+  "monorepo": false                                  // detection-seeded (Probe 1)
 }
 ```
 

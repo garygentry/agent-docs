@@ -84,30 +84,6 @@ code (`REQ-VERIFY-02`):
 
 ---
 
-## 2.2 Reconciling Rule 4 with the title-injection shim
-
-Rule 4 (`missing-frontmatter`) checks raw on-disk frontmatter for `title:`. When the
-**title-injection shim** is in use (`titleShim: true`, see `core.md` §0a), symlinked
-source docs **intentionally** carry no `title:` — the loader supplies it at build time.
-So Rule 4 would false-positive on exactly the pristine docs the shim is meant to allow.
-
-Reconciliation, by remediation path:
-
-- **Option (a), inject frontmatter into source docs:** no change — the source docs now
-  carry `title:`, so Rule 4 passes normally and keeps guarding it.
-- **Option (b), the loader shim:** the title is loader-supplied, not on-disk, so the
-  on-disk `title` check no longer applies to symlinked pages. When emitting with
-  `titleShim: true`, the agent removes `"title"` from `REQUIRED_FRONTMATTER` in the
-  emitted `check-docs.mjs` (a one-line edit to this managed-plumbing file it is already
-  authoring). The build's own `docsSchema()` remains the real arbiter of title presence,
-  so nothing is silently un-checked — a genuinely title-less, H1-less page still surfaces
-  (the shim's slug fallback names it, and the build validates it).
-
-This keeps the guard meaningful in the common (inject-frontmatter) path and avoids a
-false failure in the shim path, with no new token or template variant for the guard.
-
----
-
 ## 3. `docs:check` script wiring (`package.json`, REQ-PORT-01)
 
 When emitted, the agent adds a `docs:check` script to the docs package's
