@@ -3,7 +3,7 @@
 This reference covers two agent-run mechanics of the core site scaffold:
 
 1. **Writing the manifest** (`docs.manifest.json` + `docs.manifest.schema.json`)
-   into the target repo root.
+   into the docs package directory (`{{DOCS_PKG_DIR}}`).
 2. **Generating the Starlight sidebar** deterministically from the manifest and
    substituting it into `astro.config.mjs`.
 
@@ -13,26 +13,27 @@ not redefine them.
 
 ---
 
-## 1. Writing the manifest into the target repo
+## 1. Writing the manifest into the docs package
 
-This phase writes **two files**, and both land at the **target repo root** —
-alongside, **not inside**, the docs package directory (`{{DOCS_PKG_DIR}}`).
+This phase writes **two files**, and both land **inside** the docs package
+directory (`{{DOCS_PKG_DIR}}`) — beside the consumers that read them.
 
-| File                        | Target path                               | Source                                                                          | Role                                      |
-| --------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------- |
-| `docs.manifest.json`        | `./docs.manifest.json` (repo root)        | authored by the agent from the interview answers                                | the single source of truth                |
-| `docs.manifest.schema.json` | `./docs.manifest.schema.json` (repo root) | copied **verbatim** from the skill asset `references/docs.manifest.schema.json` | validates the manifest in the target repo |
+| File                        | Target path                                  | Source                                                                          | Role                                      |
+| --------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------- |
+| `docs.manifest.json`        | `{{DOCS_PKG_DIR}}/docs.manifest.json`        | authored by the agent from the interview answers                                | the single source of truth                |
+| `docs.manifest.schema.json` | `{{DOCS_PKG_DIR}}/docs.manifest.schema.json` | copied **verbatim** from the skill asset `references/docs.manifest.schema.json` | validates the manifest in the target repo |
 
-### Why both live at the repo root
+### Why both live in the docs package
 
-All three downstream consumers read the manifest from one well-known location:
-
-- **sidebar generation** (this document),
-- **the symlinker** (materializes `source: symlink` page bodies), and
-- **the drift guard** (sidebar ↔ manifest parity).
-
-Putting both files at the repo root — not under `{{DOCS_PKG_DIR}}` — keeps that
-single well-known location stable for every consumer and for the repo's CI.
+The **drift guard** is the only runtime consumer, and it resolves the manifest
+relative to its own location — `check-docs.mjs` reads
+`join(DOCS_PKG_DIR, "docs.manifest.json")`. The sidebar generation and the
+symlinker consume the manifest at **emit time** (the agent reads the interview
+answers, not a file on disk in the target). Placing both files in
+`{{DOCS_PKG_DIR}}` puts the manifest beside its only runtime reader, so the guard
+works out of the box in single-package **and** monorepo layouts (it never has to
+know where the repo root is). The schema sits beside the manifest so the relative
+`$schema` reference resolves locally.
 
 ### Managed-state of each file
 

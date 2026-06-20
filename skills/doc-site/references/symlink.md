@@ -115,12 +115,14 @@ POSIX-`sh` interpreter regardless of the file's shebang.
 
 ### Composition with diagrams
 
-If the **diagrams** component is also selected, its
-prebuild snippet and this symlink prebuild are composed into a single `prebuild` by
-the agent — **diagram generation first, then symlink relinking** — so generated SVGs
-exist in `{{IMAGES_SRC_DIR}}` before `link_dir` runs over `images/`. The composition
-rule is owned by `diagrams.md` (item 006); this layer only requires that the symlink
-step run **last** in any composed `prebuild`.
+If the **diagrams** component is also selected, its prebuild snippet and this
+symlink prebuild are composed into a single `prebuild` by the agent —
+**symlink setup first, then diagram generation**
+(`sh ./setup-docs.sh && npm run diagrams`). The order is safe because the shipped
+diagram snippet renders to **`public/diagrams/`** (served directly by Astro as a
+static asset), **not** into `{{IMAGES_SRC_DIR}}` — so there is no "SVGs must exist
+before `link_dir`" dependency. The composition rule is owned by `diagrams.md`
+(item 006); this layer just contributes the `setup-docs.sh` step.
 
 ---
 

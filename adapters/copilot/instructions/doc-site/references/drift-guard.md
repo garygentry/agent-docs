@@ -108,18 +108,28 @@ When emitted, the agent adds a `docs:check` script to the docs package's
 
 ---
 
-## 4. Optional pre-build CI step (GitHub Pages, REQ-DRIFT-01)
+## 4. Optional CI guard step (GitHub Pages, REQ-DRIFT-01)
 
 When the repo has CI **and** the GitHub Pages deploy target is selected, the agent
-inserts the guard as a job step **before** the build in the emitted
-`.github/workflows/docs.yml` (`deploy-github-pages.md`), so a broken page never
-deploys:
+inserts the guard as a job step in the emitted `.github/workflows/docs.yml`
+(`deploy-github-pages.md`), positioned **after the build (or after `setup-docs.sh`)
+and before the deploy**, so a drifted or broken page never ships.
+
+**Ordering is load-bearing in symlink/mixed mode.** The symlinked page bodies under
+`src/content/docs/**` are materialized by `setup-docs.sh` (run via the build's
+`prebuild` hook). If `docs:check` runs **before** the symlinks exist, Rule 1
+(`broken-link`) and Rule 3 (`orphaned-symlink`) fire on every page → false failure.
+So the step must run after symlinks are in place. The self-contained form composes
+`setup-docs.sh` directly:
 
 ```yaml
 # .github/workflows/docs.yml — added step (toolchain matched per {{PKG_MANAGER}}/{{RUNTIME}})
+# symlink / mixed mode — make symlinks exist, then check:
 - name: Docs drift guard
-  run: {{PKG_MANAGER}} run docs:check
-  working-directory: {{DOCS_PKG_DIR}}
+  run: sh setup-docs.sh && {{PKG_MANAGER}} run docs:check
+  working-directory: "{{DOCS_PKG_DIR}}"
+# native mode — no symlinks; drop the `setup-docs.sh &&` prefix:
+#   run: {{PKG_MANAGER}} run docs:check
 ```
 
 When there is no CI / no GitHub Pages target, only the `docs:check` script entry is
