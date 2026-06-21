@@ -1,0 +1,491 @@
+{
+  "schemaVersion": "1",
+  "project": "diagram-generator",
+  "description": "Text-to-diagram skill authored in the agent-docs repo: an engine-neutral DiagramSpec rendered to tier-2-portable SVG (and PNG) via Graphviz-WASM (@viz-js/viz) for graph-shaped types plus direct-SVG sequence layout, with no runtime renderer and no view-time network. Source lives in src/diagram/*.ts (typechecked/linted/vitest); a single self-contained bundle at skills/diagram-generator/scripts/diagram-render.mjs (WASM+font inlined) ships verbatim to all 5 adapter targets and is consumed zero-install by doc-site-plugin. This backlog implements the feature foundation-first: scaffold, core types, validation, the render pipeline, the CLI, packaging, and the test suite.",
+  "items": [
+    {
+      "id": "001",
+      "type": "chore",
+      "priority": 1,
+      "title": "Scaffold src/diagram tree, package.json devDeps + scripts, embedded font asset",
+      "description": "Lay the foundation for the diagram-generator feature. 1) package.json: add three NEW devDependencies (NOT runtime dependencies) pinned to EXACT versions (no ^ or ~): @viz-js/viz, @resvg/resvg-js, @rgrove/parse-xml. zod and zod-to-json-schema already exist as runtime deps — do not move or duplicate them. 2) package.json scripts: add `build:diagram` = `bun build src/diagram/cli.ts --target=node --minify --outfile skills/diagram-generator/scripts/diagram-render.mjs`, `build:diagram:check` = `bun run src/diagram/build-check.ts`, `schema:gen:diagram` = `bun run src/diagram/schema-gen.ts`, `schema:check:diagram` = `bun run src/diagram/schema-gen.ts --check`. Extend the EXISTING `gate` script (do not replace it) so it also runs `schema:check:diagram` and `build:diagram:check` in addition to the checks it already runs. 3) Create the src/diagram/ directory and src/diagram/assets/font.subset.ts — a generated module exporting a base64 data-URI string of a subset libre sans font (e.g. DejaVu Sans / IBM Plex subset) for later embedding into SVG (REQ-OUT-04). The export should be `export const FONT_SUBSET_DATA_URI: string` of the form `data:font/woff2;base64,...` (this exact name is imported by svg-postprocess.ts per 04 §3.6). Do NOT implement other modules in this item — referenced scripts (build-check.ts, schema-gen.ts, cli.ts) are created by later items, so `gate` itself need not pass yet, only `tsc --noEmit`. See 01-architecture-layout.md §4 (dependencies, pin policy) and §5 (scripts), and 04-theme-postprocess-png.md §3.6 (font embedding).",
+      "acceptanceCriteria": [
+        "@viz-js/viz, @resvg/resvg-js, @rgrove/parse-xml appear in package.json devDependencies (not dependencies), each pinned to an exact version with no ^ or ~",
+        "package.json scripts contain build:diagram, build:diagram:check, schema:gen:diagram, schema:check:diagram with the commands described",
+        "The existing gate script is extended to include schema:check:diagram and build:diagram:check (existing checks retained)",
+        "src/diagram/assets/font.subset.ts exports FONT_SUBSET_DATA_URI as a base64 data-URI string beginning with 'data:font/'",
+        "tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:08:38.963Z",
+      "dependsOn": [],
+      "notes": "Foundation item — lays groundwork for items 002–018. The font asset is consumed by svg-postprocess.ts (009) and must be a real subset (small) so the committed bundle stays manageable. Pins are required because @viz-js/viz and @resvg/resvg-js output bytes feed the determinism (017) and PNG smoke tests. Requirements satisfied: REQ-OUT-04 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/01-architecture-layout.md",
+        "specs/diagram-generator/04-theme-postprocess-png.md"
+      ]
+    },
+    {
+      "id": "002",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement core definitions — schema.ts (DiagramSpec Zod) and errors.ts",
+      "description": "Create src/diagram/schema.ts and src/diagram/errors.ts per 00-core-definitions.md (the spec gives near-complete code — follow it). schema.ts exports: enums DiagramType, Theme, HexColor, NodeRole, EdgeDirection, EdgeStyle; Zod objects Node, Edge, Container, Participant, Message, and DiagramSpec (built with .strict()); the inferred TypeScript types for each; the RenderResult interface (svg, width, height, theme, slug); and constants CONTRACT_VERSION = \"1.0.0\", EXIT_CODES (Record<DiagramErrorCode, number>: INPUT_INVALID:2, RENDER_FAILED:3, OUTPUT_INVALID:4, PNG_FAILED:5, IO_ERROR:6, USAGE_ERROR:64), DEFAULT_FORMAT = \"svg\", DEFAULT_THEME = \"light\", SVG_COORD_PRECISION = 2. errors.ts exports the DiagramErrorCode union and the error hierarchy: DiagramError base (readonly code, exitCode derived from EXIT_CODES, optional detail) plus subclasses DiagramInputError, DiagramRenderError, DiagramOutputError, DiagramPngError, DiagramIoError, DiagramUsageError, each setting its distinct code. Note EXIT_CODES lives in schema.ts and is imported by errors.ts. Every exported symbol and object field carries a /** … */ doc comment (match src/model.ts convention). Cross-field invariants are NOT implemented here (they live in validate.ts, item 003) — only the base .strict() object. Author schema.test.ts and errors.test.ts covering the 00 Verification checklist.",
+      "acceptanceCriteria": [
+        "DiagramSpec.parse() accepts a minimal valid architecture spec and a minimal valid sequence spec",
+        ".strict() rejects an unknown top-level key (test asserts a ZodError is thrown)",
+        "A bad accent value ('#abc' and 'red') is rejected at parse",
+        "CONTRACT_VERSION === '1.0.0' and EXIT_CODES has the six mappings exactly as specified",
+        "Each error subclass sets a distinct code and the matching EXIT_CODES exitCode; DiagramError is the common base",
+        "Every exported type/const has a /** */ doc comment",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:10:29.817Z",
+      "dependsOn": [
+        "001"
+      ],
+      "notes": "00-core-definitions.md contains the authoritative code for almost every symbol — transcribe it, do not redesign. schema.ts and errors.ts are leaf modules imported by everything downstream (see 01 §3 import graph). Requirements satisfied: REQ-IN-02 REQ-REL-02 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "003",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement input + output validation — validate.ts",
+      "description": "Create src/diagram/validate.ts per 02-schema-and-validation.md §2–3. Two responsibilities: (A) INPUT — export diagramSuperRefine and parseSpec(json: unknown): DiagramSpec. parseSpec runs DiagramSpec.parse then applies diagramSuperRefine, which enforces the three cross-field invariants from 00 §3.1 / 02 §2: (1) referential integrity — every Edge.from/Edge.to, Container.children[], Container.parent, Message.from/Message.to references an id that exists in its collection; (2) unique ids across nodes, containers, participants with no node/container namespace collision; (3) type/field agreement per the 00 §2.5 table (sequence ⇒ participants/messages populated and nodes/edges/containers empty; the five graph types ⇒ the inverse). Failures throw DiagramInputError with the offending JSON path in `detail`. (B) OUTPUT — export assertOutputValid(svg: string): void (single arg; it parses the SVG internally — do NOT pass a {width,height} object) which aggregates: assertWellFormed (parse with @rgrove/parse-xml, throw DiagramOutputError on malformed XML), assertTier2 (no <foreignObject>, labels are plain <text>), assertStructural(svg, doc) (root <svg> has explicit viewBox + width + height read from the SVG markup itself), assertFontPortable (any embedded font is a data-URI, no external/network href), assertA11y (<title>, <desc>, role=\"img\" present). Each sub-assertion throws DiagramOutputError with a named detail. Author validate.test.ts covering accept + each reject path.",
+      "acceptanceCriteria": [
+        "parseSpec rejects an edge referencing a missing node id with DiagramInputError whose detail names the JSON path",
+        "parseSpec rejects duplicate ids and node/container id collisions",
+        "parseSpec rejects a sequence spec with non-empty nodes, and a flowchart spec with empty nodes (type/field agreement)",
+        "assertOutputValid passes a well-formed tier-2 SVG with title/desc/role=img/viewBox/embedded data-URI font",
+        "assertOutputValid throws DiagramOutputError for: malformed XML, a <foreignObject>, missing viewBox, an external font href, and missing <title>",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:15:09.882Z",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "These same output validators are reused by render.ts (011) and the property tests (017) — keep them individually exported, not just the aggregator. 02 §2.3 has a worked rejected-input example to mirror in tests. Requirements satisfied: REQ-IN-02 REQ-REL-01 REQ-REL-02 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/02-schema-and-validation.md",
+        "specs/diagram-generator/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "004",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement JSON Schema generator — schema-gen.ts + diagram-input.schema.json",
+      "description": "Create src/diagram/schema-gen.ts per 02-schema-and-validation.md §5 and 06-integration-and-packaging.md §3. It is a STANDALONE script (not imported by cli.ts, so zod-to-json-schema stays out of the shipped bundle). Default run: convert the DiagramSpec Zod schema (from src/diagram/schema.ts) via zod-to-json-schema and write schemas/diagram-input.schema.json (pretty-printed, deterministic key order). With a `--check` argument: regenerate in memory and diff against the committed schemas/diagram-input.schema.json — exit 0 if identical, non-zero (printing a drift message) if they differ. This mirrors the existing manifest schema-gen `--check` drift pattern already in the repo. The package.json scripts schema:gen:diagram / schema:check:diagram (added in 001) invoke this. Run `bun run schema:gen:diagram` once to commit the generated schemas/diagram-input.schema.json. No unit test file required, but the --check behavior must be demonstrably correct.",
+      "acceptanceCriteria": [
+        "bun run schema:gen:diagram writes schemas/diagram-input.schema.json derived from DiagramSpec",
+        "bun run schema:check:diagram exits 0 when the committed schema matches the Zod source",
+        "schema:check:diagram exits non-zero with a drift message when the committed schema is stale",
+        "schema-gen.ts is not imported by cli.ts (verify no import edge)",
+        "tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:16:38.205Z",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "Reference the existing repo schema-gen/--check pattern (the tools.manifest schema generator) for output formatting and drift-diff style so gate behavior is consistent. Requirements satisfied: REQ-IN-02 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/02-schema-and-validation.md",
+        "specs/diagram-generator/06-integration-and-packaging.md"
+      ]
+    },
+    {
+      "id": "005",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement DOT emitter — dot-emit.ts (DiagramSpec → tier-2 Graphviz DOT)",
+      "description": "Create src/diagram/dot-emit.ts per 03-rendering-engine.md §2. Export a function that maps a graph-shaped DiagramSpec (architecture/flowchart/er/state/dataflow — NOT sequence) to a Graphviz DOT string. CRITICAL tier-2 constraint (§2.1): emit NO HTML-like labels and nothing that would produce <foreignObject>; all node labels are plain text. Per-type mapping (§2.2): set rankdir/shape conventions per diagramType. ER (§2.3): render entity fields as plain text rows WITHOUT Graphviz record shapes (record/HTML labels are not tier-2 portable). Containers (§2.4): each Container becomes a `subgraph cluster_<id>` enclosing its children, supporting nesting via parent. Role color is NOT baked here (§2.5) — emit a stable role marker/class the post-process pass colors later; do not emit fill colors. Determinism (§2.6): iterate nodes/edges/containers in input order, stable attribute ordering, no timestamps. Escaping (§2.7): escape quotes/backslashes/newlines in labels and ids. Provide the signature from §2.8. Author dot-emit.test.ts asserting: no HTML/record labels in output, cluster emission for containers, per-type rankdir, and byte-stable output for a fixed spec.",
+      "acceptanceCriteria": [
+        "Emitted DOT contains no HTML-like labels (no '<' label markup) and no record shapes",
+        "Containers emit `subgraph cluster_<id>` blocks enclosing their children, with nesting honored",
+        "Per-type DOT differs correctly (e.g. rankdir/shape) across architecture/flowchart/er/state/dataflow",
+        "Output is byte-identical across two emits of the same spec (deterministic ordering)",
+        "Labels containing quotes/backslashes are escaped",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:19:10.183Z",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "DOT is an INTERNAL compile target only — never surfaced to users. Role color deliberately deferred to svg-postprocess (009) to keep DOT engine-neutral and tier-2-clean. Requirements satisfied: REQ-COV-01 REQ-COV-02 REQ-OUT-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/03-rendering-engine.md",
+        "specs/diagram-generator/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "006",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement graph render — graph-render.ts (DOT → SVG via @viz-js/viz)",
+      "description": "Create src/diagram/graph-render.ts per 03-rendering-engine.md §3. Export an async function that takes a DOT string and returns SVG markup, using @viz-js/viz (Graphviz-WASM) entirely in-process. Implement the async init + render pattern from §3.2 (instantiate/await the Viz instance, render with format 'svg'). Guarantee no network access and no system Graphviz binary (§3.1, REQ-OUT-04/REQ-SEC-02) — the WASM engine is the only dependency. On any engine failure, throw DiagramRenderError (from errors.ts) with context in detail (§3.3). Honor the determinism note (§3.4): pinned @viz-js/viz version, no nondeterministic inputs. Author graph-render.test.ts: a minimal DOT renders to an <svg> root; an invalid DOT throws DiagramRenderError; rendering the same DOT twice yields identical SVG.",
+      "acceptanceCriteria": [
+        "A valid DOT string renders to SVG whose root element is <svg>",
+        "Rendering uses @viz-js/viz in-process with no network and no external graphviz binary",
+        "An invalid/un-renderable DOT throws DiagramRenderError",
+        "Rendering the same DOT twice produces byte-identical SVG",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:20:42.101Z",
+      "dependsOn": [
+        "005"
+      ],
+      "notes": "@viz-js/viz init is async and somewhat slow — cache/reuse the instance across calls within a process if the spec's pattern allows. The raw SVG here is pre-color/pre-a11y; svg-postprocess (009) finishes it. Requirements satisfied: REQ-COV-02 REQ-OUT-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/03-rendering-engine.md"
+      ]
+    },
+    {
+      "id": "007",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement sequence layout — sequence-svg.ts (direct-SVG)",
+      "description": "Create src/diagram/sequence-svg.ts per 03-rendering-engine.md §4 (resolves OTQ-3). Sequence diagrams do not use the graph/DOT path; lay them out directly to SVG from the spec's participants and ordered messages. Implement: lifelines with header boxes per participant (§4.1, §4.3 geometry using the layout constants in §4.2); message arrows styled by Message.kind — sync (solid closed arrow), async (open arrow), reply (dashed) (§4.4); activation bars on activated targets and correct self-message rendering (§4.5); overlap avoidance (§4.6). Output a complete SVG with explicit viewBox + width + height computed from the layout (REQ-OUT-02), plain <text> labels only (tier-2, no <foreignObject>). On malformed layout state throw DiagramRenderError (§4.7). Use the signature in §4.7. Like graph-render, this produces pre-a11y/pre-font SVG finished by svg-postprocess (009). Author sequence-svg.test.ts covering each message kind, an activation bar, a self-message, and presence of viewBox/width/height.",
+      "acceptanceCriteria": [
+        "A sequence spec renders one lifeline per participant and one arrow per message in document order",
+        "sync/async/reply messages render with distinct arrow/line styles",
+        "An activated target draws an activation bar; a self-message (from===to) renders correctly",
+        "Output SVG root has explicit viewBox, width, and height; labels are plain <text> with no <foreignObject>",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:23:04.475Z",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "Use the concrete layout constants chosen in 03 §4.2 so geometry is deterministic. This is the one render path that bypasses Graphviz entirely. Requirements satisfied: REQ-COV-02 REQ-OUT-02 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/03-rendering-engine.md"
+      ]
+    },
+    {
+      "id": "008",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement theme — theme.ts (palette, light/dark tokens, accent)",
+      "description": "Create src/diagram/theme.ts per 04-theme-postprocess-png.md §1–2 (resolves OTQ-2). Define the ResolvedPalette render type (§1). Define the light token set (§2.1) and dark token set (§2.2) — concrete color values for backgrounds, strokes, text, and the NodeRole→fill map covering every NodeRole from 00 (default/frontend/backend/database/queue/cache/external/security/gateway/storage/compute). Implement accent override resolution (§2.3–2.4): given a Theme and optional accent HexColor, return a ResolvedPalette where the accent replaces the appropriate token(s) as specified. Export a resolve function with the signature from §2.4. Author theme.test.ts: light and dark resolve to distinct palettes; every NodeRole has a color in both; an accent override changes the expected token; an omitted accent leaves defaults.",
+      "acceptanceCriteria": [
+        "resolve('light') and resolve('dark') return distinct ResolvedPalette values",
+        "Every NodeRole maps to a defined color in both light and dark palettes",
+        "Supplying an accent HexColor overrides the documented token(s); omitting it leaves theme defaults",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:24:25.179Z",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "00 fixes only the palette KEYS (NodeRole/Theme); this item supplies the VALUES. Seed from the research Cocoon palette referenced in 04 §2. Requirements satisfied: REQ-THEME-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/04-theme-postprocess-png.md",
+        "specs/diagram-generator/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "009",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement SVG post-process — svg-postprocess.ts (color, z-order, legend, a11y, font, canonicalize)",
+      "description": "Create src/diagram/svg-postprocess.ts per 04-theme-postprocess-png.md §3. Given raw SVG (from graph-render or sequence-svg), a ResolvedPalette (from theme.ts, item 008), and the DiagramSpec, run the ordered passes: (§3.1) parse the SVG; (§3.2) semantic color baking — apply the role→fill palette to each node using the role markers/classes emitted by dot-emit, inlining colors as attributes (no external CSS); (§3.3) z-order enforcement — order elements so containers/edges/nodes/labels stack correctly; (§3.4) legend placement — render a role legend per 04 §3.4; (§3.5) accessibility injection — add <title> (from spec.title), <desc> (from spec.description), and role=\"img\" on the root (REQ-A11Y-01); (§3.6) font embedding — inline the SUBSET_FONT_DATA_URI from src/diagram/assets/font.subset.ts as an @font-face/data-URI so there is no view-time network fetch (REQ-OUT-04); (§3.7) canonicalization — round coordinates to SVG_COORD_PRECISION decimals and normalize attribute ordering/whitespace for byte-determinism (resolves OTQ-6). Return the finished tier-2 SVG plus width/height. Author svg-postprocess.test.ts: colors are inlined per role; title/desc/role=img present; font is a data-URI; output passes the item-003 assertOutputValid; two runs are byte-identical.",
+      "acceptanceCriteria": [
+        "Node fills are inlined from the ResolvedPalette per role (no external stylesheet/CSS link)",
+        "Output root <svg> has role=\"img\" and contains <title> and <desc> sourced from the spec",
+        "The embedded font is a data-URI (no external href); a legend is present for colored roles",
+        "Coordinates are rounded to SVG_COORD_PRECISION and two post-processings of the same input are byte-identical",
+        "Post-processed SVG passes assertOutputValid from validate.ts (item 003)",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:31:33.455Z",
+      "dependsOn": [
+        "008",
+        "003",
+        "001"
+      ],
+      "notes": "This is the finishing stage shared by BOTH render paths and the largest single module (7 ordered passes). It imports FONT_SUBSET_DATA_URI from src/diagram/assets/font.subset.ts (item 001) for §3.6 font embedding — hence the direct 001 dependency. Reuse @rgrove/parse-xml (already a devDep) for parsing if helpful. Canonicalization (§3.7) is the linchpin of REQ-REPRO-01 byte-determinism — keep it last; if byte-determinism is not achieved on the first pass it may warrant a follow-up iteration. Requirements satisfied: REQ-COV-01 REQ-A11Y-01 REQ-OUT-04 REQ-REPRO-01 REQ-PORT-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 2,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/04-theme-postprocess-png.md",
+        "specs/diagram-generator/02-schema-and-validation.md"
+      ]
+    },
+    {
+      "id": "010",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement PNG rasterization — png.ts (SVG → PNG via @resvg/resvg-js)",
+      "description": "Create src/diagram/png.ts per 04-theme-postprocess-png.md §4 (resolves OTQ-5). Export a function that rasterizes a finished SVG string to a PNG Buffer/Uint8Array using @resvg/resvg-js (pinned), entirely in-process — no browser, no network, no system binary. Follow §4.1 for the engine choice/pin and §4.2 for the signature. Implement the dimension assertion + tolerance (§4.3): the produced PNG's pixel dimensions must match the SVG's intrinsic width/height within the documented tolerance, else throw DiagramPngError. On any resvg failure throw DiagramPngError (§4.4) with detail. Author png.test.ts: a valid SVG produces a non-empty PNG with the PNG magic header; dimensions are within tolerance; a malformed SVG throws DiagramPngError. (Per 08 §6 the PNG test is smoke-level — assert it produces a valid PNG, not exact bytes.)",
+      "acceptanceCriteria": [
+        "A finished SVG rasterizes to a non-empty buffer beginning with the PNG magic bytes (\\x89PNG)",
+        "PNG pixel dimensions match the SVG intrinsic width/height within the documented tolerance",
+        "Rasterization uses @resvg/resvg-js in-process with no network/browser/system binary",
+        "A malformed SVG throws DiagramPngError",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:33:11.692Z",
+      "dependsOn": [
+        "002",
+        "001"
+      ],
+      "notes": "PNG is a REQUIRED v1 artifact (REQ-OUT-03). resvg is pinned (001) so PNG drift is bounded; tests stay smoke-only because exact rasterized bytes vary by platform. Requirements satisfied: REQ-OUT-03 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/04-theme-postprocess-png.md"
+      ]
+    },
+    {
+      "id": "011",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement orchestration — render.ts (spec → RenderResult)",
+      "description": "Create src/diagram/render.ts per 03-rendering-engine.md §5 — the pipeline orchestrator that ties the modules together. Export an async function render(spec: DiagramSpec, opts: RenderOptions): Promise<RenderResult>, where RenderOptions = { theme: Theme; accent?: HexColor } (a single options object — NOT positional theme/accent args; transcribe the exact §5 signature). Dispatch flow (§5.1): if diagramType === 'sequence', call sequence-svg.ts; otherwise dot-emit.ts → graph-render.ts. Then resolve the palette via theme.ts and run svg-postprocess.ts to finish color/z-order/legend/a11y/font/canonicalization. Validation placement (§5.2, REQ-REL-01/02): render() does NOT re-validate input — it trusts the typed DiagramSpec it is given (the CLI calls parseSpec at the boundary, item 012). Run assertOutputValid AFTER post-processing; enforce tier-2/viewBox there too (§5.3). On failure, propagate the typed DiagramError unchanged (§5.4) and NEVER return/write a partial artifact. Honor the determinism boundary (§5.5). Return a RenderResult (svg, width, height, theme, slug) with slug derived from spec.title. Author render.test.ts: each of the six diagram types renders end-to-end to a RenderResult whose svg passes assertOutputValid; an invalid spec throws DiagramInputError; both themes render.",
+      "acceptanceCriteria": [
+        "render() dispatches sequence specs to sequence-svg and the five graph types through dot-emit → graph-render",
+        "All six diagram types render end-to-end (called as render(spec, { theme })) to a RenderResult whose svg passes assertOutputValid",
+        "render() does not re-validate input; assertOutputValid runs AFTER post-processing and a malformed output throws DiagramOutputError (never a partial artifact)",
+        "RenderResult.width/height match the SVG and slug is derived from the title; light and dark both render",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:35:04.045Z",
+      "dependsOn": [
+        "006",
+        "007",
+        "009",
+        "003"
+      ],
+      "notes": "This is the single integration point of the render tree (see 01 §3 import graph). render.ts itself does no file IO — that is the CLI's job (012). render.ts does NOT import or invoke png.ts: PNG is produced by the CLI (012) from RenderResult.svg, not inside render() (03 §5 L546-547, 05 §3.3). Therefore png.ts (010) is a dependency of item 012, not this item. Requirements satisfied: REQ-REL-01 REQ-REL-02 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/03-rendering-engine.md",
+        "specs/diagram-generator/02-schema-and-validation.md"
+      ]
+    },
+    {
+      "id": "012",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement CLI — cli.ts (the scriptable contract)",
+      "description": "Create src/diagram/cli.ts per 05-cli-and-invocation.md §2–3 — the only consumer-facing surface and the bundle entry point. Export `async function main(argv: string[]): Promise<number>` returning an exit code, plus a thin top-level runner. Flags (§2.1): --type <DiagramType>, --theme light|dark, --accent <#rrggbb>, --format svg|png|both, --out-dir <dir>, --out-file <path>, --out-name <name>, --version. Input (§3.1, dimension 1): read the DiagramSpec JSON from a positional file path or '-' for stdin. Type/spec selection (§2.2): --type overrides spec.diagramType when given. Render per requested theme(s) (§3.2) via render.ts. Output-path resolution & precedence (§2.3, dimension 2): --out-file > --out-dir + --out-name > --out-dir + slug > stdout; deterministic file names <slug>.<theme>.<ext>. A binary PNG must never be streamed to a text stdout: `--format png` (or `both`) with no resolved file target is refused with DiagramUsageError → exit USAGE_ERROR (64) (§2.3/§3.4). Writes MUST be path-confined (§3.3, REQ-SEC-01) — refuse to write outside the resolved out dir/file, throwing DiagramIoError. --version (§2.4) prints CONTRACT_VERSION and exits 0. Stdout & exit signaling (§3.4, dimension 4): map caught DiagramError to its exitCode; print message to stderr; exit 0 on success. No network (§2.5). Produce PNG via png.ts when --format is png|both. Author cli.test.ts covering input forms, format/theme combinations, path precedence, --version, and exit codes for each error class.",
+      "acceptanceCriteria": [
+        "main() reads a spec from a file path and from stdin ('-'); --type overrides spec.diagramType",
+        "--format svg|png|both writes the right artifacts with names <slug>.<theme>.<ext>; output-path precedence is --out-file > --out-dir+--out-name > --out-dir+slug > stdout",
+        "--version prints CONTRACT_VERSION and returns exit code 0",
+        "Errors return their mapped exit codes (INPUT_INVALID=2, RENDER_FAILED=3, OUTPUT_INVALID=4, PNG_FAILED=5, IO_ERROR=6, USAGE_ERROR=64) with message on stderr and no partial artifact",
+        "An attempt to write outside the resolved output location throws DiagramIoError (path confinement)",
+        "`--format png` (or `both`) with no output target (which would stream binary PNG to stdout) is refused with DiagramUsageError → exit code USAGE_ERROR (64); no binary is written to stdout",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:39:09.961Z",
+      "dependsOn": [
+        "011",
+        "010",
+        "002"
+      ],
+      "notes": "cli.ts is the bundle entry (`bun build --target=node src/diagram/cli.ts`). Keep its imports limited to render.ts, png.ts, schema.ts, errors.ts — do NOT import schema-gen.ts or build-check.ts (they must stay out of the shipped .mjs). The flag/path/exit contract is FROZEN and versioned (CONTRACT_VERSION); doc-site-plugin pins against it. Requirements satisfied: REQ-INV-02 REQ-INV-03 REQ-INV-04 REQ-SEC-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 2,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/05-cli-and-invocation.md",
+        "specs/diagram-generator/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "013",
+      "type": "chore",
+      "priority": 2,
+      "title": "Author SKILL.md + references (schema-guide, diagram-craft)",
+      "description": "Create the skill authoring surface per 05-cli-and-invocation.md §4. 1) skills/diagram-generator/SKILL.md: the conversational invocation procedure (§4.1) an agent follows to go from a natural-language request to a DiagramSpec and a diagram-render invocation; §4.2 points the agent at the schema guide for the prose→spec translation; §4.3 the REQ-IN-03 discipline — depict ONLY what the user described, never invent semantic content/components; §4.4 mode parity (conversational and scriptable produce the same artifacts). Include trigger description frontmatter consistent with other skills in skills/. 2) skills/diagram-generator/references/schema-guide.md: human-readable DiagramSpec reference with worked JSON examples per diagram type. 3) skills/diagram-generator/references/diagram-craft.md: color taxonomy (role palette), z-order, legend, and spacing craft rules (mine 04 §3 and the research Cocoon rules). Do NOT create the scripts/diagram-render.mjs bundle here — that is item 014.",
+      "acceptanceCriteria": [
+        "skills/diagram-generator/SKILL.md exists with trigger frontmatter, the conversational procedure, and an explicit REQ-IN-03 'depict only what was described' rule",
+        "skills/diagram-generator/references/schema-guide.md documents DiagramSpec with at least one worked JSON example per diagram type",
+        "skills/diagram-generator/references/diagram-craft.md documents role color taxonomy, z-order, legend, and spacing rules",
+        "SKILL.md describes both conversational and scriptable invocation (mode parity) and references the CLI contract"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:41:26.717Z",
+      "dependsOn": [
+        "012"
+      ],
+      "notes": "REQ-IN-03 ('MUST NOT invent semantic content') is not machine-validatable (02 §4) — its enforcement home is this SKILL.md prompt discipline. Match the frontmatter/description style of existing skills so the emitter picks it up. Requirements satisfied: REQ-IN-01 REQ-IN-03 REQ-INV-01 REQ-USE-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/05-cli-and-invocation.md",
+        "specs/diagram-generator/02-schema-and-validation.md"
+      ]
+    },
+    {
+      "id": "014",
+      "type": "feature",
+      "priority": 2,
+      "title": "Build committed bundle + build-check.ts drift guard + byte golden",
+      "description": "Produce and guard the shipped bundle per 06-integration-and-packaging.md §4 and 01-architecture-layout.md §2/§6 (resolves OTQ-1). 1) Run `bun run build:diagram` to produce skills/diagram-generator/scripts/diagram-render.mjs from src/diagram/cli.ts with @viz-js/viz (WASM, base64), @resvg/resvg-js, @rgrove/parse-xml, and the subset font INLINED — a single self-contained file runnable with no node_modules. Commit it. 2) Create src/diagram/build-check.ts (§4.2): a STANDALONE script (not imported by cli.ts) that re-bundles cli.ts in memory and diffs the result against the committed .mjs, exiting non-zero with a clear message if stale — this backs the `build:diagram:check` script and the gate. 3) Commit a byte golden for the bundle per §4.3 (OTQ-1) so bundle bytes are pinned in two places that move together. Note resvg's native-binding bundling caveat in 04 §4 / 01 §5 — follow the chosen approach (inline vs resolve-at-runtime for the .node addon) stated in the spec.",
+      "acceptanceCriteria": [
+        "skills/diagram-generator/scripts/diagram-render.mjs exists and runs standalone from a clean dir with no node_modules (e.g. `cd /tmp && bun /abs/diagram-render.mjs spec.json --out-dir .` succeeds)",
+        "src/diagram/build-check.ts re-bundles in memory and `bun run build:diagram:check` exits 0 when the committed bundle is current",
+        "build:diagram:check exits non-zero when the committed .mjs is stale",
+        "A byte golden for the bundle is committed per 06 §4.3",
+        "tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:51:02.949Z",
+      "dependsOn": [
+        "012"
+      ],
+      "notes": "Mirrors the existing schema-gen --check and adapter drift-guard patterns. The bundle is the ONLY artifact that ships to targets; build-check.ts must stay out of the bundle itself. Requirements satisfied: REQ-PORT-02 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/06-integration-and-packaging.md",
+        "specs/diagram-generator/01-architecture-layout.md"
+      ]
+    },
+    {
+      "id": "015",
+      "type": "feature",
+      "priority": 2,
+      "title": "Register manifest ToolEntry + verbatim emission to all 5 targets",
+      "description": "Wire the skill into the host emitter per 06-integration-and-packaging.md §2 and §5. 1) Append exactly ONE ToolEntry for the diagram-generator skill to tools.manifest.json (§2.1). The Manifest-level/ToolEntry `config` block is UNCHANGED (§2.2, corrected finding V-002) — do not add config fields. 2) Rely on the existing emitter (src/discover.ts, src/publish.ts, src/targets/_shared.ts) to copy the skill — SKILL.md, references/, and scripts/diagram-render.mjs — VERBATIM into every adapters/<target>/ tree with the .mjs file mode preserved (§5.1; publish.ts:118 already preserves mode). 3) Register the per-target golden relpaths in SAMPLE_RELPATHS in src/test/golden.shared.ts (§5.3) so the emission golden covers the new skill on every target. If any target's relpath transform differs from the claude shape, follow §5.2/§5.4. Run `bun run build` and confirm the skill (including the .mjs) lands in all five adapters/<target>/ trees.",
+      "acceptanceCriteria": [
+        "tools.manifest.json gains exactly one ToolEntry for diagram-generator; the config block is unchanged",
+        "`bun run build` emits skills/diagram-generator/ (SKILL.md + references + scripts/diagram-render.mjs) into all five adapters/<target>/ trees",
+        "The emitted .mjs preserves its file mode",
+        "SAMPLE_RELPATHS in src/test/golden.shared.ts registers the new skill's per-target relpaths",
+        "bun run gate passes (including schema:check:diagram and build:diagram:check)"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:56:45.619Z",
+      "dependsOn": [
+        "013",
+        "014"
+      ],
+      "notes": "Depends on 013 (skill content) and 014 (the committed bundle) because emission copies both. The backlog schema and rauf contract are unchanged (REQ-COMPAT-03) — this is host-emitter wiring only. Requirements satisfied: REQ-PORT-02 CON-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/06-integration-and-packaging.md"
+      ]
+    },
+    {
+      "id": "016",
+      "type": "test",
+      "priority": 2,
+      "title": "Golden SVG suite (12 files) + regeneration script + comparison test",
+      "description": "Create the golden SVG suite per 08-testing-strategy.md §2–3. 1) Author one minimal valid DiagramSpec fixture per diagram type (reuse/centralize the §7.2 fixtures). 2) Generate and commit 12 golden SVGs (6 diagram types × {light, dark}) under src/diagram/__golden__/ named <type>.<theme>.svg (§2.1), rendered via render.ts. 3) Create a regeneration script mirroring the existing src/test/regenerate-goldens.ts pattern (§2.3) so goldens can be refreshed deterministically. 4) Author the golden comparison test (§3): for each fixture+theme, render and assert byte-equality against the committed golden. The goldens prove per-type/per-theme structure and (with item 017) determinism. Use agentDelegation to author the type fixtures + goldens in parallel since each diagram type is independent.",
+      "acceptanceCriteria": [
+        "src/diagram/__golden__/ contains 12 committed SVGs named <type>.<theme>.svg for all six types × {light,dark}",
+        "A regeneration script reproduces the committed goldens byte-for-byte",
+        "The golden comparison test renders each fixture and asserts byte-equality with its committed golden",
+        "One minimal valid DiagramSpec fixture exists per diagram type and is shared with the CLI tests (017/018)",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T03:59:11.525Z",
+      "dependsOn": [
+        "011"
+      ],
+      "notes": "Goldens depend only on render.ts (011), not the CLI/bundle. Keep fixtures in a shared module so items 017 and 018 reuse them. Determinism (byte-equality) is asserted more strictly in 017. Requirements satisfied: REQ-COV-01 REQ-COV-02 REQ-THEME-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "agentDelegation": {
+        "recommendedConcurrency": 3,
+        "strategy": "Each sub-agent owns 2 diagram types: authors their minimal DiagramSpec fixtures and generates the 4 goldens (2 types × 2 themes) via render.ts. They share the fixture module and __golden__/ dir but write disjoint files, and the comparison test + regeneration script are wired once after.",
+        "subtasks": [
+          "Author fixtures + light/dark goldens for diagramType 'architecture' and 'flowchart' under src/diagram/__golden__/",
+          "Author fixtures + light/dark goldens for diagramType 'sequence' and 'er' under src/diagram/__golden__/",
+          "Author fixtures + light/dark goldens for diagramType 'state' and 'dataflow' under src/diagram/__golden__/"
+        ]
+      },
+      "specReferences": [
+        "specs/diagram-generator/08-testing-strategy.md"
+      ]
+    },
+    {
+      "id": "017",
+      "type": "test",
+      "priority": 2,
+      "title": "Property assertions + determinism + PNG smoke tests",
+      "description": "Add the cross-cutting render tests per 08-testing-strategy.md §4–6. 1) Property assertions (§4): for each committed golden, reuse the item-003 validators (assertWellFormed/Tier2/Structural/FontPortable/A11y via assertOutputValid) to prove REQ-OUT-01/02/04 and REQ-A11Y-01 hold — do NOT re-implement the checks (§4.1). Add architecture-specific machine-assertable properties (§4.3) and theme+accent coverage (§4.4). 2) Determinism (§5): render the same fixture twice and assert byte-identical SVG, and assert each render matches its committed golden — proving REQ-REPRO-01. 3) PNG smoke (§6): rasterize at least one fixture via png.ts and assert a valid PNG within the dimension tolerance (smoke-only, not exact bytes; resvg pinned). Reuse the shared fixtures from item 016.",
+      "acceptanceCriteria": [
+        "Every committed golden passes assertOutputValid (reused from validate.ts, not re-implemented)",
+        "Architecture goldens satisfy the §4.3 machine-assertable properties; theme+accent coverage per §4.4 is exercised",
+        "A determinism test renders a fixture twice and asserts byte-identical SVG matching the committed golden",
+        "A PNG smoke test produces a valid PNG within the documented dimension tolerance",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T04:01:13.009Z",
+      "dependsOn": [
+        "016",
+        "010"
+      ],
+      "notes": "Property tests are the machine-checkable proof of the portability/a11y requirements; they consume the goldens from 016 and the validators from 003. PNG stays smoke-level per 08 §6 because rasterized bytes vary by platform. Requirements satisfied: REQ-OUT-01 REQ-OUT-02 REQ-OUT-04 REQ-A11Y-01 REQ-REPRO-01 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/08-testing-strategy.md"
+      ]
+    },
+    {
+      "id": "018",
+      "type": "test",
+      "priority": 2,
+      "title": "CLI contract tests + emission/gate guard test",
+      "description": "Add the contract-level tests per 08-testing-strategy.md §7–8. CLI contract (§7), exercising the frozen scriptable contract: input forms — file path and stdin '-' (§7.1, dimension 1) using the shared per-type fixtures (§7.2); output paths & precedence — --out-file > --out-dir+--out-name > --out-dir+slug > stdout, deterministic <slug>.<theme>.<ext> names (§7.3, dimension 2); invocable types & exit codes — all six --type values render and each DiagramError class returns its mapped exit code (§7.4, dimensions 3+4); --version prints CONTRACT_VERSION (§7.5, REQ-INV-04); path confinement — writing outside the allowed path is refused with the IO exit code (§7.6, REQ-SEC-01); in-process vs bundle execution parity (§7.7) — the committed .mjs and the in-process cli.ts main() produce equivalent artifacts. Emission/gate guard (§8): a test asserting the skill emits to all five targets (REQ-PORT-02), aligned with the SAMPLE_RELPATHS from item 015. Verify coverage targets per §9 are not regressed.",
+      "acceptanceCriteria": [
+        "CLI tests cover input via file path and stdin, all six --type values, and --format svg|png|both",
+        "Output-path precedence and deterministic file naming are asserted; --version prints CONTRACT_VERSION",
+        "Each DiagramError class maps to its documented exit code; path confinement (REQ-SEC-01) is enforced",
+        "An in-process vs committed-bundle parity test confirms equivalent artifacts",
+        "An emission/gate guard test asserts the skill lands in all five targets",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T04:05:13.871Z",
+      "dependsOn": [
+        "012",
+        "014"
+      ],
+      "notes": "Depends on 012 (CLI) and 014 (committed bundle) for the in-process-vs-bundle parity check. Reuses the shared fixtures (016). This locks the contract doc-site-plugin pins against (CON-02, REQ-INV-04). Requirements satisfied: REQ-INV-04 REQ-SEC-01 REQ-PORT-02 CON-02 (see TRACEABILITY.md).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/diagram-generator/08-testing-strategy.md"
+      ]
+    }
+  ]
+}

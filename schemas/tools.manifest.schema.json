@@ -1,0 +1,128 @@
+{
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "skillsDir": {
+          "type": "string",
+          "default": "skills"
+        },
+        "agentsDir": {
+          "type": "string",
+          "default": "agents"
+        },
+        "commandsDir": {
+          "type": "string",
+          "default": "commands"
+        },
+        "referencesDir": {
+          "type": "string",
+          "default": "references"
+        },
+        "scriptsDir": {
+          "type": "string",
+          "default": "scripts"
+        },
+        "overridesDir": {
+          "type": "string",
+          "default": "overrides"
+        },
+        "adaptersDir": {
+          "type": "string",
+          "default": "adapters"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "claude",
+              "codex",
+              "copilot",
+              "cursor",
+              "gemini"
+            ]
+          },
+          "default": [
+            "claude",
+            "codex",
+            "copilot",
+            "cursor",
+            "gemini"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "default": {}
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "skill",
+              "agent",
+              "command",
+              "script",
+              "reference"
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "targets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "exclude": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            "propertyNames": {
+              "enum": [
+                "claude",
+                "codex",
+                "copilot",
+                "cursor",
+                "gemini"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "source"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "version",
+    "tools"
+  ],
+  "additionalProperties": false,
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "tools.manifest.schema.json",
+  "title": "Agent-Docs Tool Manifest",
+  "description": "Canonical tool registry + emitter config for the agent-agnostic scaffold (REQ-DISC-01/03)."
+}

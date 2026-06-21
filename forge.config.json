@@ -1,0 +1,11 @@
+{
+  "specsDir": "./specs",
+  "docsDir": "./docs/architecture",
+  "backlogDir": null,
+  "gitCommitAfterStage": true,
+  "commitPrefix": "forge",
+  "stack": "bun-typescript",
+  "typeCheckCommand": "tsc --noEmit",
+  "testCommand": "vitest run",
+  "loopIterationMultiplier": 1.5
+}

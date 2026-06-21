@@ -1,0 +1,19 @@
+node_modules/
+dist/
+*.tmp-*
+
+# Working plans — local scratch, never tracked (matches feature-forge convention)
+plans/
+
+# Rauf runtime — transient files that must never be tracked
+**/.rauf/.loop.lock
+**/.rauf/state.json
+**/.rauf/DONE
+**/.rauf/CANCEL
+**/.rauf/iteration-status.json
+**/.rauf/rauf.log
+**/.rauf/events.ndjson
+**/backlog.json.bak
+
+# Local Claude Code session state
+.claude/

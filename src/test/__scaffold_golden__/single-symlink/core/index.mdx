@@ -1,0 +1,25 @@
+---
+title: Acme Docs
+description: Documentation for the Acme project.
+template: splash
+hero:
+  tagline: Documentation for the Acme project.
+  actions:
+    - text: Get Started
+      link: guides/setup/
+      icon: right-arrow
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+Welcome to the **Acme Docs** documentation.
+
+<CardGrid>
+  <Card title="Get started" icon="rocket">
+    Head to the [setup guide](guides/setup/) to begin.
+  </Card>
+  <Card title="Single source of truth" icon="document">
+    Pages are driven by `docs.manifest.json`; edit the manifest to change the
+    sidebar.
+  </Card>
+</CardGrid>

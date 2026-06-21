@@ -1,0 +1,6 @@
+# Merge into pnpm-workspace.yaml — register the docs package as a workspace member.
+# Additive merge (06 §7.4): add the entry to `packages:` only if not already
+# present (string-equality on the POSIX-relative path). Never overwrite unrelated
+# keys; a second run is a no-op.
+packages:
+  - "{{DOCS_PKG_DIR}}"

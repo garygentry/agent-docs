@@ -1,0 +1,29 @@
+{
+  "tokens": {
+    "SITE_TITLE": "Minimal Docs",
+    "SITE_TITLE_SLUG": "minimal-docs",
+    "SITE_DESC": "A minimal documentation site.",
+    "SITE_URL": "https://example.com",
+    "BASE_PATH": "",
+    "REPO_SLUG": "example-org/example",
+    "GITHUB_URL": "https://github.com/example-org/example",
+    "PKG_MANAGER": "npm",
+    "RUNTIME": "node",
+    "DOCS_PKG_DIR": "docs",
+    "IMAGES_SRC_DIR": "../docs/images",
+    "ACCENT_LIGHT": "#0ea5e9",
+    "ACCENT_DARK": "#38bdf8",
+    "DEFAULT_BRANCH": "main",
+    "ASTRO_VERSION": "5.6.1",
+    "STARLIGHT_VERSION": "0.32.2",
+    "DOCS_PKG_DIR_TO_ROOT": "..",
+    "SYMLINK_PAGE_LINES": ""
+  },
+  "selection": {
+    "contentMode": "native",
+    "diagrams": false,
+    "deploy": [],
+    "driftGuard": false,
+    "monorepo": false
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "site": { "title": "Bad", "description": "native with from" },
+  "pages": [{ "slug": "about", "source": "native", "from": "docs/about.md" }]
+}

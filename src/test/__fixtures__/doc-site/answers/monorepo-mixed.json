@@ -1,0 +1,29 @@
+{
+  "tokens": {
+    "SITE_TITLE": "Widget Monorepo Docs",
+    "SITE_TITLE_SLUG": "widget-monorepo-docs",
+    "SITE_DESC": "Documentation for the Widget monorepo.",
+    "SITE_URL": "https://docs.widget.dev",
+    "BASE_PATH": "",
+    "REPO_SLUG": "widget-co/widget",
+    "GITHUB_URL": "https://github.com/widget-co/widget",
+    "PKG_MANAGER": "pnpm",
+    "RUNTIME": "bun",
+    "DOCS_PKG_DIR": "packages/docs",
+    "IMAGES_SRC_DIR": "../../docs/images",
+    "ACCENT_LIGHT": "#7c3aed",
+    "ACCENT_DARK": "#a78bfa",
+    "DEFAULT_BRANCH": "main",
+    "ASTRO_VERSION": "5.6.1",
+    "STARLIGHT_VERSION": "0.32.2",
+    "DOCS_PKG_DIR_TO_ROOT": "../..",
+    "SYMLINK_PAGE_LINES": "link_file \"../../docs/intro.md\" \"intro\"\nlink_file \"../../docs/api/reference.md\" \"api/reference\""
+  },
+  "selection": {
+    "contentMode": "mixed",
+    "diagrams": true,
+    "deploy": ["vercel"],
+    "driftGuard": true,
+    "monorepo": true
+  }
+}

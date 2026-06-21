@@ -1,0 +1,11 @@
+{
+  "site": {
+    "title": "Mixed Docs",
+    "description": "Mixed sourcing",
+    "social": { "github": "https://github.com/acme/mixed" }
+  },
+  "pages": [
+    { "slug": "guides/setup", "source": "symlink", "from": "docs/setup.md" },
+    { "slug": "about", "source": "native" }
+  ]
+}

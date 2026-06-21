@@ -1,0 +1,375 @@
+{
+  "schemaVersion": "1",
+  "project": "doc-site-plugin",
+  "description": "Implement doc-site-plugin: a canonical agent-docs skill (SKILL.md orchestration + parameterized {{TOKEN}} .tmpl template assets under skills/doc-site-plugin/references/) that scaffolds an Astro 5 + Starlight docs site into any target repo from an agent-driven interview. Purely additive to agent-docs: no new src/ production module and no new gate stage. The existing agent-agnostic-scaffold emitter ships the skill byte-identically to all 5 targets (claude/codex/gemini/cursor/copilot). Only in-repo non-skill changes: one ToolEntry in tools.manifest.json, SAMPLE_RELPATHS rows in src/test/golden.shared.ts, and new vitest verification tests. Foundation-first: scaffold + static schema, then detection/interview + per-component template groups (each paired with its agent-facing reference doc), then the lifecycle/verification doc, then integration/emission, then the two in-repo verification test suites.",
+  "items": [
+    {
+      "id": "001",
+      "type": "chore",
+      "priority": 1,
+      "title": "Scaffold skills/doc-site-plugin/ directory + SKILL.md skeleton with phased procedure and substitution table",
+      "description": "Create the canonical skill directory skills/doc-site-plugin/ with its SKILL.md entry point and an empty references/ subdir. This is purely additive; do NOT touch src/ or the gate chain. 1) Create skills/doc-site-plugin/SKILL.md as the lean phased procedure. It MUST document the 7 phases from spec 01 §4 in order: Phase 1 detect (ref detect.md), Phase 2 interview (ref interview.md), Phase 3 component-select (resolve the component-selection record, 00 §5), Phase 4 emit (per selected template group: substitute tokens, write, record provenance hashes), Phase 5 run setup-docs (symlink/mixed only), Phase 6 build smoke test (require green, REQ-VERIFY-01), Phase 7 next steps. Reference docs are authored by later items — SKILL.md may name them as pull-in references. 2) SKILL.md MUST carry the substitution table — the SKILL-side mirror of the canonical token table in 00 §4.1 — listing EXACTLY these 17 tokens and NO others: SITE_TITLE, SITE_DESC, SITE_URL, BASE_PATH, REPO_SLUG, GITHUB_URL, PKG_MANAGER, RUNTIME, DOCS_PKG_DIR, IMAGES_SRC_DIR, ACCENT_LIGHT, ACCENT_DARK, DEFAULT_BRANCH, ASTRO_VERSION, STARLIGHT_VERSION, DOCS_PKG_DIR_TO_ROOT, SYMLINK_PAGE_LINES. Write each token in {{TOKEN}} form somewhere in SKILL.md so the token-coverage test (item 011) sees it. 3) Add appropriate YAML frontmatter (name: doc-site-plugin, plus a description) matching the docs-helper / diagram-generator skill style so discovery (src/discover.ts) accepts it. 4) Create the skills/doc-site-plugin/references/ directory (a .gitkeep is acceptable until later items add files). Do NOT register the tool in tools.manifest.json yet (that is item 010) — leaving it unregistered keeps the gate green for this item.",
+      "acceptanceCriteria": [
+        "skills/doc-site-plugin/SKILL.md exists with YAML frontmatter including name: doc-site-plugin",
+        "SKILL.md describes all 7 phases in order: detect, interview, component-select, emit, run setup-docs, build smoke test, next steps",
+        "SKILL.md contains a substitution table that includes each of the 17 canonical tokens in {{TOKEN}} form and no token names outside that set: SITE_TITLE, SITE_DESC, SITE_URL, BASE_PATH, REPO_SLUG, GITHUB_URL, PKG_MANAGER, RUNTIME, DOCS_PKG_DIR, IMAGES_SRC_DIR, ACCENT_LIGHT, ACCENT_DARK, DEFAULT_BRANCH, ASTRO_VERSION, STARLIGHT_VERSION, DOCS_PKG_DIR_TO_ROOT, SYMLINK_PAGE_LINES",
+        "skills/doc-site-plugin/references/ directory exists",
+        "tools.manifest.json is unchanged (registration deferred to item 010)",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:31:27.431Z",
+      "dependsOn": [],
+      "notes": "Foundation item — lays groundwork for items 002-012. SKILL.md is the load-bearing procedure; per-component reference docs (detect.md, interview.md, core.md, etc.) are pulled in as needed and authored by later items. The token table here is the agent-facing mirror of 00 §4.1; keep it EXACTLY the 17 canonical tokens — item 011's token-coverage test fails on any orphan (documented-but-unused) or extra token. The skill stays unregistered until item 010, so build:check/golden tests do not yet expect it.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/01-architecture-layout.md",
+        "specs/doc-site-plugin/00-core-definitions.md",
+        "specs/doc-site-plugin/02-detection-and-interview.md"
+      ]
+    },
+    {
+      "id": "002",
+      "type": "feature",
+      "priority": 1,
+      "title": "Author static docs.manifest.schema.json (Draft 2020-12) for the target-repo manifest",
+      "description": "Create skills/doc-site-plugin/references/docs.manifest.schema.json — a HAND-AUTHORED static JSON Schema (Draft 2020-12) for the target-repo docs.manifest.json. It is shipped verbatim into target repos and is NOT produced by src/schema-gen.ts (that module is hardwired to the emitter's Manifest Zod type — do not touch it). Place the file directly under references/ (NOT under assets/ — the emitter's collectOwnedTree only walks references/ and scripts/). Encode every validation rule from 00 §2.2: (1) top-level object requires site and pages, additionalProperties:false; (2) site requires title (non-empty string) and description (string), optional social (object mapping string->uri string), additionalProperties:false; (3) pages is an array (may be empty) of PageEntry objects, additionalProperties:false; (4) PageEntry: slug (string, required); source enum ['symlink','native']; from (string); unmanaged (boolean, default false); (5) source:'symlink' REQUIRES from (use if/then or oneOf), source:'native' FORBIDS from, unmanaged:true makes source/from optional, unmanaged absent/false REQUIRES source. Set $schema to the Draft 2020-12 metaschema URI and give the schema a $id. For slug-uniqueness (00 §2.2 rule 5): JSON Schema cannot express 'unique slug property across array items' directly (uniqueItems compares whole items). Encode it if feasible; otherwise add a description note that the symlinker/drift-guard enforces slug-uniqueness (10 §4.3 caveat) — item 011 honors this by skipping or relaxing the duplicate-slug case accordingly.",
+      "acceptanceCriteria": [
+        "skills/doc-site-plugin/references/docs.manifest.schema.json exists and is valid JSON",
+        "The schema declares the Draft 2020-12 $schema metaschema and a $id",
+        "Top-level, site, and PageEntry objects all set additionalProperties:false",
+        "site requires title and description; pages is required and allows an empty array",
+        "A page with source:'symlink' requires from; source:'native' forbids from; unmanaged:true allows omitting source/from; a managed page without unmanaged requires source",
+        "A comment/description records whether slug-uniqueness is schema-enforced or delegated to the symlinker/drift-guard (10 §4.3 caveat)",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:32:18.912Z",
+      "dependsOn": [
+        "001"
+      ],
+      "notes": "This static asset is validated in-repo by item 011's vitest schema-fixture test (using ajv with the Draft 2020-12 metaschema), NOT by the schema:check gate stage (which stays hardwired to Manifest — 09 §5). Keeping it a hand-authored asset preserves the 'no new src/ module' property. The schema rides verbatim to all 5 targets once the tool is registered (item 010).",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/00-core-definitions.md",
+        "specs/doc-site-plugin/09-integration-and-emission.md"
+      ]
+    },
+    {
+      "id": "003",
+      "type": "feature",
+      "priority": 1,
+      "title": "Author detect.md + interview.md reference docs (Phase 1-2 agent instructions)",
+      "description": "Author the two agent-facing instruction docs for the detect and interview phases. Create skills/doc-site-plugin/references/detect.md and skills/doc-site-plugin/references/interview.md. These are the authoritative agent procedures implementing the decision record in spec 02. detect.md (Phase 1, per 02 §2): document every network-free, read-only probe against the target repo — monorepo vs single (pnpm-workspace.yaml / root package.json workspaces), package manager (packageManager field then lockfile precedence pnpm/bun/yarn/npm), runtime (.bun-version/bun.lock => bun, engines.node => node), existing docs (docs/*.md, CONTRIBUTING.md), existing CI (.github/workflows/*), default branch (git symbolic-ref origin/HEAD then current branch), repo slug (git remote get-url origin parsed to owner/name). Include the graceful-degradation table (02 §3.1): each missing signal yields a fallback default and an assumption record (code, signal, chose, because per 00 §6.2). Emphasize: detection is best-effort, never a hard prerequisite; the only legitimate hard-fail is HARD_FAIL_IMPOSSIBLE (non-writable/absent tree). interview.md (Phase 2, per 02 §4): document the 8-parameter minimum set (site title, description, social links, content-sourcing mode, markdown->sidebar-slug mapping, deploy targets, accent colors, docs-package location), each mapped to its token(s)/selection-record field with a detection-seeded default. Optional components (diagrams, deploy[], driftGuard) default to declined (00 §5). Only use tokens from the 00 §4.1 canonical set when writing {{TOKEN}} references. Do NOT author template assets here.",
+      "acceptanceCriteria": [
+        "skills/doc-site-plugin/references/detect.md exists and documents all 7 probes from 02 §2.2 with exact files/commands and states they are read-only and network-free",
+        "detect.md includes the graceful-degradation table mapping each signal to its fallback default and assumption code (ASSUME-MONOREPO-SINGLE, ASSUME-PKGMGR-NPM, ASSUME-RUNTIME-NODE, ASSUME-NO-DOCS, ASSUME-NO-CI, ASSUME-BRANCH-MAIN, ASSUME-SLUG-ASKED)",
+        "skills/doc-site-plugin/references/interview.md exists and captures all 8 REQ-INT-01 parameters, each mapped to its token/selection-record field with a detection-seeded default",
+        "interview.md states optional components (diagrams, deploy[], driftGuard) default to declined",
+        "Any {{TOKEN}} referenced in either doc is from the 00 §4.1 canonical 17-token set",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:34:13.654Z",
+      "dependsOn": [
+        "001"
+      ],
+      "notes": "These reference docs ride verbatim to all 5 targets (once registered in item 010). They implement spec 02; the conversational phrasing of questions is intentionally agent-dependent and out of REQ-PORT-02 scope. No template group is tied to this item — it is pure instruction text feeding Phases 1-2.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/02-detection-and-interview.md",
+        "specs/doc-site-plugin/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "004",
+      "type": "feature",
+      "priority": 1,
+      "title": "Author core/ template group (8 assets) + core.md + manifest-schema.md",
+      "description": "Author the always-emitted core scaffold template group plus its two reference docs. Create the 8 assets under skills/doc-site-plugin/references/templates/core/ with the exact bodies, tokens, and documented target paths from 03 §3: astro.config.mjs.tmpl, package.json.tmpl, tsconfig.json.tmpl, content.config.ts.tmpl, custom.css.tmpl, favicon.svg (verbatim, NO tokens, real .svg not .tmpl), index.mdx.tmpl (authored splash, source:native), starter-page.mdx.tmpl (authored, source:native). Key requirements: astro.config.mjs.tmpl sets site:process.env.SITE and base:process.env.BASE_PATH (REQ-CORE-02), image:{ service: passthroughImageService() } (REQ-CORE-03), Starlight social as an ARRAY of {icon,label,href}, and carries the literal sidebar:[] line with the // <<SIDEBAR>> sentinel comment; package.json.tmpl pins astro/@astrojs/starlight via {{ASTRO_VERSION}}/{{STARLIGHT_VERSION}} with only dev/build/preview scripts (no predev/prebuild in core); content.config.ts.tmpl uses docsLoader() + docsSchema(); custom.css.tmpl defines only --sl-color-accent* via {{ACCENT_LIGHT}}/{{ACCENT_DARK}} with color-mix shades. Author references/core.md documenting the deterministic sidebar-from-manifest algorithm (03 §7: buildSidebar groups by first POSIX slug segment, titleize labels, exclude unmanaged pages, native==symlink in the sidebar, manifest order is sidebar order, home splash excluded) and the manifest-writing procedure (write docs.manifest.json + copy docs.manifest.schema.json to the target repo ROOT). Author references/manifest-schema.md as the manifest schema reference + escape hatch (00 §2, unmanaged:true). Use ONLY tokens already in the 00 §4.1 table — introduce no new tokens.",
+      "acceptanceCriteria": [
+        "All 8 assets exist under skills/doc-site-plugin/references/templates/core/ (astro.config.mjs.tmpl, package.json.tmpl, tsconfig.json.tmpl, content.config.ts.tmpl, custom.css.tmpl, favicon.svg, index.mdx.tmpl, starter-page.mdx.tmpl)",
+        "astro.config.mjs.tmpl reads process.env.SITE and process.env.BASE_PATH, sets image.service to passthroughImageService(), uses a social array, and contains the // <<SIDEBAR>> sentinel with sidebar:[]",
+        "package.json.tmpl uses {{ASTRO_VERSION}} and {{STARLIGHT_VERSION}} and contains dev/build/preview scripts only (no predev/prebuild)",
+        "content.config.ts.tmpl uses docsLoader() and docsSchema(); custom.css.tmpl uses {{ACCENT_LIGHT}} and {{ACCENT_DARK}} and defines only --sl-color-accent* variables",
+        "favicon.svg is a real SVG asset containing no {{TOKEN}} placeholders",
+        "references/core.md documents the buildSidebar algorithm (03 §7) and the docs.manifest.json + docs.manifest.schema.json repo-root write; references/manifest-schema.md documents the manifest contract and the unmanaged escape hatch",
+        "Every {{TOKEN}} used across the core templates and docs is one of the 17 canonical tokens (no new tokens introduced)",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:37:09.443Z",
+      "dependsOn": [
+        "001",
+        "002"
+      ],
+      "notes": "Templates live under references/templates/** so the emitter's collectOwnedTree discovers them (09 §3). index.mdx/starter-page.mdx are authored content (source:native) — never tracked for overwrite; the other 6 core files are managed plumbing. The sidebar array is replaced wholesale at emit time by the buildSidebar result substituted into the // <<SIDEBAR>> sentinel. Item 012's single-symlink/monorepo-mixed/decline-all scaffold goldens all exercise this core group. This item authors 10 files, so it uses agentDelegation to keep the emit surface within one iteration — the three subtasks write disjoint files and share the single bun run gate verification.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "agentDelegation": {
+        "recommendedConcurrency": 3,
+        "strategy": "Three sub-agents author disjoint slices of the core/ group + its docs under skills/doc-site-plugin/, all using only the 00 §4.1 canonical tokens and spec 03. They write non-overlapping files and share the single bun run gate verification.",
+        "subtasks": [
+          "Author the 6 managed plumbing core templates under references/templates/core/: astro.config.mjs.tmpl (site=process.env.SITE, base=process.env.BASE_PATH, image.service=passthroughImageService(), social array, // <<SIDEBAR>> sentinel with sidebar:[]), package.json.tmpl ({{ASTRO_VERSION}}/{{STARLIGHT_VERSION}}, dev/build/preview scripts only), tsconfig.json.tmpl, content.config.ts.tmpl (docsLoader()+docsSchema()), custom.css.tmpl ({{ACCENT_LIGHT}}/{{ACCENT_DARK}} accent vars only), favicon.svg (verbatim, no tokens). Exact bodies/target-paths per 03 §3.",
+          "Author the 2 authored-content MDX templates under references/templates/core/: index.mdx.tmpl (splash landing, source:native, {{SITE_TITLE}}/{{SITE_DESC}}) and starter-page.mdx.tmpl (authored starter page, source:native). Exact bodies per 03 §3.7-3.8.",
+          "Author references/core.md (documenting the deterministic buildSidebar algorithm from 03 §7 — group by first POSIX slug segment, titleize, exclude unmanaged, native==symlink, manifest order is sidebar order, home splash excluded — and writing docs.manifest.json + copying docs.manifest.schema.json to the target repo root) and references/manifest-schema.md (the manifest contract + unmanaged:true escape hatch per 00 §2)."
+        ]
+      },
+      "specReferences": [
+        "specs/doc-site-plugin/03-core-site-and-manifest.md",
+        "specs/doc-site-plugin/00-core-definitions.md",
+        "specs/doc-site-plugin/01-architecture-layout.md"
+      ]
+    },
+    {
+      "id": "005",
+      "type": "feature",
+      "priority": 1,
+      "title": "Author symlink/ template group (setup-docs.sh.tmpl) + symlink.md",
+      "description": "Author the content-sourcing/symlink template group plus its reference doc, emitted only when contentMode is symlink or mixed. Create skills/doc-site-plugin/references/templates/symlink/setup-docs.sh.tmpl with the full POSIX-sh body from 04 §2: shebang #!/bin/sh; set -eu (NOT set -euo pipefail); NO bash-isms (no arrays, no [[ ]], no local, no pipefail). It MUST include: a pure-sh rel_path helper computing a relative path between two canonicalized absolute paths (NO GNU realpath --relative-to / readlink -f); assert_inside_repo confinement that refuses any source escaping the repo root (REQ-SEC-02); link_file using ln -sf; link_dir using ln -sfn (the -n/--no-dereference is load-bearing for images/ idempotency — without it a second run creates images/images); a .astro cache clear (rm -rf the .astro and node_modules/.astro dirs); the {{DOCS_PKG_DIR_TO_ROOT}} derived token for the repo-root hop; and the {{SYMLINK_PAGE_LINES}} generated block delimited by the manifest-managed-symlinks markers, followed by the link_dir \"{{IMAGES_SRC_DIR}}\" \"images\" line. Author references/symlink.md documenting: how the agent generates {{SYMLINK_PAGE_LINES}} from docs.manifest.json (exactly one link_file \"<from>\" \"<slug>\" per page where source==symlink AND unmanaged!=true; native/unmanaged pages contribute no line); how {{DOCS_PKG_DIR_TO_ROOT}} is derived (one .. per path segment of {{DOCS_PKG_DIR}}); native/mixed gating (native mode emits nothing); and the predev/prebuild wiring added to the core package.json (predev/prebuild = sh ./setup-docs.sh). Use only canonical tokens.",
+      "acceptanceCriteria": [
+        "skills/doc-site-plugin/references/templates/symlink/setup-docs.sh.tmpl exists, begins with #!/bin/sh, and contains set -eu (not set -euo pipefail)",
+        "The template contains no bash-only constructs ([[, arrays, local, pipefail) and defines a pure-sh rel_path helper that does not use realpath --relative-to or readlink -f",
+        "The images directory link uses ln -sfn (grep confirms -sfn for the directory link); file links use ln -sf",
+        "The template includes assert_inside_repo confinement, a .astro cache clear, and references {{DOCS_PKG_DIR}}, {{DOCS_PKG_DIR_TO_ROOT}}, {{IMAGES_SRC_DIR}}, and {{SYMLINK_PAGE_LINES}}",
+        "references/symlink.md documents {{SYMLINK_PAGE_LINES}} generation (one link_file per source==symlink non-unmanaged page), {{DOCS_PKG_DIR_TO_ROOT}} derivation, native/mixed gating, and the predev/prebuild = sh ./setup-docs.sh wiring",
+        "After substituting the {{TOKEN}}s with sample values, sh -n on the resolved script reports no syntax errors",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:38:58.471Z",
+      "dependsOn": [
+        "001",
+        "004"
+      ],
+      "notes": "Depends on 004 because symlink.md references the core package.json insertion point (predev/prebuild). The script is a managed plumbing file (sha256 tracked). When diagrams are also selected, the composed prebuild runs setup-docs first then diagram generation (the composition rule is owned by diagrams.md, item 006). Item 012's single-symlink and monorepo-mixed answer sets exercise this group.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/04-content-symlink-layer.md",
+        "specs/doc-site-plugin/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "006",
+      "type": "feature",
+      "priority": 1,
+      "title": "Author diagrams/ template group + diagrams.md (delegation by vendoring)",
+      "description": "Author the optional diagram component template group plus its reference doc, emitted only when diagrams:true. The generator does NOT ship a renderer — it vendors diagram-render.mjs from the already-shipped sibling diagram-generator skill. Create skills/doc-site-plugin/references/templates/diagrams/diagrams.prebuild.snippet.tmpl: a package.json script fragment (NOT a standalone file) that invokes the VENDORED renderer with predictable, slug-independent output paths via --out-file (public/diagrams/<basename>.<theme>.svg). Each spec is rendered TWICE — once --theme light with {{ACCENT_LIGHT}}, once --theme dark with {{ACCENT_DARK}} (there is NO --theme both). Chain invocations with && so any nonzero exit short-circuits and fails prebuild. Author references/diagrams.md documenting: (1) vendoring reads the renderer at the FIXED uniform sibling rel-path ../diagram-generator/scripts/diagram-render.mjs (identical across all 5 targets — no per-agent branching) and copies it to scripts/diagram-render.mjs (or {{DOCS_PKG_DIR}}/scripts/) in the target; (2) a --version pin-check against CONTRACT_VERSION 1.0.0 runs BEFORE vendoring — a match proceeds and records diagramContract:'1.0.0' + the vendored copy's sha256 in .doc-site-scaffold.json; any other version or an unavailable/missing renderer aborts the component with zero files written and NO embedded fallback (CON-05); (3) a starter DiagramSpec is emitted into src/diagrams/ if none exists so the smoke test renders for real (REQ-DIAG-03); (4) all nonzero renderer exits (2/3/4/5/6/64 per 00 §8) are surfaced as BUILD_RED, never masked (including exit 5 --format both that may leave an SVG); (5) decline-clean: diagrams:false emits zero files/hooks and no diagramContract. Use only canonical tokens ({{DOCS_PKG_DIR}}, {{ACCENT_LIGHT}}, {{ACCENT_DARK}}, {{RUNTIME}}, {{PKG_MANAGER}}).",
+      "acceptanceCriteria": [
+        "skills/doc-site-plugin/references/templates/diagrams/diagrams.prebuild.snippet.tmpl exists and invokes the vendored renderer with --out-file (never --out-dir alone), uses --theme light then --theme dark (no --theme both), and chains invocations with &&",
+        "references/diagrams.md documents reading the renderer at the fixed rel-path ../diagram-generator/scripts/diagram-render.mjs (uniform across all 5 targets)",
+        "references/diagrams.md documents the --version pin-check against CONTRACT_VERSION 1.0.0 before vendoring, with abort + zero files + no embedded fallback on mismatch/unavailable (CON-05)",
+        "references/diagrams.md documents recording diagramContract:'1.0.0' + vendored sha256 in provenance, emitting a starter DiagramSpec when none exists (REQ-DIAG-03), surfacing nonzero renderer exits as BUILD_RED, and the diagrams:false decline-clean guarantee",
+        "Every {{TOKEN}} used is one of the 17 canonical tokens",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:41:18.932Z",
+      "dependsOn": [
+        "001",
+        "004"
+      ],
+      "notes": "diagram-generator is a HARD prerequisite already shipped and registered (tools.manifest.json) — the fixed sibling hop works because skillRefDir roots both skills under the same per-target parent (09 §4). The prebuild snippet composes with the symlink prebuild (item 005): symlink setup first, then diagram generation. Item 012's monorepo-mixed answer set exercises this group.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/05-diagrams-component.md",
+        "specs/doc-site-plugin/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "007",
+      "type": "feature",
+      "priority": 1,
+      "title": "Author deploy/ and monorepo/ template groups + 3 deploy reference docs",
+      "description": "Author the deploy and monorepo-portability template groups plus their reference docs, each component-gated. Templates under skills/doc-site-plugin/references/templates/: (1) deploy/github-pages/docs.yml.tmpl — a valid GitHub Actions workflow per 06 §3 with TWO named toolchain fragments (Bun+pnpm AND Node+npm) selected by fragment, NOT by in-YAML conditionals; SITE/BASE_PATH derived at runtime from actions/configure-pages outputs; path-filtered triggers ({{DOCS_PKG_DIR}}/**, docs/**, docs.manifest.json, the workflow itself) on {{DEFAULT_BRANCH}}. Note GitHub Actions ${{ }} expressions are NOT generator tokens. (2) deploy/vercel/vercel.json.tmpl — framework astro, build/install commands, outputDirectory under {{DOCS_PKG_DIR}}/dist, build.env SITE={{SITE_URL}} and BASE_PATH=\"\" (root). (3) deploy/static/netlify.toml.tmpl — [build] base={{DOCS_PKG_DIR}}, publish=dist, [build.environment] SITE={{SITE_URL}}, BASE_PATH={{BASE_PATH}}. (4) monorepo/pnpm-workspace.fragment.yaml.tmpl — packages: entry for {{DOCS_PKG_DIR}}. (5) monorepo/root-scripts.fragment.json.tmpl — workspaces membership + dev:docs/build:docs passthroughs; provide BOTH the pnpm --filter form and the npm --workspace form (fragment-selected). Reference docs: references/deploy-github-pages.md, references/deploy-vercel.md, references/deploy-static-netlify.md documenting per-target wiring and the shared env-driven SITE/BASE_PATH mechanism (REQ-DEPLOY-02, consumed from the core astro.config.mjs). Author references/monorepo.md (a SEPARATE doc, NOT inside the deploy docs) documenting the monorepo additive-merge semantics (register membership idempotently; set dev:docs/build:docs; RERUN_SKIP on a user-edited script value, never clobber) per 06 §7. Each group is gated by deploy[] membership / the monorepo flag; introduce no tokens beyond 00 §4.1.",
+      "acceptanceCriteria": [
+        "deploy/github-pages/docs.yml.tmpl exists as valid GitHub Actions YAML with both Bun+pnpm and Node+npm toolchain fragments (no in-YAML conditionals), path-filtered triggers on {{DEFAULT_BRANCH}}, and SITE/BASE_PATH fed from configure-pages outputs",
+        "deploy/vercel/vercel.json.tmpl exists with framework:astro, outputDirectory under {{DOCS_PKG_DIR}}, SITE={{SITE_URL}} and BASE_PATH empty; deploy/static/netlify.toml.tmpl exists with base={{DOCS_PKG_DIR}}, publish=dist, and SITE/BASE_PATH build env",
+        "monorepo/pnpm-workspace.fragment.yaml.tmpl and monorepo/root-scripts.fragment.json.tmpl exist; the root-scripts fragment provides dev:docs/build:docs in both pnpm --filter and npm --workspace forms plus workspaces membership",
+        "references/deploy-github-pages.md, references/deploy-vercel.md, references/deploy-static-netlify.md exist and document per-target wiring and the shared env-driven SITE/BASE_PATH mechanism; a separate references/monorepo.md documents the monorepo additive-merge/RERUN_SKIP semantics",
+        "Every {{TOKEN}} used across these templates is one of the 17 canonical tokens (GitHub Actions ${{ }} expressions are not flagged as tokens)",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:45:21.675Z",
+      "dependsOn": [
+        "001",
+        "004"
+      ],
+      "notes": "Larger item with independent template files — uses agentDelegation to author the three deploy groups + monorepo group + their docs concurrently (they share one verification step and don't touch each other's files). The env-driven SITE/BASE_PATH consumer (astro.config.mjs) is owned by item 004 — these only SUPPLY the vars. Item 012 must cover deploy/static via an added static-netlify answer set; github-pages/vercel/monorepo are covered by single-symlink/monorepo-mixed.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "agentDelegation": {
+        "recommendedConcurrency": 4,
+        "strategy": "Each sub-agent authors one independent template-group + reference-doc bundle under skills/doc-site-plugin/references/, writing strictly DISJOINT files (the monorepo subtask owns its own references/monorepo.md rather than editing the deploy docs). They all use only the 00 §4.1 canonical tokens and 06-deploy-and-monorepo.md, so they run in parallel with no write conflicts and share the single bun run gate verification.",
+        "subtasks": [
+          "Author references/templates/deploy/github-pages/docs.yml.tmpl (valid GH Actions YAML; Bun+pnpm AND Node+npm named fragments, no in-YAML conditionals; path-filtered triggers on {{DEFAULT_BRANCH}}; SITE/BASE_PATH from actions/configure-pages outputs) and references/deploy-github-pages.md per 06 §3",
+          "Author references/templates/deploy/vercel/vercel.json.tmpl (framework astro, outputDirectory under {{DOCS_PKG_DIR}}/dist, build.env SITE={{SITE_URL}}, BASE_PATH=\"\") and references/deploy-vercel.md per 06 §4",
+          "Author references/templates/deploy/static/netlify.toml.tmpl ([build] base={{DOCS_PKG_DIR}}, publish=dist; [build.environment] SITE={{SITE_URL}}, BASE_PATH={{BASE_PATH}}) and references/deploy-static-netlify.md (incl. generic static-host steps) per 06 §5",
+          "Author references/templates/monorepo/pnpm-workspace.fragment.yaml.tmpl and references/templates/monorepo/root-scripts.fragment.json.tmpl (workspaces membership + dev:docs/build:docs in both pnpm --filter and npm --workspace forms) and author references/monorepo.md documenting the additive-merge/RERUN_SKIP semantics per 06 §7 (write this in your own monorepo.md — do NOT edit the deploy reference docs, which other subtasks own)"
+        ]
+      },
+      "specReferences": [
+        "specs/doc-site-plugin/06-deploy-and-monorepo.md",
+        "specs/doc-site-plugin/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "008",
+      "type": "feature",
+      "priority": 1,
+      "title": "Author drift-guard/ template group (check-docs.mjs.tmpl) + drift-guard.md",
+      "description": "Author the optional drift-guard component template group plus its reference doc, emitted only when driftGuard:true. Create skills/doc-site-plugin/references/templates/drift-guard/check-docs.mjs.tmpl — a stdlib-only ESM script (.mjs) that runs identically under node AND bun, importing only from node:fs, node:path, node:url. All runtime paths derive from import.meta.url (location-independent). Structure per 07 §3: path bootstrap; Finding model + collector ({rule,file,line,message}); manifest + page collection (walkPages following symlinks, skipping images/); the four generic rules per 07 §4 — (1) broken-link: flag local markdown/image links that do not resolve, skipping external/anchor/mailto/tel/data targets, with slug-style fallback (foo -> foo.md/foo.mdx/foo/index.mdx); (2) sidebar-parity: managed manifest slugs vs astro.config.mjs sidebar slugs, in manifest order, with unmanaged pages EXEMPT from parity (allow-listed); (3) orphaned-symlink: dangling content-dir symlinks + stale source:symlink pages with no link; (4) missing-frontmatter: every .md/.mdx must have a title frontmatter key; custom-rule discovery from an optional docs.drift.rules.mjs (default-exported array of {id, run(ctx)} rule objects; a thrown rule becomes a finding); structured report + exit codes (0 clean, 1 drift, 2 guard-error e.g. bad/missing manifest). Author references/drift-guard.md documenting: gating (emit only when driftGuard:true; declined => zero files and no docs:check/CI wiring); the docs:check script wiring ({{RUNTIME}} check-docs.mjs added to package.json, appended to a meta gate if present); the optional CI step run before build in the GH Pages workflow when that deploy target is selected; and that docs.drift.rules.mjs is a user convention the generator never emits.",
+      "acceptanceCriteria": [
+        "skills/doc-site-plugin/references/templates/drift-guard/check-docs.mjs.tmpl exists, imports only from node:fs/node:path/node:url, and derives all paths from import.meta.url",
+        "The script implements all four rules: broken-link, sidebar-parity (unmanaged exempt), orphaned-symlink (dangling + stale), missing-frontmatter (title); plus optional docs.drift.rules.mjs custom-rule discovery",
+        "The script exits 0 on no findings, 1 on drift findings, 2 on guard error (missing/invalid manifest), and emits structured findings",
+        "After substituting {{TOKEN}}s, node --check on the resolved check-docs.mjs reports no syntax errors",
+        "references/drift-guard.md documents driftGuard gating (declined => zero files), the {{RUNTIME}} check-docs.mjs docs:check wiring, and the optional pre-build CI step for GH Pages",
+        "Every {{TOKEN}} used is one of the 17 canonical tokens",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:48:01.132Z",
+      "dependsOn": [
+        "001",
+        "004"
+      ],
+      "notes": "The guard reads docs.manifest.json + astro.config.mjs sidebar + src/content/docs/** (all owned by item 004) — it is a regression net over the core scaffold's generated sidebar and the symlinker's links (item 005). The check-docs.mjs.tmpl contains the {{DOCS_PKG_DIR}} token only inside a comment (runtime paths come from import.meta.url), so the resolved script is location-independent. node --check is a fast POSIX-free syntax validation for the resolved .mjs.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/07-drift-guard.md",
+        "specs/doc-site-plugin/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "009",
+      "type": "feature",
+      "priority": 1,
+      "title": "Author rerun.md (lifecycle/safety/verification) + finalize SKILL.md phases 4-7",
+      "description": "Author the lifecycle/safety/verification reference doc and finalize the SKILL.md emit/setup/smoke/next-steps phases so they reference the now-authored component docs and the verification contract. Create skills/doc-site-plugin/references/rerun.md per spec 08: (1) provenance write during emit — compute sha256 of EXACTLY the emitted bytes for each managed plumbing file and record \"<repo-rel-path>\":\"sha256:<lowercase-hex>\" in .doc-site-scaffold.json; native (source:native) pages are NEVER recorded; give the sha256sum/shasum commands. (2) Re-run decision algorithm implementing 00 §3.3: absent->EMIT; present & hash==recorded->REGENERATE; present & hash!=recorded OR untracked->SKIP_FLAG (emit RERUN_SKIP, never clobber); native->PRESERVE; plus in-place reconciliation of manifest/sidebar/symlinks. (3) Idempotency rationale (second identical run = no-op git diff modulo .astro/dist caches). (4) Version resolution & pin policy: resolve latest via npm view at FIRST scaffold (the sole repo-data-free network use besides install), write exact astroPin/starlightPin + caret ranges in package.json, PRESERVE pins on re-run (never re-resolve), explicit opt-in bump only, and an opt-in known-good fallback set — store the ACTUAL fallback Astro+Starlight version pair in rerun.md. (5) Authoritative safety policy: write confinement (only within repo root), symlink confinement (refuse escaping from), no external transmission (network = package resolve/install only). (6) Build smoke test gate: install -> setup-docs (symlink/mixed) -> diagram prebuild (if diagrams) -> astro build; all green => OK, any nonzero => BUILD_RED with failed step + remediation, NEVER report success on red; partial-emission => no rollback, flag + name failed step. Then update skills/doc-site-plugin/SKILL.md Phases 4-7 to pull in the component reference docs (core.md, symlink.md, diagrams.md, deploy-*.md, drift-guard.md) and rerun.md, keeping the substitution table from item 001 intact and still listing exactly the 17 canonical tokens.",
+      "acceptanceCriteria": [
+        "skills/doc-site-plugin/references/rerun.md exists and documents the provenance write (sha256 of emitted bytes; native pages never recorded) with the sha256sum/shasum commands",
+        "rerun.md documents the re-run decision algorithm (EMIT/REGENERATE/SKIP_FLAG-RERUN_SKIP/PRESERVE) implementing 00 §3.3 and the idempotency no-op-diff rationale",
+        "rerun.md documents version resolution (npm view latest at first scaffold, preserve pins on re-run, explicit-bump-only) and records a concrete known-good fallback Astro+Starlight version pair",
+        "rerun.md documents the authoritative safety policy (write confinement, symlink confinement, no external transmission) and the build smoke test gate (install/setup-docs/diagram-prebuild/build; OK vs BUILD_RED; partial-emission no-rollback)",
+        "SKILL.md Phases 4-7 reference the component docs (core.md, symlink.md, diagrams.md, deploy-*.md, drift-guard.md) and rerun.md, and SKILL.md still lists exactly the 17 canonical tokens in {{TOKEN}} form",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:50:10.664Z",
+      "dependsOn": [
+        "001",
+        "004",
+        "005",
+        "006",
+        "007",
+        "008"
+      ],
+      "notes": "Depends on all component items because rerun.md and the finalized SKILL.md cross-reference every component's managed files and reference docs. This is the last content item before integration. Keep the SKILL.md token table exactly 17 tokens — item 011's token-coverage test asserts the mirror.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/08-rerun-and-verification.md",
+        "specs/doc-site-plugin/01-architecture-layout.md",
+        "specs/doc-site-plugin/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "010",
+      "type": "feature",
+      "priority": 1,
+      "title": "Register doc-site-plugin ToolEntry + SAMPLE_RELPATHS rows + regenerate adapters/goldens",
+      "description": "Wire the now-complete skill into the agent-docs emitter (spec 09). 1) tools.manifest.json: append EXACTLY ONE element to the tools[] array after the diagram-generator entry: { \"name\": \"doc-site-plugin\", \"type\": \"skill\", \"source\": \"skills/doc-site-plugin\", \"description\": \"Scaffolds an Astro 5 + Starlight docs site into a target repo from an agent-driven interview: env-driven site/base, manifest-driven sidebar/symlinker/drift guard, optional diagrams (via diagram-generator) and deploy wiring.\" }. Leave the top-level config block BYTE-FOR-BYTE unchanged. 2) src/test/golden.shared.ts: add the per-target transformed-SKILL relpath for doc-site-plugin to each target's SAMPLE_RELPATHS array, mirroring the existing diagram-generator rows — claude: skills/doc-site-plugin/SKILL.md; codex: skills/doc-site-plugin/SKILL.md; gemini: skills/doc-site-plugin/doc-site-plugin.md; cursor: rules/doc-site-plugin.mdc; copilot: instructions/doc-site-plugin.instructions.md. Register ONLY the transformed SKILL relpath per target (references/templates/schema ride verbatim in emit().verbatim and are pinned by build:check, NOT registered in SAMPLE_RELPATHS). 3) Run bun run build to emit the skill (transformed SKILL + verbatim references/ subtree incl. all templates and docs.manifest.schema.json) into all 5 adapters/<target>/ trees. 4) Regenerate the representative goldens via bun run src/test/regenerate-goldens.ts (this also updates the gemini-extension.json aggregate golden, which gains a doc-site-plugin skills[] row). 5) Confirm the renderer rel-path ../diagram-generator/scripts/diagram-render.mjs resolves to a real file relative to each target's doc-site-plugin dir. Do NOT add a new src/ module, a new gate stage, or a new package.json script. If the actual emitter output disagrees with a guessed SKILL relpath, correct SAMPLE_RELPATHS to match the real emit().files output (three-way set equality is the source of truth).",
+      "acceptanceCriteria": [
+        "tools.manifest.json has exactly one new tools[] element for doc-site-plugin (type skill, source skills/doc-site-plugin) after the diagram-generator entry, and the config block is byte-for-byte unchanged",
+        "src/test/golden.shared.ts SAMPLE_RELPATHS gains the doc-site-plugin transformed-SKILL relpath for each of claude/codex/gemini/cursor/copilot per the documented filename shapes",
+        "bun run build emits skills/doc-site-plugin (transformed SKILL + verbatim references/ subtree including templates and docs.manifest.schema.json) into all 5 adapters/<target>/ trees",
+        "The committed __golden__/ trees (incl. gemini-extension.json) are regenerated via bun run src/test/regenerate-goldens.ts and reflect the new tool",
+        "../diagram-generator/scripts/diagram-render.mjs resolves to a real file relative to each target's doc-site-plugin directory in adapters/",
+        "No new src/ module, gate stage, or package.json script was added",
+        "bun run gate passes (compile, schema:check, typecheck, lint, format:check, test, build:check, build:diagram:check all green)"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:51:58.846Z",
+      "dependsOn": [
+        "002",
+        "003",
+        "004",
+        "005",
+        "006",
+        "007",
+        "008",
+        "009"
+      ],
+      "notes": "This is the integration item — it must run after ALL skill content exists so the verbatim subtree and transformed SKILL emit completely. build:check (in gate) is the exhaustive byte-identity proof across all 5 adapters; the SAMPLE_RELPATHS goldens are the fast representative spot-check. The gate chain itself is unchanged (09 §7). Per 09 §6.1, if a per-target SKILL transform differs from the guessed relpath, trust the emitter's actual emit().files output.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/09-integration-and-emission.md",
+        "specs/doc-site-plugin/01-architecture-layout.md"
+      ]
+    },
+    {
+      "id": "011",
+      "type": "test",
+      "priority": 1,
+      "title": "Add ajv devDep + doc-site-templates.test.ts (token-coverage + schema-fixture)",
+      "description": "Add the in-repo template-asset validation tests (10 §4). 1) Add ajv as a TEST-ONLY devDependency in package.json (devDependencies, NOT dependencies — no runtime dep is added to agent-docs, exactly as @rgrove/parse-xml is test-only for diagrams). 2) Create src/test/doc-site-templates.test.ts with two describe blocks. (a) Token-coverage: walk skills/doc-site-plugin/references/templates/** collecting every {{TOKEN}} (regex /\\{\\{([A-Z0-9_]+)\\}\\}/g); assert every used token is in the canonical 17-token set AND appears in SKILL.md (no undefined tokens); assert every canonical token is exercised by at least one template (no orphan tokens); assert SKILL.md's substitution table mirrors the canonical set exactly (lists all 17, no extras). The canonical set is the in-test mirror array of 00 §4.1: SITE_TITLE, SITE_DESC, SITE_URL, BASE_PATH, REPO_SLUG, GITHUB_URL, PKG_MANAGER, RUNTIME, DOCS_PKG_DIR, IMAGES_SRC_DIR, ACCENT_LIGHT, ACCENT_DARK, DEFAULT_BRANCH, ASTRO_VERSION, STARLIGHT_VERSION, DOCS_PKG_DIR_TO_ROOT, SYMLINK_PAGE_LINES. (b) Schema-fixture: load skills/doc-site-plugin/references/docs.manifest.schema.json, compile it with Ajv2020 (ajv/dist/2020.js), assert it compiles, and run accept/reject fixtures. 3) Add fixtures under src/test/__fixtures__/doc-site/manifests/: valid-minimal.json, valid-mixed.json, valid-unmanaged.json (accept); invalid-symlink-missing-from.json, invalid-native-with-from.json, invalid-missing-source.json, invalid-duplicate-slug.json, invalid-unknown-key.json (reject). Honor the slug-uniqueness caveat (10 §4.3): if the static schema cannot express slug-uniqueness, move the duplicate-slug case to it.skip with a comment pointing at the guard that owns it, rather than failing. Import REPO_ROOT from ./golden.shared.js. Use the existing vitest runner — add no new framework and no new gate stage.",
+      "acceptanceCriteria": [
+        "ajv is added to package.json devDependencies (not dependencies)",
+        "src/test/doc-site-templates.test.ts exists with a token-coverage block asserting no undefined tokens, no orphan tokens, and SKILL.md's table mirrors the canonical 17-token set exactly",
+        "The schema-fixture block compiles docs.manifest.schema.json with Ajv2020 and asserts it accepts valid-minimal/valid-mixed/valid-unmanaged and rejects invalid-symlink-missing-from/invalid-native-with-from/invalid-missing-source/invalid-unknown-key (duplicate-slug handled per the 10 §4.3 caveat)",
+        "Fixtures exist under src/test/__fixtures__/doc-site/manifests/ for all 8 cases",
+        "No new vitest framework and no new gate stage were added (tests run under the existing test stage)",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:55:58.883Z",
+      "dependsOn": [
+        "009"
+      ],
+      "notes": "Depends on 009 — the last item that authors the skill assets these tests validate. The tests read ONLY from skills/doc-site-plugin/ (the template tree, SKILL.md, and docs.manifest.schema.json), never from adapters/ or SAMPLE_RELPATHS, so they need the authored assets (present after 009), not the emitter integration (item 010). The token-coverage test is what makes 00 §4.1's closed-vocabulary rule enforceable: it fails on any orphan or undefined token. Mirror the diagram-generator test patterns under src/test/.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/10-testing-strategy.md",
+        "specs/doc-site-plugin/00-core-definitions.md"
+      ]
+    },
+    {
+      "id": "012",
+      "type": "test",
+      "priority": 1,
+      "title": "Add doc-site-scaffold.test.ts + answer-set fixtures + __scaffold_golden__ + regeneration script",
+      "description": "Add the in-repo scaffold-output golden tests proving the {{TOKEN}} substitution procedure is deterministic and agent-agnostic (10 §5/§6). 1) Create src/test/doc-site-scaffold.test.ts with a pure resolveTree helper that mirrors the agent's mechanical emit (01 §2.1): for each SELECTED template group (per the GROUPS predicate table in 10 §5.2 — core always; symlink when contentMode is symlink|mixed; diagrams when diagrams; deploy/github-pages, deploy/vercel, deploy/static per deploy[]; drift-guard when driftGuard; monorepo when monorepo), read each .tmpl, globally replace every {{TOKEN}} with its answer value (throw on a missing answer), strip the .tmpl extension, copy non-.tmpl assets verbatim. Assert the resolved tree is byte-identical to the committed src/test/__scaffold_golden__/<set>/ tree with BIDIRECTIONAL set equality (a leaked declined-group file fails). Add: the decline-all invariant guard (only core/ files emitted; no setup-docs/prebuild/docs.yml/vercel/netlify/check-docs/workspace artifacts); a determinism check (two resolveTree runs equal); and the template-group coverage meta-test asserting every group present under templates/ is exercised by >=1 answer set. 2) Answer-set fixtures under src/test/__fixtures__/doc-site/answers/ — each pairs a token map with a selection record: single-symlink.json (symlink, deploy:[github-pages], driftGuard on, diagrams off), monorepo-mixed.json (mixed, monorepo:true, deploy:[vercel], diagrams on, driftGuard on), decline-all.json (native, diagrams off, deploy:[], driftGuard off, monorepo off). To cover deploy/static, ADD a fourth answer set (e.g. static-host.json) OR extend monorepo-mixed deploy to include static-netlify so the deploy/static group is exercised (the coverage meta-test must pass). 3) Add src/test/regenerate-scaffold-goldens.ts — a DELIBERATE writer (mirroring src/test/regenerate-goldens.ts) that calls the same resolveTree over the answer sets and writes __scaffold_golden__/<set>/; goldens are NEVER auto-overwritten by a plain vitest run. 4) Generate and commit the __scaffold_golden__/ trees. Import REPO_ROOT from ./golden.shared.js. No Astro build, no diagram render, no network in any test.",
+      "acceptanceCriteria": [
+        "src/test/doc-site-scaffold.test.ts exists with a pure resolveTree helper gated by the 10 §5.2 GROUPS predicates and asserts byte-identical resolved-vs-golden trees with bidirectional set equality",
+        "The decline-all answer set resolves to ONLY core/-group files (no setup-docs/prebuild/docs.yml/vercel/netlify/check-docs/workspace artifacts), asserted by an explicit invariant guard",
+        "Answer-set fixtures exist under src/test/__fixtures__/doc-site/answers/ (single-symlink, monorepo-mixed, decline-all, plus coverage for deploy/static via a fourth set or an extended monorepo-mixed deploy)",
+        "The template-group coverage meta-test passes: every template group present under templates/ (incl. deploy/static) is exercised by at least one answer set",
+        "src/test/regenerate-scaffold-goldens.ts exists as a deliberate writer and the committed src/test/__scaffold_golden__/<set>/ trees match resolveTree output; goldens are not auto-overwritten on a plain vitest run",
+        "No Astro/Starlight build, diagram render, or network call occurs in any test",
+        "bun run gate passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-19T18:59:43.947Z",
+      "dependsOn": [
+        "009"
+      ],
+      "notes": "This is the scaffolded-output half of REQ-PORT-02 (item 011 proves the tool-emission half + token vocabulary + schema). Depends on 009 — it reads references/templates/** (present after 009) via its own resolveTree helper, answer-set fixtures, and __scaffold_golden__ trees; it consumes nothing from item 011, so 011 and 012 are independently parallelizable. 10 §6 item 1 explicitly requires a static-netlify answer set so deploy/static is covered — the coverage meta-test enforces it. Goldens follow the same never-auto-overwrite discipline as the emitter golden suite.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/doc-site-plugin/10-testing-strategy.md",
+        "specs/doc-site-plugin/01-architecture-layout.md"
+      ]
+    }
+  ]
+}

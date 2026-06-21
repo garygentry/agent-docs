@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "diagrams": "{{RUNTIME}} scripts/diagram-render.mjs src/diagrams/arch.json --theme light --accent '{{ACCENT_LIGHT}}' --format svg --out-file public/diagrams/arch.light.svg && {{RUNTIME}} scripts/diagram-render.mjs src/diagrams/arch.json --theme dark --accent '{{ACCENT_DARK}}' --format svg --out-file public/diagrams/arch.dark.svg",
+    "prebuild": "{{PKG_MANAGER}} run diagrams"
+  }
+}

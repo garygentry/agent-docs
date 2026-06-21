@@ -1,0 +1,685 @@
+{
+  "schemaVersion": "1",
+  "project": "agent-agnostic-scaffold",
+  "description": "Greenfield Bun+TypeScript emitter that transforms canonical Claude-native tool definitions (skills/agents/commands/references/scripts) into per-target adapter bundles (claude/codex/cursor/gemini/copilot), with manifest validation, discovery, per-target transforms, overrides, atomic publish, drift guard, coverage report, plugin packaging, and a sample tool. Byte-stable, deterministic output (REQ-EMIT-06). Implementation specs live under specs/agent-agnostic-scaffold/ (00-08 + TRACEABILITY).",
+  "items": [
+    {
+      "id": "001",
+      "type": "chore",
+      "priority": 1,
+      "title": "Scaffold Bun+TypeScript project manifest, build config, and directory skeleton",
+      "description": "Greenfield setup — the repo currently has no package.json. Create, per spec 01 §3/§4: package.json (name agent-docs-scaffold, version 0.1.0, type module, private, main dist/index.js, types dist/index.d.ts, bin agent-docs-build->dist/cli.js; runtime deps zod ^3.24.0, zod-to-json-schema ^3.24.0, yaml ^2.6.0, smol-toml ^1.3.0; devDeps typescript ^5.7.0, bun-types latest, vitest ^3.0.0, eslint ^9.0.0, typescript-eslint ^8.0.0, prettier ^3.4.0; scripts build='bun run src/cli.ts build', build:check='bun run src/cli.ts build --check', schema:gen='bun run src/schema-gen.ts', schema:check='bun run src/schema-gen.ts --check', compile='tsc', typecheck='tsc --noEmit', lint='eslint src/', format:check='prettier --check .', test='vitest run', gate='bun run compile && bun run schema:check && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build:check'). tsconfig.json exactly per 01 §4 (ES2022/ESNext/bundler, strict, noUncheckedIndexedAccess, outDir dist, rootDir src, types bun-types). vitest.config.ts ({ test: { include: ['src/**/*.test.ts'] } }). eslint.config.mjs (ESLint 9 flat config + typescript-eslint, ignore dist/, adapters/, *.mjs). .prettierrc.json (semi true, singleQuote false, trailingComma all, printWidth 100, tabWidth 2). .bun-version (1.3.10). .gitignore excluding node_modules/, dist/, *.tmp-* but NOT adapters/ (CON-02). Create empty directory skeleton with .gitkeep: skills/ agents/ commands/ references/ scripts/ overrides/ adapters/ schemas/ src/ src/targets/ src/test/. Do NOT implement any src/*.ts logic — later items own that. Run bun install so bun.lock is generated.",
+      "acceptanceCriteria": [
+        "package.json exists with the exact deps, devDeps, and scripts from 01 §3",
+        "tsconfig.json, vitest.config.ts, eslint.config.mjs, .prettierrc.json, .bun-version, .gitignore all exist with the specified content",
+        ".gitignore excludes node_modules/, dist/, *.tmp-* and does NOT ignore adapters/",
+        "Directory skeleton (skills/ agents/ commands/ references/ scripts/ overrides/ adapters/ schemas/ src/ src/targets/ src/test/) exists and is tracked",
+        "The `gate` script chains compile, schema:check, typecheck, lint, format:check, test, and build:check in that order (CON-05)",
+        "bun install completes and produces bun.lock"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:30:06.374Z",
+      "dependsOn": [],
+      "notes": "Pure scaffolding. No emitter logic. The gate script is the CI bar (CON-05) but most scripts reference files created by later items — that is expected; they need not run green yet.",
+      "estimatedIterations": 1,
+      "model": "sonnet",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/01-architecture-layout.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "002",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement core model: types, Zod schemas, constants, and error hierarchy",
+      "description": "Create the foundation types per spec 00. src/model.ts must export, verbatim to 00: enums ToolType (z.enum skill/agent/command/script/reference) and Target (z.enum claude/codex/copilot/cursor/gemini); Zod schemas TargetToolFlags, ToolEntry (name regex kebab-case, type, source, description?, targets?), EmitterConfig (skillsDir/agentsDir/commandsDir/referencesDir/scriptsDir/overridesDir/adaptersDir defaults + targets array default ['claude','codex','copilot','cursor','gemini']), Manifest (version literal 1, config default, tools array); interfaces ParsedDoc, SkillRecord, AgentRecord, CommandRecord; emit-output interfaces EmittedFile, DropRecord (with kind: 'fallback'|'skipped'), VerbatimRecord, ManifestEntry, EmitResult; report interfaces TargetCoverage, ReportModel; DriftEntry (kind: 'content'|'orphan'|'missing'); constants KEY_ORDER, TARGET_ORDER, REGEN_CMD ('bun run build'), PROVENANCE (yamlComment + htmlComment forms), YAML_OPTS ({ sortKeys: false, lineWidth: 4096 }). src/errors.ts must export EmitterError base (carries stable code, name = class name) plus ManifestValidationError (code MANIFEST_INVALID, issues[]), MalformedFrontmatterError (FRONTMATTER_MALFORMED, sourcePath), SourceNotFoundError (SOURCE_NOT_FOUND, sourcePath), PathEscapeError (PATH_ESCAPE, attemptedPath), DriftError (DRIFT_DETECTED, entries[]). Stale overrides are deliberately NOT an error — do not add OverrideConflictError. src/index.ts barrel must re-export everything from ./model.js and ./errors.js (entry functions added by later items). Every exported type and field gets a /** */ doc comment (00 §1 quality bar).",
+      "acceptanceCriteria": [
+        "src/model.ts exports all enums, Zod schemas, record/emit/report interfaces, DriftEntry, and constants listed in 00",
+        "DropRecord includes the 'kind' discriminator; DriftEntry.kind is 'content'|'orphan'|'missing'",
+        "src/errors.ts exports EmitterError + the 5 subclasses, each with a stable code and name === class name; no OverrideConflictError exists",
+        "src/index.ts re-exports all of ./model.js and ./errors.js",
+        "Manifest.parse() accepts a minimal valid manifest and rejects one missing version/tools",
+        "tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:31:24.003Z",
+      "dependsOn": [
+        "001"
+      ],
+      "notes": "This is the single source of truth every other module imports. KEY_ORDER and TARGET_ORDER must be the ONLY ordering literals — later items reference them, never re-spell target arrays.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/00-core-definitions.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "003",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement manifest loading, Zod validation, and manifest-source cross-check",
+      "description": "Create src/manifest.ts per spec 02 §2. Implement loadManifest(manifestPath: string): Manifest that reads tools.manifest.json, JSON-parses it, and validates with the Manifest Zod schema from src/model.ts; on failure throw ManifestValidationError with a formatted issue list (one readable string per Zod issue, path + message). Implement the TQ-4 manifest<->source cross-check (02 §2.3): for every ToolEntry, resolve its source path relative to the repo root and verify it exists on disk — throw SourceNotFoundError when missing; additionally flag mismatches where a tool's declared type/name disagrees with what the source path implies (per 02 §2.3 rules). Keep file IO confined to the repo root. Include co-located src/manifest.test.ts (08 §4.1) covering: a minimal valid manifest loads and applies config defaults; a manifest missing version/tools throws ManifestValidationError; a tool whose source does not exist throws SourceNotFoundError.",
+      "acceptanceCriteria": [
+        "loadManifest reads + Zod-validates tools.manifest.json and returns a typed Manifest",
+        "Invalid manifest throws ManifestValidationError with a formatted issues[] list",
+        "A ToolEntry.source that does not exist on disk throws SourceNotFoundError",
+        "Manifest<->source cross-check (TQ-4, 02 §2.3) is implemented",
+        "src/manifest.test.ts covers valid load, invalid manifest, and missing source",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:33:07.292Z",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "Cross-check resolution detail is in 02 §2.3. Use the Manifest schema and error classes from src/model.ts and src/errors.ts — do not redefine them.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/02-manifest-and-config.md",
+        "specs/agent-agnostic-scaffold/00-core-definitions.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "004",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement config resolution and path-confinement helpers",
+      "description": "Create src/config.ts and src/paths.ts per spec 02 §3 and 05 §7. src/config.ts: resolveConfig(config: EmitterConfig, repoRoot: string): ResolvedRoots — turn the repo-relative POSIX dirs in EmitterConfig (skillsDir/agentsDir/commandsDir/referencesDir/scriptsDir/overridesDir/adaptersDir) into absolute roots, plus repoRoot itself; export the ResolvedRoots type (05 §7.1 shape). No emitter module may hardcode a root path or the target list (REQ-REUSE-01) — all come from config. src/paths.ts: path-confinement helpers — a resolveWithin(root, relpath) that resolves a path and throws PathEscapeError (from src/errors.ts) if the result escapes root (REQ-SEC-01), plus any helpers 05 §7 specifies (POSIX normalization, confinement matrix checks). Include co-located src/config.test.ts and src/paths.test.ts covering: default config resolves to repo-root-relative absolute roots; a custom config (different dirs) resolves correctly proving no hardcoding; resolveWithin allows in-root paths and throws PathEscapeError for '../escape' and absolute-outside paths.",
+      "acceptanceCriteria": [
+        "resolveConfig maps EmitterConfig dirs to a ResolvedRoots object of absolute paths (05 §7.1)",
+        "A non-default config resolves to the configured locations (proves REQ-REUSE-01, no hardcoding)",
+        "resolveWithin throws PathEscapeError for paths escaping the root and returns confined paths otherwise",
+        "Co-located tests cover default + custom config and the confinement allow/deny cases",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:35:27.786Z",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "ResolvedRoots is consumed by discovery (007), emit (013), publish (015), and drift guard (016) — match the 05 §7.1 shape exactly so those items bind cleanly.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/02-manifest-and-config.md",
+        "specs/agent-agnostic-scaffold/05-overrides-publish-determinism.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "005",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement JSON-Schema generation with write and --check modes",
+      "description": "Create src/schema-gen.ts per spec 02 §4. Provide a pure builder buildManifestSchema() that runs zod-to-json-schema over the Manifest Zod schema (from src/model.ts) and returns the JSON Schema object deterministically. Add a CLI entry (guarded by import.meta.main): default mode writes schemas/tools.manifest.schema.json (byte-stable, stable key order, trailing newline); --check mode re-derives the schema, compares to the committed file, and exits nonzero with a clear diff message on drift, zero when identical. The schemas/ output path is an intentional fixed build path (not part of the reuse config surface). Include co-located src/schema-gen.test.ts (08 §7.2): buildManifestSchema is deterministic across two calls (byte-identical); --check passes against a freshly written schema and fails against a mutated one.",
+      "acceptanceCriteria": [
+        "buildManifestSchema() returns a deterministic JSON Schema derived from the Manifest Zod schema",
+        "Default mode writes schemas/tools.manifest.schema.json byte-stably",
+        "--check exits nonzero on drift and zero when the committed schema matches",
+        "src/schema-gen.test.ts proves determinism and the --check pass/fail behavior",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:37:17.988Z",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "Pre-sort object keys or otherwise guarantee stable ordering so the committed schema is byte-stable (REQ-DISC-03). schema:gen / schema:check scripts in package.json invoke this file.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/02-manifest-and-config.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "006",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement order-preserving frontmatter parse and serialize",
+      "description": "Create src/frontmatter.ts per spec 03 §2. parseFrontmatter(content: string): ParsedDoc — split the leading YAML frontmatter block (--- fenced) from the markdown body, parse the YAML into an insertion-order-preserving Map<string, unknown> (ParsedDoc.frontmatter), and return the byte-preserved body. Throw MalformedFrontmatterError (from src/errors.ts) on an unterminated/invalid frontmatter block. serializeFrontmatter(frontmatter: Map<string, unknown>): string — render the Map back to a byte-stable YAML frontmatter block using the `yaml` package with YAML_OPTS (sortKeys:false, lineWidth:4096) so key order is preserved exactly as given. Import the yaml stringify as: import { stringify as stringifyYaml } from 'yaml'; call stringifyYaml(value, YAML_OPTS). Include co-located src/frontmatter.test.ts (08 §4.2): round-trip preserves key order and body bytes; a malformed block throws MalformedFrontmatterError; serialize output is byte-identical across two calls.",
+      "acceptanceCriteria": [
+        "parseFrontmatter returns an order-preserving Map + byte-preserved body",
+        "Malformed frontmatter throws MalformedFrontmatterError",
+        "serializeFrontmatter produces byte-stable YAML honoring insertion order (YAML_OPTS, sortKeys:false)",
+        "src/frontmatter.test.ts covers round-trip order/body preservation, malformed input, and byte-stability",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:38:30.314Z",
+      "dependsOn": [
+        "002"
+      ],
+      "notes": "Order preservation is load-bearing for determinism (REQ-EMIT-06). Map insertion order is the canonical order; never sort keys here.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/03-discovery-and-canonical-model.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "007",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement canonical source discovery into typed records",
+      "description": "Create src/discover.ts per spec 03 §3. Entry point discover(manifest: Manifest, roots: ResolvedRoots): a DiscoveryResult containing SkillRecord[]/AgentRecord[]/CommandRecord[] plus shared references & scripts (03 §3.6, REQ-TOOLS-04). For each ToolEntry walk its source under the appropriate ResolvedRoots dir and parse via parseSkill (03 §3.3), parseAgent (03 §3.4), parseCommand (03 §3.5) using src/frontmatter.ts. parseSkill must implement the TQ-3 canonical skill metadata nesting (03 §4): non-name/description frontmatter nests under a single 'metadata' key as an ordered Map; gather skill-owned ownRefs (references/scripts under the skill dir). Use a shared confined file-read helper (03 §3.2) that goes through src/paths.ts (PathEscapeError on escape, REQ-SEC-01). All output ordering is deterministic (sort by name; 03 §3.7). Include co-located src/discover.test.ts (08 §4.3): a fixture skill/agent/command parse into correct records; TQ-3 metadata nests under 'metadata'; shared references/scripts are discovered; deterministic ordering across two runs.",
+      "acceptanceCriteria": [
+        "discover() returns typed SkillRecord/AgentRecord/CommandRecord plus shared references & scripts",
+        "parseSkill nests extra frontmatter under a single 'metadata' ordered Map (TQ-3, 03 §4) and collects ownRefs",
+        "File reads are confined via src/paths.ts and throw PathEscapeError on escape",
+        "Output ordering is deterministic (sorted by name)",
+        "src/discover.test.ts covers skill/agent/command parsing, TQ-3 nesting, shared refs/scripts, and determinism",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:40:12.632Z",
+      "dependsOn": [
+        "004",
+        "006"
+      ],
+      "notes": "TQ-3 nested metadata shape (03 §4/§5) is what the cursor/gemini transforms read — get the single-'metadata'-key nesting right. Use ResolvedRoots from 004 and frontmatter from 006.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/03-discovery-and-canonical-model.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "008",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement transform foundation, shared helpers, registry, and Claude target",
+      "description": "Create the transform layer per spec 04 §3/§4/§6. src/targets/_shared.ts: hintValue (04 §4.1 — extract canonical argument-hint, handling the TQ-3 nested metadata shape from 03 §4), orderFrontmatter (04 §4.2 — reorder a frontmatter Map by KEY_ORDER, REQ-EMIT-06), renderFrontmatter (04 §4.3 — frontmatter + Form A provenance), dropAllClaudeKeys (04 §4.4 — record agent structural-key drops as DropRecords), and skill-owned verbatim copy handling (04 §4.6 — map SkillRecord.ownRefs to VerbatimRecord[] via EmitResult.verbatim; cursor reference relpath is rules/<n>/<ref-subpath>). Define the TargetTransform interface (04 §3): transformSkill, transformAgent, transformCommand, and aggregateManifest(entries, identity?) returning EmittedFile/DropRecord/ManifestEntry/VerbatimRecord pieces. src/targets/index.ts: a registry mapping each Target to its TargetTransform. src/targets/claude.ts: the canonical target — passes records through with NO drops (04 §6), Form A provenance on generated frontmatter, verbatim refs copied. Include co-located src/targets/claude.test.ts (08 §4.4): a skill/agent/command transform to the expected claude relpaths/content; no DropRecords are produced for claude.",
+      "acceptanceCriteria": [
+        "_shared.ts exports hintValue, orderFrontmatter (by KEY_ORDER), renderFrontmatter (Form A), dropAllClaudeKeys, and ownRefs->VerbatimRecord handling (cursor relpath rules/<n>/<ref-subpath>)",
+        "TargetTransform interface and the Target->transform registry exist in src/targets/index.ts",
+        "claude.ts emits canonical output with zero DropRecords",
+        "src/targets/claude.test.ts covers skill/agent/command transforms and asserts no drops",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:43:12.987Z",
+      "dependsOn": [
+        "002",
+        "006"
+      ],
+      "notes": "This item defines the contract the four other targets (009-012) implement against and is on their critical path. orderFrontmatter must use KEY_ORDER and nothing else. Per-target target file forms are authoritative in 04 §7-§10 (supersede tech-spec §5.2).",
+      "estimatedIterations": 2,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "009",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement Codex target transforms (TOML agents + openai.yaml aggregate)",
+      "description": "Create src/targets/codex.ts per spec 04 §7, implementing TargetTransform. transformSkill: emit skills/<n>/SKILL.md (04 §7.1/§7.2). transformAgent (04 §7.3, TQ-2): render the agent as TOML via smol-toml, dropping unsupported structural keys and recording each as a DropRecord (kind per 04 §4.5); use a renderCodexAgentToml helper (04 §7.5) with deterministic key ordering (pre-sort or fixed order) and triple-quoted literals for multiline values like developer_instructions. transformCommand (04 §7.4) + aggregateManifest: build the codex openai.yaml aggregate serialized with the `yaml` package + YAML_OPTS, with the _generated key serialized first (Form C ordering). Byte-stable output (REQ-EMIT-06): smol-toml key ordering MUST be deterministic. Include co-located src/targets/codex.test.ts: agent transform produces TOML with expected keys and records the expected drops; openai.yaml aggregate has _generated first; output is byte-identical across two runs.",
+      "acceptanceCriteria": [
+        "transformSkill emits skills/<n>/SKILL.md",
+        "transformAgent emits deterministic TOML via smol-toml and records structural-key drops as DropRecords (TQ-2)",
+        "aggregateManifest emits openai.yaml with _generated first (Form C), serialized via yaml + YAML_OPTS",
+        "Output is byte-identical across two emits",
+        "src/targets/codex.test.ts covers the agent drops, TOML shape, aggregate ordering, and byte-stability",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:45:04.323Z",
+      "dependsOn": [
+        "008"
+      ],
+      "notes": "smol-toml key ordering is the determinism risk — pre-sort or force a fixed order before stringify. Carry-forward warnings (04 §12): Codex per-agent tool key, skills path, prompts deprecation.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "010",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement Cursor target transforms (.mdc rules)",
+      "description": "Create src/targets/cursor.ts per spec 04 §8, implementing TargetTransform. transformSkill: emit a flattened rule at rules/<n>.mdc (no skill directory); skill-owned references land at rules/<n>/<ref-subpath> as verbatim copies (per 04 §4.6 / _shared). transformAgent and transformCommand per 04 §8.2 rules table, recording any drops/fallbacks as DropRecords. Read skill metadata via the canonical nested shape (single 'metadata' key, 03 §4) using the shared hintValue helper. Byte-stable, deterministic output (REQ-EMIT-06). Include co-located src/targets/cursor.test.ts: a skill emits rules/<n>.mdc with the expected frontmatter (argument-hint resolved from nested metadata) and body; verbatim refs land under rules/<n>/; agent/command transforms produce the expected outputs and any expected drops.",
+      "acceptanceCriteria": [
+        "transformSkill emits flattened rules/<n>.mdc and places ownRefs under rules/<n>/<ref-subpath>",
+        "argument-hint is resolved from the nested 'metadata' Map (03 §4) via hintValue",
+        "transformAgent/transformCommand emit per 04 §8 and record expected drops",
+        "src/targets/cursor.test.ts covers the .mdc output, nested-metadata handling, verbatim refs, and drops",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:46:24.705Z",
+      "dependsOn": [
+        "008"
+      ],
+      "notes": "Cursor command argument syntax is unconfirmed (carry-forward, 04 §12) — follow 04 §8 and record a drop/fallback if needed. The flattened rules/<n>.mdc layout is what golden/drift tests assert against.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "011",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement Gemini target transforms (TOML commands + gemini-extension.json)",
+      "description": "Create src/targets/gemini.ts per spec 04 §9, implementing TargetTransform. transformSkill/transformAgent per 04 §9 rules table. transformCommand: emit commands as TOML via smol-toml (deterministic key ordering). aggregateManifest(entries: ManifestEntry[], identity: { name: string; version: string }): emit gemini-extension.json in Form C with the _generated key first; the identity (name/version) is received as a parameter sourced from PluginMeta (07 §3.2) — do NOT hardcode name/version. Gemini ':' subdir command namespacing is OUT of scope for v1 — commands are emitted flat; do not attempt nested a:b mapping. Byte-stable output (REQ-EMIT-06). Include co-located src/targets/gemini.test.ts: command transform produces deterministic TOML; aggregateManifest with a given identity produces gemini-extension.json with _generated first and the passed name/version (not hardcoded); byte-identical across two runs.",
+      "acceptanceCriteria": [
+        "transformCommand emits deterministic TOML via smol-toml",
+        "aggregateManifest takes identity:{name,version} as a parameter and emits gemini-extension.json (Form C, _generated first) using it — no hardcoded name/version",
+        "':' subdir command namespacing is not implemented (flat, out-of-scope v1)",
+        "src/targets/gemini.test.ts proves identity threading, Form C ordering, and byte-stability",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:48:23.494Z",
+      "dependsOn": [
+        "008"
+      ],
+      "notes": "Identity threading (V-020) and namespacing-out (V-021) were resolved decisions. GEMINI.md has no frontmatter (carry-forward, 04 §12). emit (013) must pass the identity through when invoking aggregateManifest.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "012",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement Copilot target transforms (.agent.md/.prompt.md/.instructions.md)",
+      "description": "Create src/targets/copilot.ts per spec 04 §10, implementing TargetTransform. transformSkill/transformAgent/transformCommand emit the Copilot file forms per the 04 §10 rules table: agents as .agent.md, commands as .prompt.md, and the appropriate .instructions.md outputs (04 §10.2). Use Form A/B provenance as specified. Record any unsupported constructs as DropRecords (kind fallback/skipped) per 04 §4.5. Commands map cleanly (argument-hint preserved, HIGH confidence per 04 §10). Byte-stable, deterministic output (REQ-EMIT-06). Include co-located src/targets/copilot.test.ts: a skill/agent/command transform produces the expected .agent.md/.prompt.md/.instructions.md relpaths and content; expected drops/fallbacks are recorded; byte-identical across two runs.",
+      "acceptanceCriteria": [
+        "transformAgent emits .agent.md, transformCommand emits .prompt.md, and instructions emit .instructions.md per 04 §10",
+        "Unsupported constructs are recorded as DropRecords with the correct kind",
+        "Output is byte-identical across two emits",
+        "src/targets/copilot.test.ts covers the three file forms and the recorded drops",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:50:05.694Z",
+      "dependsOn": [
+        "008"
+      ],
+      "notes": "Copilot mode-vs-agent (.agent.md vs legacy .chatmode.md) is a carry-forward (04 §12) — follow 04 §10's .agent.md decision.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "013",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement emit orchestration across all targets",
+      "description": "Create src/emit.ts per spec 04/05 §1. emit(manifest: Manifest, roots: ResolvedRoots): EmitResult — run discover() (007), then for each Target in TARGET_ORDER look up its TargetTransform in the registry (008) and apply transformSkill/transformAgent/transformCommand over the discovered records, collecting EmittedFile[], DropRecord[], ManifestEntry[] (invoking aggregateManifest where a target needs it, passing the gemini identity from manifest/PluginMeta), and VerbatimRecord[] (skill-owned + shared references/scripts). emit is IN-MEMORY only — it does NOT write to disk and does NOT apply overrides; publish (015) and overrides (014) are separate steps. Deterministic ordering throughout (TARGET_ORDER, sorted records). Include an integration test src/test/emit.test.ts that builds a small in-memory/temp fixture repo (a skill + agent + command) and asserts emit produces files for all five targets with stable relpaths and the expected drops, returning an EmitResult (no disk writes to adapters/).",
+      "acceptanceCriteria": [
+        "emit(manifest, roots) returns an EmitResult aggregating files/drops/manifestEntries/verbatim across all targets in TARGET_ORDER",
+        "emit is in-memory only — it writes nothing to disk and applies no overrides",
+        "The gemini aggregate identity is threaded through from manifest/PluginMeta",
+        "An integration test over a fixture repo asserts five-target output and expected drops",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:53:12.114Z",
+      "dependsOn": [
+        "007",
+        "008",
+        "009",
+        "010",
+        "011",
+        "012"
+      ],
+      "notes": "Keep emit pure/in-memory so determinism and override tests can assert on EmitResult.files directly. Overrides overlay and disk publish are downstream (014/015).",
+      "estimatedIterations": 2,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/04-transforms.md",
+        "specs/agent-agnostic-scaffold/05-overrides-publish-determinism.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "014",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement override loading and file-level overlay",
+      "description": "Create src/overrides.ts per spec 05 §2/§3. loadOverrides(overridesDir: string): an override set keyed by adapters-relative POSIX path, reading the overrides/<target>/<relpath> tree (05 §2.1, §3.1) through the confined file helpers (src/paths.ts). applyOverrides(files: EmittedFile[], overrides): OverlayResult — file-level WHOLE-FILE replace: for each emitted file with a matching override path, replace its content with the override bytes; return the merged EmittedFile[] plus an overridden[] list of replaced adapter-relative paths (EmitResult.overridden). Distinguishability (V-005): an override existing for a path ⇔ that file is author-sourced; overrides carry no provenance header. A stale override (targets a path no longer emitted) is NOT applied and NOT an error — collect it for the report (staleOverrides). Include co-located src/overrides.test.ts (08 §5.3): an override replaces the emitted bytes and is listed in overridden[]; a stale override is collected but not applied and throws nothing; override bytes are preserved verbatim.",
+      "acceptanceCriteria": [
+        "loadOverrides reads overrides/<target>/<relpath> into a path-keyed set via confined IO",
+        "applyOverrides whole-file-replaces matching emitted files and returns overridden[]",
+        "Override bytes are preserved verbatim with no provenance header",
+        "Stale overrides are collected (staleOverrides) without applying or throwing",
+        "src/overrides.test.ts covers replacement, the overridden[] list, verbatim bytes, and stale handling",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:55:11.208Z",
+      "dependsOn": [
+        "013"
+      ],
+      "notes": "Stale overrides are deliberately non-fatal (00 §4 note, 05 §3.3) — surfaced via ReportModel.staleOverrides, never thrown.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/05-overrides-publish-determinism.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "015",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement atomic publish and stale cleanup",
+      "description": "Create src/publish.ts per spec 05 §4/§5. publish(files: EmittedFile[], verbatim: VerbatimRecord[], roots: ResolvedRoots) — write the final adapter set to disk atomically: stage into a *.tmp-* staging dir then atomic rename into adaptersDir (05 §4.1/§4.3), failing intact (on error the existing adapters/ is untouched). Every single-file write goes through the confined writer (src/paths.ts, PathEscapeError on escape, REQ-SEC-01). Publish BOTH EmittedFile.content and the verbatim records byte-for-byte (verbatim copies get NO provenance header). Stale cleanup (05 §5, REQ-EMIT-08): remove committed adapter files that are no longer in the emitted set. Idempotent (REQ-EMIT-05): re-publishing identical input changes nothing on disk and re-running produces byte-identical results (no Date.now(), no nondeterministic ordering). Include co-located src/publish.test.ts: publishing to a temp adapters dir writes the expected files; a second identical publish is a no-op (idempotent); a previously-committed file absent from the new set is removed (stale cleanup); a path escaping the root throws PathEscapeError.",
+      "acceptanceCriteria": [
+        "publish stages to *.tmp-* and atomically renames into adaptersDir, failing intact",
+        "Both files and verbatim records are written byte-for-byte (verbatim has no provenance header)",
+        "Stale committed adapter files no longer emitted are removed (REQ-EMIT-08)",
+        "Re-publishing identical input is idempotent and byte-stable (REQ-EMIT-05/06)",
+        "Confined writes throw PathEscapeError on escape",
+        "src/publish.test.ts covers write, idempotency, stale cleanup, and confinement; vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:56:49.423Z",
+      "dependsOn": [
+        "013",
+        "004"
+      ],
+      "notes": "Staging-dir name must not embed a timestamp/pid in committed content. Atomic rename gives crash-safety; the loop runner may interrupt mid-write.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/05-overrides-publish-determinism.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "016",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement drift guard (re-emit and diff)",
+      "description": "Create src/driftguard.ts per spec 06 §2. driftCheck(manifest: Manifest, roots: ResolvedRoots): DriftEntry[] — re-emit in memory (emit 013 + applyOverrides 014), then compare the emitted+overlaid set against the committed files on disk under adaptersDir AND .claude-plugin/: set-based comparison yields orphan (committed but not emitted) and missing (emitted but not committed) entries; content comparison yields content entries (bytes differ). Both sides keyed by adaptersDir-relative POSIX path (06 §2.2). Build a clear remediation message (06 §2.5) and, in the CLI path, throw DriftError(entries) so the caller exits nonzero (REQ-OBS-02, REQ-VALID-02, CON-05). Include co-located src/driftguard.test.ts (08 §5.2): a clean tree yields zero entries; a mutated committed file yields a content entry; a committed file with no emitted counterpart yields an orphan; an emitted file not committed yields a missing entry.",
+      "acceptanceCriteria": [
+        "driftCheck re-emits and returns DriftEntry[] with kinds content/orphan/missing, covering adapters/ and .claude-plugin/",
+        "Both sides are keyed by adaptersDir-relative POSIX path",
+        "The CLI path throws DriftError with a remediation message on nonzero drift",
+        "src/driftguard.test.ts covers clean, content-drift, orphan, and missing cases",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T19:59:41.320Z",
+      "dependsOn": [
+        "013",
+        "014",
+        "015"
+      ],
+      "notes": "build --check (item 020) calls this. driftCheck re-applies the override overlay (imports applyOverrides/loadOverrides from ./overrides.js, item 014) and uses the staging-dir helper from ./publish.js (item 015). Derive orphan/golden relpaths from the emitted set, not hardcoded paths. Drift guard covers .claude-plugin/ as well as adapters/.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/06-validation-and-drift-guard.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "017",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement coverage report rendering to GENERATION-REPORT.md",
+      "description": "Create src/report.ts per spec 06 §3. buildReportModel(emitResult: EmitResult, manifest: Manifest): ReportModel — compute toolsProcessed, per-target TargetCoverage tallies (emitted/fallback/skipped/overridden/verbatim), the drops list, and staleOverrides (06 §3.1). renderReport(model: ReportModel): string — render adapters/GENERATION-REPORT.md deterministically (06 §3.2): Summary, Coverage-by-target table, Dropped & fallback constructs grouped by target, Stale overrides section. Surfaces exactly REQ-OBS-01's data (targets emitted, tools processed, fallbacks applied, items skipped). No Date.now() — fully deterministic output. Include co-located src/report.test.ts (08 §4.5): a model with known drops/overrides renders the expected sections and tallies; output is byte-identical across two renders.",
+      "acceptanceCriteria": [
+        "buildReportModel computes per-target tallies, drops, and staleOverrides from an EmitResult",
+        "renderReport produces deterministic GENERATION-REPORT.md markdown with the Summary/Coverage/Drops/Stale sections",
+        "Report contains REQ-OBS-01 data and no timestamps",
+        "src/report.test.ts covers tally correctness and byte-stable rendering",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:01:29.297Z",
+      "dependsOn": [
+        "013"
+      ],
+      "notes": "The report is written into adapters/ and is therefore drift-guarded — it must be byte-stable.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/06-validation-and-drift-guard.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "018",
+      "type": "feature",
+      "priority": 2,
+      "title": "Implement per-target emitted-manifest schema validation",
+      "description": "Implement per-target schema validation per spec 06 §4 and 04 §9.4 (REQ-VALID-03). Add a validator (e.g. in src/targets/ or a src/validate-manifests.ts) that checks the emitted aggregate manifests against their expected schemas: the codex openai.yaml aggregate and the gemini gemini-extension.json (Form C) must conform to the structural rules in 06 §4 / 04 §9.4. Surface validation failures as a typed result the build can report (do not silently pass). Include co-located unit tests (08 §7.1): a well-formed emitted gemini-extension.json and codex openai.yaml validate; a deliberately malformed one fails validation with a clear message.",
+      "acceptanceCriteria": [
+        "Emitted codex openai.yaml and gemini-extension.json are validated against their schemas (REQ-VALID-03)",
+        "Validation failures produce a clear, typed result (not a silent pass)",
+        "Co-located tests cover a valid and a malformed emitted manifest for both targets",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:22:25.011Z",
+      "dependsOn": [
+        "011",
+        "013"
+      ],
+      "notes": "Depends on gemini (011) for the extension-json shape and emit (013) for the aggregate output. See 06 §4.1 for the validator signature.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/06-validation-and-drift-guard.md",
+        "specs/agent-agnostic-scaffold/04-transforms.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "019",
+      "type": "feature",
+      "priority": 1,
+      "title": "Implement plugin packaging (.claude-plugin manifests)",
+      "description": "Create src/plugin.ts per spec 07 §3. Define the PluginMeta type (07 §3.2 — name, version, and the other manifest fields, sourced from package.json so identity has a single source of truth). emitPlugin(meta: PluginMeta, roots: ResolvedRoots): EmittedFile[] — emit .claude-plugin/plugin.json and .claude-plugin/marketplace.json (REQ-PKG-01, OQ-05) per the 07 §3.2 field mapping. Serialize as strict deterministic JSON (07 §3.4): NO provenance header, stable key order, trailing newline (these manifests use Form C strict JSON, matching feature-forge). The .claude-plugin/ output is committed and drift-guarded (07 §3.5). Error handling per 07 §3.6. Export emitPlugin and PluginMeta; they are re-exported by the barrel (item 020). Include co-located src/plugin.test.ts here is deferred to item 023 packaging test — for THIS item, add a minimal unit test asserting emitPlugin(meta) produces plugin.json + marketplace.json with the mapped fields and byte-stable JSON across two calls.",
+      "acceptanceCriteria": [
+        "PluginMeta is defined and sourced from package.json (single identity source)",
+        "emitPlugin emits .claude-plugin/plugin.json and marketplace.json per the 07 §3.2 mapping",
+        "Output is strict deterministic JSON with no provenance header and stable key order",
+        "A unit test asserts the mapped fields and byte-stable JSON across two calls",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:02:36.162Z",
+      "dependsOn": [
+        "002",
+        "004"
+      ],
+      "notes": "PluginMeta.name/version feed the gemini aggregate identity (011) and the plugin manifests — single source of truth. Plugin manifests are Form C strict JSON, NOT the Form-A provenance markdown.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/07-packaging-and-sample-tool.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "020",
+      "type": "feature",
+      "priority": 1,
+      "title": "Wire the CLI (build, build --check) and complete the barrel",
+      "description": "Create src/cli.ts per spec 01 §5 / REQ-EMIT-01, wiring the full pipeline. `build`: loadManifest -> resolveConfig -> emit -> loadOverrides + applyOverrides -> publish -> buildReportModel + renderReport (write GENERATION-REPORT.md) -> emitPlugin (write .claude-plugin/ + publish those files). `build --check`: run driftCheck and exit nonzero (with the remediation message) on drift, zero when clean. cli.ts is the ONLY module that reads process.argv and sets exit codes; library functions stay pure and throw the 00 §4 errors. Update src/index.ts barrel to ALSO re-export loadManifest (./manifest.js), emit (./emit.js), driftCheck (./driftguard.js), emitPlugin and type PluginMeta (./plugin.js) — completing the 01 §5 export surface. Verify end-to-end: from a minimal manifest + one canonical tool, `bun run build` produces adapters/ with zero manual steps (REQ-EMIT-01, SC-01) and `bun run build:check` passes on the freshly built tree. Include a smoke test (src/cli.test.ts or src/test/build.test.ts) that runs build against a temp fixture repo and asserts adapters/ is produced and a subsequent build --check reports no drift.",
+      "acceptanceCriteria": [
+        "src/cli.ts implements `build` (emit->overrides->publish->report->emitPlugin) and `build --check` (drift guard, nonzero exit on drift)",
+        "cli.ts is the only place reading process.argv / setting exit codes",
+        "src/index.ts re-exports loadManifest, emit, driftCheck, emitPlugin, and PluginMeta plus all of model/errors (01 §5)",
+        "`bun run build` against a fixture produces adapters/ with no manual steps; `bun run build:check` then passes",
+        "A smoke test exercises build + build --check over a temp fixture repo",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:09:46.666Z",
+      "dependsOn": [
+        "003",
+        "005",
+        "013",
+        "014",
+        "015",
+        "016",
+        "017",
+        "019"
+      ],
+      "notes": "This is the integration item that connects every prior module. It imports/re-exports loadManifest from ./manifest.js (item 003) and calls resolveConfig from ./config.js (item 004, transitively satisfied via 015). After it, `bun run build` is the canonical local build (REQ-EMIT-01).",
+      "estimatedIterations": 2,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/01-architecture-layout.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "021",
+      "type": "feature",
+      "priority": 1,
+      "title": "Author the docs-helper sample tool and concrete tools.manifest.json",
+      "description": "Create the MVP sample tool per spec 07 §6 and the concrete manifest per 02 §6. Author the canonical skill at skills/docs-helper/SKILL.md (07 §6.2 — frontmatter with name/description and the When-to-use / How-to-help / House-style sections shown in 07 §6.2) plus any skill-owned references/ files described there. Register it in a concrete tools.manifest.json at the repo root: a config block (defaults per 02 §6) and a tools registry entry for docs-helper (type skill, source skills/docs-helper). Then run `bun run build` to emit docs-helper to all five targets and `bun run schema:gen` to write schemas/tools.manifest.schema.json; commit the produced adapters/ and .claude-plugin/ output (CON-02). Verify the emitted output matches the per-target expectations in 07 §7 (claude no-drops; codex SKILL.md; cursor rules/docs-helper.mdc; gemini; copilot) and the coverage report (07 §7.6). Also author a repo README documenting the authoring conventions per 01 §2.3 (REQ-STRUCT-04): where a tool lives (skills/agents/commands + shared references/scripts), how it is named (kebab-case == source basename), how to add one (author the canonical file, add a ToolEntry to tools.manifest.json, run `bun run build`), and how to run a build — using docs-helper as the worked example, so a new contributor can add a tool without reading the emitter source.",
+      "acceptanceCriteria": [
+        "skills/docs-helper/SKILL.md (+ any referenced files) exists per 07 §6.2",
+        "tools.manifest.json registers docs-helper with a valid config block (02 §6)",
+        "`bun run build` emits docs-helper to all five targets and writes GENERATION-REPORT.md + .claude-plugin/",
+        "schemas/tools.manifest.schema.json is generated and committed",
+        "A repo README documents where a tool lives, how it is named, how to add one, and how to run a build (REQ-STRUCT-04, 01 §2.3)",
+        "`bun run build:check` reports no drift on the committed tree; vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:11:55.108Z",
+      "dependsOn": [
+        "020"
+      ],
+      "notes": "This is the SC-02 end-to-end proof: one canonical skill emitting correctly to all four non-Claude targets plus canonical. The committed adapters/ output becomes the golden baseline for item 023.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/07-packaging-and-sample-tool.md",
+        "specs/agent-agnostic-scaffold/02-manifest-and-config.md",
+        "specs/agent-agnostic-scaffold/01-architecture-layout.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "022",
+      "type": "test",
+      "priority": 1,
+      "title": "Add cross-cutting determinism, drift/orphan, and override-survival suites",
+      "description": "Add the cross-cutting test suites per spec 08 §5 that exercise the full pipeline. Build the shared fixtures/factories from 08 §3: a makeFixtureRepo helper returning { root, manifest, roots: ResolvedRoots } (roots built via resolveConfig) and a buildAndPublish(manifest, roots) helper that runs emit -> loadOverrides -> applyOverrides -> publish (matching 05 §1). src/test/determinism.test.ts (08 §5.1, SC-03, REQ-EMIT-05/06): two emits of the same fixture (including a TOML-emitting construct — a codex/gemini command) produce byte-identical files; publish is idempotent. src/test/driftguard.test.ts (08 §5.2, SC-04/SC-05a, REQ-VALID-01): clean tree => no drift; mutate a committed file => content entry; remove an emitted tool => orphan; derive relpaths from the emitted set, not hardcoded paths. src/overrides.test.ts cross-cutting cases (08 §5.3, SC-05): an override survives a rebuild and is byte-preserved; the overridden file is distinguishable as author-sourced. Use repo.roots (ResolvedRoots), not bare path strings, at every emit/driftCheck call site; clean up temp dirs via afterEach.",
+      "acceptanceCriteria": [
+        "makeFixtureRepo (returning ResolvedRoots) and buildAndPublish helpers exist per 08 §3",
+        "determinism.test.ts asserts byte-identical re-emit (incl. a TOML construct) and publish idempotency",
+        "driftguard.test.ts covers clean/content/orphan cases with relpaths derived from the emitted set",
+        "overrides cross-cutting test asserts override survival + byte preservation + distinguishability",
+        "All emit/driftCheck calls pass ResolvedRoots; temp dirs cleaned via afterEach",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:15:05.775Z",
+      "dependsOn": [
+        "014",
+        "015",
+        "016",
+        "020"
+      ],
+      "notes": "08 §3 fixtures are shared by items 023/024 too. The determinism fixture MUST include a command tool so TOML serialization is actually exercised (byte-stable smol-toml).",
+      "estimatedIterations": 2,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/08-testing-strategy.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "023",
+      "type": "test",
+      "priority": 1,
+      "title": "Add golden snapshot tests for docs-helper and plugin packaging test",
+      "description": "Add the golden-snapshot suite per spec 08 §6 and the plugin packaging test (08 §6.4). src/test/golden.test.ts (REQ-VALID-04, SC-02/SC-08): store byte-exact expected output for the docs-helper sample under src/test/__golden__/<target>/… (06 §5 scope — sample skill only) and assert emit produces byte-identical content for each golden file across all five targets. Use BIDIRECTIONAL set equality on the sample-scoped relpaths (emitted keys === golden keys, sorted) so a new unreviewed emitted file fails — not arrayContaining. Pin the per-target relpaths to 04 §5.2 / §7-§10 (e.g. cursor rules/docs-helper.mdc), not .includes() heuristics. src/plugin.test.ts (08 §6.4, SC-07, REQ-PKG-01): emitPlugin for the sample produces the expected .claude-plugin/plugin.json + marketplace.json; standardize the fixtures import path to match co-located src/*.test.ts suites and use the afterEach(() => repos.forEach(cleanupFixtureRepo)) cleanup pattern. Include a documented regenerate path for goldens (08 §6.3).",
+      "acceptanceCriteria": [
+        "golden.test.ts asserts byte-exact docs-helper output for all five targets against src/test/__golden__",
+        "Emitted-vs-golden comparison is bidirectional set equality on pinned per-target relpaths (not arrayContaining/.includes)",
+        "plugin.test.ts asserts the .claude-plugin manifests for the sample (SC-07)",
+        "Fixtures import path is standardized and temp repos are cleaned via afterEach",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:20:17.247Z",
+      "dependsOn": [
+        "021"
+      ],
+      "notes": "Goldens are scoped to the docs-helper sample only (06 §5). The committed adapters/ output from item 021 is the source of truth for the golden fixtures.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/08-testing-strategy.md",
+        "specs/agent-agnostic-scaffold/06-validation-and-drift-guard.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "024",
+      "type": "test",
+      "priority": 2,
+      "title": "Add schema-validation and manifest JSON-Schema drift tests",
+      "description": "Add the schema-validation suites per spec 08 §7. src/test/schema.test.ts (08 §7.1, REQ-VALID-03): the emitted target manifests for the sample (codex openai.yaml, gemini-extension.json) validate against their schemas via the validator from item 018; a deliberately corrupted emitted manifest fails. src/schema-gen.test.ts (08 §7.2, REQ-DISC-03, SC-08): buildManifestSchema output matches the committed schemas/tools.manifest.schema.json (schema:check passes), and a mutated committed schema is detected as drift. Bind any default-targets expectation to the TARGET_ORDER constant rather than a re-spelled literal.",
+      "acceptanceCriteria": [
+        "schema.test.ts validates the emitted codex/gemini manifests and fails on a corrupted one (REQ-VALID-03)",
+        "schema-gen.test.ts asserts the committed manifest JSON-Schema matches buildManifestSchema and detects drift (REQ-DISC-03)",
+        "Any targets-default expectation references TARGET_ORDER, not a re-spelled literal",
+        "vitest run && tsc --noEmit passes"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:24:32.622Z",
+      "dependsOn": [
+        "005",
+        "018",
+        "021"
+      ],
+      "notes": "Closes the validation traceability (SC-08). Reuses the validator (018) and the schema builder (005); fixtures from 08 §3.",
+      "estimatedIterations": 1,
+      "model": "opus",
+      "specReferences": [
+        "specs/agent-agnostic-scaffold/08-testing-strategy.md"
+      ],
+      "provider": "claude-cli"
+    },
+    {
+      "id": "025",
+      "type": "bug",
+      "priority": 2,
+      "title": "Fix: lint and format failures break `bun run gate`",
+      "description": "The full verification gate (`bun run gate`, item 001 CON-05) fails on two of its stages even though compile/typecheck/schema:check/test/build:check all pass.\n\n1. LINT: `src/emit.ts:11` imports `Target` but only references it inside a JSDoc `{@link Target}` comment, which `@typescript-eslint/no-unused-vars` flags as an unused import (1 error). Fix by removing `Target` from the import and changing the JSDoc reference (e.g. to plain text `Target` or `{@link TARGET_ORDER}`), or by importing it as a type used elsewhere. Also remove the 3 unused `eslint-disable` directives in `src/schema-gen.ts` (lines 71/78/85) flagged as warnings.\n\n2. FORMAT: `bun run format:check` reports 58 files with Prettier style issues, including source files (src/overrides.ts, src/targets/*.ts, src/validate-manifests.ts, src/test/*.ts, etc.). Prettier was apparently never run across the codebase. Fix by running `bun run prettier --write .` and committing the result, then confirm `bun run format:check` is clean.\n\nAfter both fixes, `bun run gate` must pass end-to-end (and re-run `bun run build:check` afterward to ensure formatting changes to emitted/source files didn't introduce drift).",
+      "acceptanceCriteria": [
+        "`bun run lint` exits 0 with no errors or warnings",
+        "`bun run format:check` exits 0 (no files need reformatting)",
+        "`bun run gate` passes end-to-end (compile, schema:check, typecheck, lint, format:check, test, build:check)",
+        "`bun run build:check` still reports no drift after reformatting"
+      ],
+      "status": "done",
+      "completedAt": "2026-06-18T20:31:23.521Z",
+      "source": "review",
+      "reviewBatch": "2026-06-18T20:25:31.260Z"
+    }
+  ]
+}
