@@ -113,7 +113,11 @@ const NodeId = z
 export const Node = z.object({
   /** Unique identifier; referenced by `Edge.from`/`Edge.to` and `Container.children`. */
   id: NodeId,
-  /** Human-visible label rendered inside the box. Plain text (no markup). */
+  /**
+   * Human-visible label rendered inside the box. Plain text (no markup). A `\n`
+   * produces a line break on graph diagram types (stacked, centered lines; the box
+   * grows to fit). Sequence labels are single-line (see `Participant`/`Message`).
+   */
   label: z.string().min(1),
   /** Semantic color key (REQ-COV-01); omitted → `"default"`. */
   role: NodeRole.optional(),
