@@ -323,7 +323,10 @@ Map each node's role marker to inline colors from `palette.roles`:
 - Within that element's subtree, set the shape's `fill = colors.fill` and
   `stroke = colors.stroke` (Graphviz node shapes are `<polygon>`/`<ellipse>`/`<path>`;
   the sequence header is a `<rect>`). Set every descendant `<text>` element's
-  `fill = colors.text`.
+  `fill = colors.text`. The `fill` is applied **unconditionally** — Graphviz emits
+  node shapes with `fill="none"` (it never sets `style=filled`), so role nodes
+  MUST be re-filled here or they render outline-only (#13). `assertOutputValid`
+  enforces this: a role group whose shapes are all unfilled fails output validation.
 - Edges: every edge `<path>`/`<polygon>` (Graphviz emits edges in `class="edge"`
   groups) gets `stroke = palette.edge`; arrowhead `<polygon>` gets
   `fill = palette.edge`. Edge-label `<text>` gets `fill = palette.label`.
@@ -332,8 +335,15 @@ Map each node's role marker to inline colors from `palette.roles`:
   — choose `fill="none"` for tier-2 simplicity), and `stroke-dasharray="6 4"` for
   the dashed-boundary convention (research §139). Cluster label `<text>` gets
   `fill = palette.label`.
-- A root backdrop `<rect>` covering the full `viewBox` is inserted **first** in
-  document order with `fill = palette.background`.
+- The content bounding box is padded by a uniform margin (default 14px,
+  `--padding`) on all sides: the `viewBox` and root `width`/`height` are grown so
+  content never sits flush against the edge (#15).
+- A root backdrop `<rect>` covering the full (padded) `viewBox` is inserted
+  **first** in document order with `fill = <resolved background>`. The background is
+  resolved from the `background` choice (`transparent` | `opaque` | `#rrggbb`),
+  defaulting to **`transparent`** (#10): when transparent, **no backdrop rect is
+  emitted at all** and the Graphviz canvas polygon is set to `fill="none"`, so the
+  diagram blends into any host surface. `opaque` paints `palette.background`.
 
 Colors are written as inline presentation attributes (not CSS) so they survive in
 every tier-2 viewer (Inkscape/Office/PDF), per REQ-OUT-01/04.
@@ -566,8 +576,12 @@ const DEFAULT_PNG_SCALE = 2 as const;
 
 /**
  * Rasterize a final, post-processed tier-2 SVG to PNG bytes, fully in-process via
- * the inlined `@resvg/resvg-wasm` (REQ-OUT-03). The embedded data-URI font (§3.6)
- * means resvg needs no system fonts — text renders identically to the SVG.
+ * the inlined `@resvg/resvg-wasm` (REQ-OUT-03). resvg does **not** parse the SVG's
+ * embedded `@font-face` data-URI (§3.6) and does not reliably accept WOFF2, so the
+ * DiagramSans subset is supplied to resvg as a TTF `fontBuffers` entry
+ * (`assets/font.buffer.ts`) with `loadSystemFonts: false` — otherwise every label
+ * rasterizes blank (#12). The TTF buffer is the same glyph set as the SVG's WOFF2
+ * `@font-face`, so SVG and PNG stay glyph-identical.
  *
  * @param svg - The final SVG markup (post `postProcess`, §3). MUST carry explicit
  *   `width`/`height`/`viewBox` (REQ-OUT-02) so resvg sizes the raster correctly.

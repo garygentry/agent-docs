@@ -40,4 +40,18 @@ describe("PNG rasterization smoke (REQ-OUT-03)", () => {
       PNG_TOLERANCE_PX,
     );
   });
+
+  // #12 regression: resvg ignores the SVG's embedded @font-face, so without an
+  // explicit fontBuffers entry every label rasterizes blank. Stripping the <text>
+  // elements should change the rendered output; if glyphs were NOT being painted,
+  // the text-stripped render would be identical (no ink to remove). The full
+  // render carries strictly more painted ink, so it compresses larger.
+  it("renders glyphs in the PNG (guards the blank-text regression, #12)", async () => {
+    const result = await render(architectureFixture.spec, { theme: "light" });
+    const withText = await renderPng(result.svg);
+    const stripped = result.svg.replace(/<text\b[^>]*>[\s\S]*?<\/text>/g, "");
+    const withoutText = await renderPng(stripped);
+
+    expect(withoutText.byteLength).toBeLessThan(withText.byteLength);
+  });
 });

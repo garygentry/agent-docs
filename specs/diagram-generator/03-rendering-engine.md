@@ -98,9 +98,12 @@ overrides the per-type default.
 | `state`        | `TB`      | `rounded` (`shape=box, style=rounded`) | `dir=forward`, solid                            | initial/final pseudo-states use `point`/`doublecircle` via `Node.shape` mapping |
 | `dataflow`     | `LR`      | `box`                                  | `dir=forward`, solid                            | stores → `cylinder`; processes → `box`; externals → `box` (color in 04)         |
 
-`rankdir` is applied as a graph attribute; it is **not** user-configurable in v1
-(no field for it on `DiagramSpec`, 00 §2.4), so layout direction is a deterministic
-function of `diagramType` (supports REQ-REPRO-01, §2.6).
+`rankdir` is applied as a graph attribute. The per-`diagramType` value above is the
+**default**; an optional `DiagramSpec.direction` (`LR`/`TB`/`RL`/`BT`, CLI
+`--direction`) overrides it so authors can tame extreme aspect ratios on long
+linear flows (#14). Layout remains a deterministic function of `(diagramType,
+direction)` (supports REQ-REPRO-01, §2.6). The CLI additionally warns (non-fatal)
+when a rendered graph exceeds a ~6:1 aspect ratio, suggesting `--direction` (#16).
 
 The `Node.shape` enum (`box | rounded | cylinder | diamond | ellipse`, 00 §2.2)
 maps to Graphviz shapes via a fixed table:

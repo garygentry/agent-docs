@@ -85,6 +85,12 @@ diagram-render <input.json | -> [options]
                           overrides DiagramSpec.diagramType; else read from input
   --theme <light|dark>    default: spec.theme (else DEFAULT_THEME "light"); overrides spec
   --accent <#rrggbb>      overrides spec.accent; validated as HexColor (00 §2.1)
+  --background <transparent|opaque|#rrggbb>
+                          overrides spec.background; default "transparent" — omits the
+                          backdrop rect so the diagram blends into any host surface (#10)
+  --direction <LR|TB|RL|BT>
+                          overrides spec.direction (graph types) → Graphviz rankdir (#14)
+  --padding <px>          uniform canvas margin around content; non-negative int, default 14 (#15)
   --format <svg|png|both> default: DEFAULT_FORMAT ("svg")
   --out-file <path>       explicit output path; highest precedence. With --format both,
                           the extension is swapped per artifact (.svg / .png).

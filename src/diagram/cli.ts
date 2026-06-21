@@ -18,9 +18,13 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, extname, resolve, sep } from "node:path";
 
 import {
+  Background,
+  type Background as BackgroundT,
   CONTRACT_VERSION,
   DEFAULT_FORMAT,
   DiagramType,
+  Direction,
+  type Direction as DirectionT,
   HexColor,
   type DiagramType as DiagramTypeT,
   type HexColor as HexColorT,
@@ -59,6 +63,12 @@ export interface ParsedArgs {
   readonly theme?: ThemeT;
   /** `--accent` override; HexColor-validated at parse (00 §2.1). */
   readonly accent?: HexColorT;
+  /** `--background` override; `transparent`/`opaque`/`#rrggbb`, validated at parse (#10). */
+  readonly background?: BackgroundT;
+  /** `--direction` override; `LR`/`TB`/`RL`/`BT`, validated at parse (#14). */
+  readonly direction?: DirectionT;
+  /** `--padding` override in px; non-negative integer, validated at parse (#15). */
+  readonly padding?: number;
   /** Requested artifact format(s); defaults to DEFAULT_FORMAT ("svg"). */
   readonly format: OutputFormat;
   /** `--out-file` explicit path (highest precedence, §2.3). */
@@ -76,6 +86,9 @@ const VALUE_FLAGS = new Set([
   "--type",
   "--theme",
   "--accent",
+  "--background",
+  "--direction",
+  "--padding",
   "--format",
   "--out-file",
   "--out-name",
@@ -83,6 +96,12 @@ const VALUE_FLAGS = new Set([
 ]);
 
 const FORMATS: ReadonlySet<string> = new Set(["svg", "png", "both"]);
+
+/**
+ * Width:height (or height:width) ratio above which the CLI warns that a graph
+ * diagram may render illegibly when embedded (#14/#16). A non-fatal hint only.
+ */
+const ASPECT_RATIO_WARN_THRESHOLD = 6 as const;
 
 /**
  * Parse and validate `argv` (process arguments **without** `node`/script
@@ -106,6 +125,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
   let type: DiagramTypeT | undefined;
   let theme: ThemeT | undefined;
   let accent: HexColorT | undefined;
+  let background: BackgroundT | undefined;
+  let direction: DirectionT | undefined;
+  let padding: number | undefined;
   let format: OutputFormat = DEFAULT_FORMAT;
   let outFile: string | undefined;
   let outName: string | undefined;
@@ -160,6 +182,32 @@ export function parseArgs(argv: string[]): ParsedArgs {
           accent = r.data;
           break;
         }
+        case "--background": {
+          const r = Background.safeParse(value);
+          if (!r.success) {
+            throw new DiagramUsageError(
+              "--background must be transparent, opaque, or a #rrggbb hex color",
+              value,
+            );
+          }
+          background = r.data;
+          break;
+        }
+        case "--direction": {
+          const r = Direction.safeParse(value);
+          if (!r.success) {
+            throw new DiagramUsageError("--direction must be LR, TB, RL, or BT", value);
+          }
+          direction = r.data;
+          break;
+        }
+        case "--padding": {
+          if (!/^\d+$/.test(value)) {
+            throw new DiagramUsageError("--padding must be a non-negative integer", value);
+          }
+          padding = Number(value);
+          break;
+        }
         case "--format": {
           if (!FORMATS.has(value)) {
             throw new DiagramUsageError("--format must be svg, png, or both", value);
@@ -211,6 +259,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
     type,
     theme,
     accent,
+    background,
+    direction,
+    padding,
     format,
     outFile,
     outName,
@@ -386,14 +437,40 @@ export async function main(argv: string[]): Promise<number> {
       rawObj = { ...rawObj, diagramType: args.type };
     }
 
+    // --direction overrides spec.direction BEFORE validation so emitDot (#14)
+    // picks it up; an invalid combination still fails as DiagramInputError.
+    if (args.direction !== undefined && isObject(rawObj)) {
+      rawObj = { ...rawObj, direction: args.direction };
+    }
+
     const spec = parseSpec(rawObj);
 
     // §3.1 — apply theme/accent overrides (REQ-THEME-01).
     const theme: ThemeT = args.theme ?? spec.theme;
     const accent = args.accent ?? spec.accent;
 
-    // §3.2 — render exactly one theme variant.
-    const result = await render(spec, { theme, accent });
+    // §3.2 — render exactly one theme variant. Background (#10) and padding (#15)
+    // overrides fall back to the spec / postprocess defaults inside render.
+    const result = await render(spec, {
+      theme,
+      accent,
+      background: args.background,
+      padding: args.padding,
+    });
+
+    // #14/#16 — warn (non-fatal) on extreme aspect ratios that read poorly when
+    // embedded; suggest a layout-direction override. Sequence diagrams are exempt
+    // (their tall shape is intrinsic).
+    if (spec.diagramType !== "sequence" && result.width > 0 && result.height > 0) {
+      const ratio = Math.max(result.width / result.height, result.height / result.width);
+      if (ratio > ASPECT_RATIO_WARN_THRESHOLD) {
+        const hint = args.direction === undefined ? " (try --direction TB or LR)" : "";
+        process.stderr.write(
+          `warning: diagram aspect ratio is ${ratio.toFixed(1)}:1 (${result.width}×${result.height}); ` +
+            `it may read poorly when embedded${hint}\n`,
+        );
+      }
+    }
 
     // §3.3/§3.4 — resolve ALL requested format targets first (so a png→stdout
     // usage error is raised before any byte is written), then write in order.

@@ -1,4 +1,4 @@
-import type { DiagramSpec, HexColor, RenderResult, Theme } from "./schema.js";
+import type { Background, DiagramSpec, HexColor, RenderResult, Theme } from "./schema.js";
 import { assertOutputValid } from "./validate.js"; // 02 §3
 import { emitDot } from "./dot-emit.js"; // §2
 import { renderGraph } from "./graph-render.js"; // §3
@@ -11,6 +11,10 @@ export interface RenderOptions {
   theme: Theme;
   /** Optional accent/brand color override (validated `HexColor`); falls back to `spec.accent`. */
   accent?: HexColor;
+  /** Optional canvas background override (#10); falls back to `spec.background`. */
+  background?: Background;
+  /** Optional uniform canvas padding in px (#15); falls back to the postprocess default. */
+  padding?: number;
 }
 
 /**
@@ -61,6 +65,8 @@ export async function render(spec: DiagramSpec, opts: RenderOptions): Promise<Re
   const post = postProcess(rawSvg, {
     theme: opts.theme,
     accent: opts.accent ?? spec.accent,
+    background: opts.background ?? spec.background,
+    padding: opts.padding,
     spec,
     width,
     height,

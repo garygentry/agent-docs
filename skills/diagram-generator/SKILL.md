@@ -59,8 +59,28 @@ When a user asks for a diagram:
    `skills/diagram-generator/scripts/diagram-render.mjs` (or the adapter-relative
    path under the running target) with the appropriate flags — the exact same
    contract a build step uses (see "Scriptable invocation" below).
-5. **Report the written artifact path(s)** on success. On a non-zero exit, surface
+5. **Visually inspect the output before declaring success (#16).** Render at least
+   the SVG (or a PNG via `--format both`) and **look at it** — do not assume it is
+   correct. Open the image and sanity-check:
+   - **Fills:** role-colored nodes are solid-filled, not outline-only, and match
+     their legend swatches.
+   - **Margins:** content is not flush against the canvas edge (default `--padding`
+     handles this; raise it if cramped).
+   - **Aspect ratio / legibility:** the diagram is not an unreadable ultra-wide or
+     ultra-tall strip. The CLI prints a `warning:` to stderr when the ratio exceeds
+     ~6:1 — heed it and pass `--direction TB`/`LR` (or restructure) for long flows.
+   - **PNG text:** if you produced a PNG, confirm labels actually render (not blank).
+   - **Background:** transparent by default — pass `--background opaque` if the host
+     surface needs a painted panel.
+6. **Report the written artifact path(s)** on success. On a non-zero exit, surface
    the CLI's **stderr verbatim** to the user, correct the spec, and re-invoke.
+
+## Embedding on light/dark surfaces
+
+A single SVG bakes one theme's colors and cannot self-adapt to light/dark (GitHub
+strips `<style>`/media queries). For host surfaces that switch themes, render a
+light + dark pair and embed them with a `<picture>` element — see
+**`references/embedding.md`**.
 
 ## REQ-IN-03 — depict only what the user described
 
@@ -92,6 +112,9 @@ diagram-render <input.json | -> [options]
   --type   <architecture|flowchart|sequence|er|state|dataflow>  override spec.diagramType
   --theme  <light|dark>     default: spec.theme (else "light")
   --accent <#rrggbb>        override spec.accent (validated as #rrggbb)
+  --background <transparent|opaque|#rrggbb>  default: "transparent" (omits the backdrop)
+  --direction <LR|TB|RL|BT>  override layout direction (graph types) to tame long flows
+  --padding <px>            uniform canvas margin around content (default 14)
   --format <svg|png|both>   default: "svg"
   --out-file <path>         explicit output path (highest precedence)
   --out-name <base>         base name written into --out-dir (overrides slug)
