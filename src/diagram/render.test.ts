@@ -187,3 +187,24 @@ describe("render — validation placement", () => {
     expect(() => assertOutputValid("<svg>not valid</svg")).toThrow(DiagramOutputError);
   });
 });
+
+// ===========================================================================
+// Multi-line labels (#19) — `\n` in a graph label renders as stacked lines.
+// ===========================================================================
+
+describe("render — multi-line labels (#19)", () => {
+  it("splits a `\\n` node label into separate stacked <text> lines", async () => {
+    const spec = parseSpec({
+      diagramType: "flowchart",
+      title: "Multi-line",
+      description: "A node label with a newline renders two stacked lines.",
+      nodes: [{ id: "prd", label: "Stage 1 · PRD\nforge-1-prd" }],
+      edges: [],
+    });
+    const { svg } = await render(spec, { theme: "light" });
+    // Each visual line is its own <text>; the literal "\n" must NOT survive.
+    expect(svg).toContain(">Stage 1 · PRD<");
+    expect(svg).toContain(">forge-1-prd<");
+    expect(svg).not.toContain("\\n");
+  });
+});

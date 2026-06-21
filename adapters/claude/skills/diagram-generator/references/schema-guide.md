@@ -36,10 +36,19 @@ A `sequence` spec carrying `nodes`, or a graph spec with empty `nodes`, is rejec
 
 ## Object shapes
 
+> **Multi-line labels.** For the graph diagram types (`architecture`, `flowchart`,
+> `er`, `state`, `dataflow`), a `\n` inside a `label` (node, edge, or container)
+> becomes a line break — the text renders as stacked, centered lines and the box is
+> sized to fit. Use it for a title plus a secondary line (e.g. a name + a
+> command/qualifier). In JSON this is a real escape: `"label": "Stage 1 · PRD\nforge-1-prd"`
+> (two lines), **not** a literal backslash-n. Sequence `participant`/`message` labels
+> are **single-line only** — a `\n` there is not honored.
+
 ### Node
 
 - `id` — unique id (alphanumeric, `-`, `_`); referenced by edges and container children.
-- `label` — visible plain-text label (no markup).
+- `label` — visible plain-text label (no markup). `\n` → line break on graph types
+  (see the multi-line note above); single-line on sequence diagrams.
 - `role` — optional `NodeRole` (see below); omitted → `"default"` (uncolored).
 - `shape` — optional `box` \| `rounded` \| `cylinder` \| `diamond` \| `ellipse`;
   sensible per-type defaults apply when omitted.
@@ -47,14 +56,14 @@ A `sequence` spec carrying `nodes`, or a graph spec with empty `nodes`, is rejec
 ### Edge
 
 - `from`, `to` — node ids that **must exist** in `nodes`.
-- `label` — optional connector label.
+- `label` — optional connector label. `\n` → line break (graph types).
 - `direction` — `forward` (default) \| `back` \| `both` \| `none`.
 - `style` — `solid` (default) \| `dashed` \| `dotted` \| `bold`.
 
 ### Container
 
 - `id` — unique id (shares the node id namespace for reference checks).
-- `label` — boundary label.
+- `label` — boundary label. `\n` → line break (graph types).
 - `children` — node ids enclosed; each **must exist** in `nodes`.
 - `parent` — optional container id for nesting; **must exist** in `containers`.
 
