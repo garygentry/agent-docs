@@ -267,6 +267,52 @@ export function assertOutputValid(svg: string): void {
   assertStructural(svg, doc);
   assertFontPortable(svg);
   assertA11y(doc);
+  assertRoleFills(doc);
+}
+
+/** Shape element names whose `fill` carries a node's role color (mirrors §3.2). */
+const ROLE_SHAPE_NAMES = new Set(["polygon", "ellipse", "path", "rect", "circle"]);
+
+/**
+ * Assert every role-classed node group renders as a solid fill, not an outline
+ * (#13). Graphviz emits node shapes with `fill="none"`; the post-process MUST bake
+ * `colors.fill` onto them. This guard would have caught the outline-only-nodes
+ * regression: it walks each `class~="role-*"` group and fails if all of its shape
+ * descendants are unfilled (`fill="none"` or absent).
+ *
+ * @param doc - The parsed output SVG document.
+ * @throws {DiagramOutputError} If any role group has shapes but none is filled.
+ */
+export function assertRoleFills(doc: XmlDocument): void {
+  const root = doc.root;
+  if (!root) return;
+  const groups: XmlElement[] = [];
+  const collect = (el: XmlElement): void => {
+    const cls = el.attributes["class"];
+    if (cls && /(?:^|\s)role-[a-z]+/.test(cls)) groups.push(el);
+    for (const child of el.children) if (child instanceof XmlElement) collect(child);
+  };
+  collect(root);
+
+  for (const group of groups) {
+    let sawShape = false;
+    let sawFilled = false;
+    const visit = (el: XmlElement): void => {
+      if (ROLE_SHAPE_NAMES.has(el.name)) {
+        sawShape = true;
+        const fill = el.attributes["fill"];
+        if (fill !== undefined && fill !== "none") sawFilled = true;
+      }
+      for (const child of el.children) if (child instanceof XmlElement) visit(child);
+    };
+    visit(group);
+    if (sawShape && !sawFilled) {
+      throw new DiagramOutputError(
+        "a role-classed node renders outline-only; node shapes must carry a non-none fill (#13)",
+        `class="${group.attributes["class"]}"`,
+      );
+    }
+  }
 }
 
 /**

@@ -44,6 +44,27 @@ export const HexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "accent must be a 
 /** A `#rrggbb` hex color. */
 export type HexColor = z.infer<typeof HexColor>;
 
+/**
+ * Canvas background choice (#10). `transparent` (the default) omits the backdrop
+ * rect so the diagram blends into any host surface; `opaque` paints the theme's
+ * background color; a `#rrggbb` value paints an explicit color. Text/stroke colors
+ * still come from `theme`, so a transparent diagram reads on the consumer's
+ * surface as long as the matching theme is chosen.
+ */
+export const Background = z.union([z.enum(["transparent", "opaque"]), HexColor]);
+/** Canvas background choice. */
+export type Background = z.infer<typeof Background>;
+
+/**
+ * Layout direction override for graph diagrams (#14) → Graphviz `rankdir`. When
+ * omitted, the per-`diagramType` default applies (architecture/dataflow=LR,
+ * flowchart/state=TB). Authors set this to avoid extreme aspect ratios on long
+ * linear flows (e.g. `TB` for a 10-stage pipeline).
+ */
+export const Direction = z.enum(["LR", "TB", "RL", "BT"]);
+/** Layout direction override (Graphviz `rankdir`). */
+export type Direction = z.infer<typeof Direction>;
+
 // ---------------------------------------------------------------------------
 // Node, edge, and container (00 §2.2)
 // ---------------------------------------------------------------------------
@@ -193,6 +214,10 @@ export const DiagramSpec = z
     theme: Theme.default("light"),
     /** Optional accent/brand color; CLI `--accent` overrides (REQ-THEME-01). */
     accent: HexColor.optional(),
+    /** Canvas background; CLI `--background` overrides. Omitted → `"transparent"` (#10). */
+    background: Background.optional(),
+    /** Optional layout direction override for graph types; CLI `--direction` overrides (#14). */
+    direction: Direction.optional(),
     /** Graph nodes (empty for sequence diagrams). */
     nodes: z.array(Node).default([]),
     /** Graph edges (empty for sequence diagrams). */

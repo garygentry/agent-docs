@@ -32,6 +32,30 @@
       "type": "string",
       "pattern": "^#[0-9a-fA-F]{6}$"
     },
+    "background": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "transparent",
+            "opaque"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      ]
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "LR",
+        "TB",
+        "RL",
+        "BT"
+      ]
+    },
     "nodes": {
       "type": "array",
       "items": {

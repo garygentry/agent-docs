@@ -1,5 +1,5 @@
 import { parseXml, XmlElement, XmlText } from "@rgrove/parse-xml";
-import type { DiagramSpec, HexColor, NodeRole, Theme } from "./schema.js";
+import type { Background, DiagramSpec, HexColor, NodeRole, Theme } from "./schema.js";
 import { SVG_COORD_PRECISION } from "./schema.js";
 import { resolveTheme, type ResolvedPalette } from "./theme.js";
 import { DiagramOutputError } from "./errors.js";
@@ -19,6 +19,19 @@ import { FONT_SUBSET_DATA_URI } from "./assets/font.subset.js";
 /** The single embedded face name; matches the render-path placeholder (03 §4.2). */
 const EMBEDDED_FONT_FAMILY = "DiagramSans" as const;
 
+/** Default uniform canvas padding in px between content bbox and the edges (#15). */
+export const DEFAULT_PADDING = 14 as const;
+
+/**
+ * Resolve a {@link Background} choice against the theme palette to a concrete fill,
+ * or `null` for transparent (no backdrop rect emitted, #10).
+ */
+function resolveBackground(background: Background, palette: ResolvedPalette): HexColor | null {
+  if (background === "transparent") return null;
+  if (background === "opaque") return palette.background;
+  return background; // already-validated #rrggbb
+}
+
 // ---------------------------------------------------------------------------
 // Options / result types (04 §3)
 // ---------------------------------------------------------------------------
@@ -29,6 +42,17 @@ export interface PostProcessOptions {
   theme: Theme;
   /** Optional validated accent override; falls back to the variant default (§2.3). */
   accent?: HexColor;
+  /**
+   * Canvas background (#10). `"transparent"` (default) omits the backdrop rect;
+   * `"opaque"` paints the theme background; a `#rrggbb` paints that color.
+   * Falls back to `spec.background`.
+   */
+  background?: Background;
+  /**
+   * Uniform padding in px between the content bounding box and the canvas/backdrop
+   * edges (#15). Falls back to {@link DEFAULT_PADDING}.
+   */
+  padding?: number;
   /** The validated DiagramSpec; `title`/`description` feed a11y (§3.5), `nodes`/`containers` the legend (§3.4). */
   spec: DiagramSpec;
   /** Intrinsic width from the render path (sequence supplies it; graph passes 0 and it is derived from the SVG). */
@@ -142,21 +166,29 @@ function hasClass(cls: string | undefined, token: string): boolean {
  */
 export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProcessResult {
   const palette = resolveTheme(opts.theme, opts.accent ?? opts.spec.accent);
+  const background = resolveBackground(
+    opts.background ?? opts.spec.background ?? "transparent",
+    palette,
+  );
+  const padding = Math.max(0, opts.padding ?? DEFAULT_PADDING);
 
   // ── §3.1 Parse ──────────────────────────────────────────────────
   const root = parseRoot(rawSvg);
 
   // Current canvas bounds, derived from the SVG itself (graph path passes 0).
-  const [minX, minY, initVbW, initVbH] = readViewBox(root, opts.width, opts.height);
-  let vbW = initVbW;
-  let vbH = initVbH;
+  // Expand uniformly by `padding` so content never sits flush against the edge (#15).
+  const [rawMinX, rawMinY, initVbW, initVbH] = readViewBox(root, opts.width, opts.height);
+  const minX = rawMinX - padding;
+  const minY = rawMinY - padding;
+  let vbW = initVbW + padding * 2;
+  let vbH = initVbH + padding * 2;
 
   // The drawing parent: graphviz wraps everything in <g class="graph">; the
   // sequence path draws directly under <svg>. Color/z-order operate there.
   const drawParent = findDrawParent(root);
 
   // ── §3.2 Semantic color baking ──────────────────────────────────
-  bakeColors(drawParent, palette);
+  bakeColors(drawParent, palette, background);
 
   // ── §3.3 Z-order enforcement ────────────────────────────────────
   enforceZOrder(drawParent);
@@ -176,7 +208,8 @@ export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProce
   embedFont(root);
 
   // ── Backdrop rect (full viewBox), behind all drawing content ────
-  insertBackdrop(root, palette, minX, minY, vbW, vbH);
+  // Omitted entirely when the background is transparent (#10).
+  insertBackdrop(root, background, minX, minY, vbW, vbH);
 
   // Authoritative dimensions on the root (numeric, no `pt`).
   root.attrs["width"] = canonNumber(vbW);
@@ -256,11 +289,16 @@ function findDrawParent(root: SElement): SElement {
 const SHAPE_NAMES = new Set(["polygon", "ellipse", "path", "rect", "circle"]);
 
 /** Apply role/edge/container/backdrop colors inline to the drawing subtree. */
-function bakeColors(drawParent: SElement, palette: ResolvedPalette): void {
-  // Recolor any graphviz backdrop polygon (direct fill="white" child) to background.
+function bakeColors(
+  drawParent: SElement,
+  palette: ResolvedPalette,
+  background: HexColor | null,
+): void {
+  // Recolor any graphviz backdrop polygon (direct fill="white" child) to the
+  // resolved background, or to "none" when transparent so no opaque panel shows (#10).
   for (const child of elementChildren(drawParent)) {
     if ((child.name === "polygon" || child.name === "rect") && child.attrs["fill"] === "white") {
-      child.attrs["fill"] = palette.background;
+      child.attrs["fill"] = background ?? "none";
     }
   }
 
@@ -271,8 +309,14 @@ function bakeColors(drawParent: SElement, palette: ResolvedPalette): void {
       const colors = palette.roles[role] ?? palette.roles.default;
       walk(group, (e) => {
         if (SHAPE_NAMES.has(e.name)) {
-          // Preserve an explicit fill="none" (e.g. sequence header outline box).
-          if (e.attrs["fill"] !== "none") e.attrs["fill"] = colors.fill;
+          // #13: role nodes are always solid-filled. Graphviz emits node shapes
+          // with fill="none" (it never sets style=filled), so an earlier
+          // fill!=="none" guard left every node outline-only — contradicting the
+          // spec and the filled legend swatches. Role-classed groups are graph
+          // nodes (sequence header outline boxes are not role-classed; they keep
+          // fill="none" via the container/primitive paths), so baking the role
+          // fill here unconditionally is safe.
+          e.attrs["fill"] = colors.fill;
           e.attrs["stroke"] = colors.stroke;
         } else if (e.name === "text") {
           e.attrs["fill"] = colors.text;
@@ -538,15 +582,20 @@ function embedFont(root: SElement): void {
 // Backdrop rect
 // ---------------------------------------------------------------------------
 
-/** Insert a full-viewBox backdrop rect as the first drawing element. */
+/**
+ * Insert a full-viewBox backdrop rect as the first drawing element. When the
+ * background is transparent (`null`), no rect is emitted at all so the diagram
+ * blends into any host surface (#10).
+ */
 function insertBackdrop(
   root: SElement,
-  palette: ResolvedPalette,
+  background: HexColor | null,
   minX: number,
   minY: number,
   vbW: number,
   vbH: number,
 ): void {
+  if (background === null) return;
   const backdrop: SElement = {
     type: "element",
     name: "rect",
@@ -556,7 +605,7 @@ function insertBackdrop(
       y: canonNumber(minY),
       width: canonNumber(vbW),
       height: canonNumber(vbH),
-      fill: palette.background,
+      fill: background,
     },
     children: [],
   };

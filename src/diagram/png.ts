@@ -18,6 +18,7 @@
  */
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
 
+import { FONT_BUFFER_BYTES } from "./assets/font.buffer.js";
 import { RESVG_WASM_BYTES } from "./assets/resvg-wasm.js";
 import { DiagramPngError } from "./errors.js";
 
@@ -74,8 +75,15 @@ export async function renderPng(svg: string, opts?: RenderPngOptions): Promise<U
   let resvg: InstanceType<typeof Resvg>;
   try {
     resvg = new Resvg(svg, {
-      // The SVG embeds its own subset font (§3.6); never depend on system fonts.
-      font: { loadSystemFonts: false },
+      // #12: resvg does NOT parse the SVG's embedded `@font-face` data-URI, so the
+      // glyphs MUST be supplied as a font buffer or every label renders blank.
+      // We pass the DiagramSans subset as TTF (resvg-wasm doesn't reliably accept
+      // WOFF2) and still never touch system fonts.
+      font: {
+        loadSystemFonts: false,
+        fontBuffers: [FONT_BUFFER_BYTES],
+        defaultFontFamily: "DiagramSans",
+      },
       fitTo: { mode: "zoom", value: scale },
     });
   } catch (cause) {

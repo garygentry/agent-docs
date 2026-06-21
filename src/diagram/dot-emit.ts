@@ -140,9 +140,14 @@ export function emitDot(spec: DiagramSpec): string {
     }
   }
 
+  // #14: an explicit spec.direction overrides the per-type default rankdir so
+  // authors can avoid extreme aspect ratios on long linear flows (e.g. TB for a
+  // 10-stage pipeline). Falls back to the diagramType default when omitted.
+  const rankdir = spec.direction ?? defaults.rankdir;
+
   const lines: string[] = [];
   lines.push("digraph {");
-  lines.push(`  rankdir=${defaults.rankdir};`);
+  lines.push(`  rankdir=${rankdir};`);
   lines.push(`  node [fontname="DiagramSans"];`);
 
   // Track which nodes are emitted inside a cluster so the top-level pass skips
