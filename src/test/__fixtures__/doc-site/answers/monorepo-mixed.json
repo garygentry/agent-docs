@@ -10,14 +10,13 @@
     "PKG_MANAGER": "pnpm",
     "RUNTIME": "bun",
     "DOCS_PKG_DIR": "packages/docs",
-    "IMAGES_SRC_DIR": "../../docs/images",
+    "IMAGES_SRC_DIR": "docs/images",
     "ACCENT_LIGHT": "#7c3aed",
     "ACCENT_DARK": "#a78bfa",
     "DEFAULT_BRANCH": "main",
     "ASTRO_VERSION": "5.6.1",
     "STARLIGHT_VERSION": "0.32.2",
-    "DOCS_PKG_DIR_TO_ROOT": "../..",
-    "SYMLINK_PAGE_LINES": "link_file \"../../docs/intro.md\" \"intro\"\nlink_file \"../../docs/api/reference.md\" \"api/reference\""
+    "DOCS_PKG_DIR_TO_ROOT": "../.."
   },
   "selection": {
     "contentMode": "mixed",
@@ -25,5 +24,15 @@
     "deploy": ["vercel"],
     "driftGuard": true,
     "monorepo": true
-  }
+  },
+  "site": {
+    "title": "Widget Monorepo Docs",
+    "description": "Documentation for the Widget monorepo.",
+    "social": { "github": "https://github.com/widget-co/widget" }
+  },
+  "pages": [
+    { "slug": "intro", "source": "symlink", "from": "docs/intro.md" },
+    { "slug": "api/reference", "source": "symlink", "from": "docs/api/reference.md" },
+    { "slug": "about", "source": "native" }
+  ]
 }

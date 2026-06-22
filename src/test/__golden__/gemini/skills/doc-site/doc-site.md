@@ -97,32 +97,67 @@ can see every degraded default that was applied.
 ## Substitution table (the SKILL-side mirror of `00 §4.1`)
 
 This is the single place tokens are documented for the agent. It lists **exactly**
-the 18 canonical tokens — no more, no fewer. Every token used anywhere under
+the 22 canonical tokens — no more, no fewer. Every token used anywhere under
 `references/templates/**` must appear here, and vice-versa (token-coverage test, `10`).
 
-| Token                      | Source                                                           | Default                                        |
-| -------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- |
-| `{{SITE_TITLE}}`           | interview                                                        | repo name (titlecased)                         |
-| `{{SITE_TITLE_SLUG}}`      | **derived** (slugified `{{SITE_TITLE}}`: lowercase, spaces→`-`)  | derived                                        |
-| `{{SITE_DESC}}`            | interview                                                        | `Documentation for <title>`                    |
-| `{{SITE_URL}}`             | interview / deploy target                                        | `""` (env-driven at build)                     |
-| `{{BASE_PATH}}`            | deploy target (GH Pages subpath vs root)                         | `""`                                           |
-| `{{REPO_SLUG}}`            | detection (`git remote`) / interview                             | ask                                            |
-| `{{GITHUB_URL}}`           | derived from `{{REPO_SLUG}}`                                     | `""`                                           |
-| `{{PKG_MANAGER}}`          | detection (lockfile / `packageManager`)                          | `npm`                                          |
-| `{{RUNTIME}}`              | detection (`bun.lock` / `engines.node`)                          | `node`                                         |
-| `{{DOCS_PKG_DIR}}`         | interview                                                        | `docs/` (single) / `packages/docs/` (monorepo) |
-| `{{IMAGES_SRC_DIR}}`       | interview / detection                                            | `docs/images`                                  |
-| `{{ACCENT_LIGHT}}`         | interview                                                        | canon default light accent                     |
-| `{{ACCENT_DARK}}`          | interview                                                        | canon default dark accent                      |
-| `{{DEFAULT_BRANCH}}`       | detection (`git symbolic-ref`)                                   | `main`                                         |
-| `{{ASTRO_VERSION}}`        | resolution (latest @ first scaffold; pin on re-run)              | latest                                         |
-| `{{STARLIGHT_VERSION}}`    | resolution                                                       | latest                                         |
-| `{{DOCS_PKG_DIR_TO_ROOT}}` | **derived** (one `..` per `{{DOCS_PKG_DIR}}` segment)            | derived                                        |
-| `{{SYMLINK_PAGE_LINES}}`   | **derived/generated** (one link line per `source: symlink` page) | generated                                      |
+The last four are **derived toolchain tokens**: pure functions of `{{RUNTIME}}`
+and `{{PKG_MANAGER}}` that decouple the two axes so the CI/deploy fragments never
+hardcode a coupled Bun+pnpm / Node+npm pair (see _Derived toolchain tokens_ below).
+
+| Token                      | Source                                                                   | Default                                        |
+| -------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------- |
+| `{{SITE_TITLE}}`           | interview                                                                | repo name (titlecased)                         |
+| `{{SITE_TITLE_SLUG}}`      | **derived** (slugified `{{SITE_TITLE}}`: lowercase, spaces→`-`)          | derived                                        |
+| `{{SITE_DESC}}`            | interview                                                                | `Documentation for <title>`                    |
+| `{{SITE_URL}}`             | interview / deploy target                                                | `""` (env-driven at build)                     |
+| `{{BASE_PATH}}`            | deploy target (GH Pages subpath vs root)                                 | `""`                                           |
+| `{{REPO_SLUG}}`            | detection (`git remote`) / interview                                     | ask                                            |
+| `{{GITHUB_URL}}`           | derived from `{{REPO_SLUG}}`                                             | `""`                                           |
+| `{{PKG_MANAGER}}`          | detection (lockfile / `packageManager`)                                  | `npm`                                          |
+| `{{RUNTIME}}`              | detection (`bun.lock` / `engines.node`)                                  | `node`                                         |
+| `{{DOCS_PKG_DIR}}`         | interview                                                                | `docs/` (single) / `packages/docs/` (monorepo) |
+| `{{IMAGES_SRC_DIR}}`       | interview / detection                                                    | `docs/images`                                  |
+| `{{ACCENT_LIGHT}}`         | interview                                                                | canon default light accent                     |
+| `{{ACCENT_DARK}}`          | interview                                                                | canon default dark accent                      |
+| `{{DEFAULT_BRANCH}}`       | detection (`git symbolic-ref`)                                           | `main`                                         |
+| `{{ASTRO_VERSION}}`        | resolution (latest @ first scaffold; pin on re-run)                      | latest                                         |
+| `{{STARLIGHT_VERSION}}`    | resolution                                                               | latest                                         |
+| `{{DOCS_PKG_DIR_TO_ROOT}}` | **derived** (one `..` per `{{DOCS_PKG_DIR}}` segment)                    | derived                                        |
+| `{{SYMLINK_PAGE_LINES}}`   | **derived/generated** (one link line per `source: symlink` page)         | generated                                      |
+| `{{CI_SETUP_ACTION}}`      | **derived** from `{{RUNTIME}}` (CI runtime setup action)                 | `actions/setup-node@v4`                        |
+| `{{INSTALL_CMD}}`          | **derived** from `{{PKG_MANAGER}}` (frozen-lockfile install)             | `npm ci`                                       |
+| `{{RUN_PREFIX}}`           | **derived** from `{{PKG_MANAGER}}` (run-a-script prefix)                 | `npm run`                                      |
+| `{{WORKSPACE_BUILD}}`      | **derived** from `{{PKG_MANAGER}}`+`{{DOCS_PKG_DIR}}` (build invocation) | `npm run build --workspace <dir>`              |
 
 **Direct vs. derived.** Most tokens are direct interview/detection values.
 `{{DOCS_PKG_DIR_TO_ROOT}}` is a pure function of `{{DOCS_PKG_DIR}}` (count path
 segments → that many `..`), and `{{SYMLINK_PAGE_LINES}}` expands to a generated block
 from the manifest's `source: symlink` pages (`references/symlink.md`). After
 substitution, **no literal `{{…}}` may survive** in any emitted file.
+
+### Derived toolchain tokens
+
+`{{CI_SETUP_ACTION}}`, `{{INSTALL_CMD}}`, `{{RUN_PREFIX}}`, and `{{WORKSPACE_BUILD}}`
+are **derived** — pure functions of the two orthogonal toolchain axes
+(`{{RUNTIME}}` and `{{PKG_MANAGER}}`), never asked in the interview. They let the
+CI/deploy fragments stay a single tokenized form instead of shipping coupled
+Bun+pnpm / Node+npm variants. The agent computes them from detection before
+substitution. `npm`, `pnpm`, `yarn`, and `bun` are all supported; the canon
+fixtures exercise `npm` and `pnpm` (the `yarn`/`bun` rows are supported-but-unfixtured).
+
+| `{{RUNTIME}}` | `{{CI_SETUP_ACTION}}`   |
+| ------------- | ----------------------- |
+| `node`        | `actions/setup-node@v4` |
+| `bun`         | `oven-sh/setup-bun@v2`  |
+
+| `{{PKG_MANAGER}}` | `{{INSTALL_CMD}}`                | `{{RUN_PREFIX}}` | `{{WORKSPACE_BUILD}}`                      |
+| ----------------- | -------------------------------- | ---------------- | ------------------------------------------ |
+| `npm`             | `npm ci`                         | `npm run`        | `npm run build --workspace <DOCS_PKG_DIR>` |
+| `pnpm`            | `pnpm install --frozen-lockfile` | `pnpm run`       | `pnpm --filter ./<DOCS_PKG_DIR> build`     |
+| `yarn`            | `yarn install --immutable`       | `yarn run`       | `yarn workspace <DOCS_PKG_DIR> build`      |
+| `bun`             | `bun install`                    | `bun run`        | `bun run --filter ./<DOCS_PKG_DIR> build`  |
+
+`<DOCS_PKG_DIR>` is `{{DOCS_PKG_DIR}}` already substituted (the derived token's
+value carries the resolved path). For pnpm, the CI workflow also injects a
+`pnpm/action-setup@v4` step (pnpm needs its own setup regardless of runtime);
+npm/yarn/bun need no extra package-manager setup step.

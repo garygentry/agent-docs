@@ -1,0 +1,21 @@
+{
+  "$schema": "./docs.manifest.schema.json",
+  "site": {
+    "title": "Static Host Docs",
+    "description": "Documentation deployed to a static host.",
+    "social": {
+      "github": "https://github.com/static-org/static"
+    }
+  },
+  "pages": [
+    {
+      "slug": "home",
+      "source": "symlink",
+      "from": "docs/home.md"
+    },
+    {
+      "slug": "guides/setup",
+      "source": "native"
+    }
+  ]
+}

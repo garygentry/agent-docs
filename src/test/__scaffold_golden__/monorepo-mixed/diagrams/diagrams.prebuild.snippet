@@ -1,6 +1,0 @@
-{
-  "scripts": {
-    "diagrams": "bun scripts/diagram-render.mjs src/diagrams/arch.json --theme light --accent '#7c3aed' --format svg --out-file public/diagrams/arch.light.svg && bun scripts/diagram-render.mjs src/diagrams/arch.json --theme dark --accent '#a78bfa' --format svg --out-file public/diagrams/arch.dark.svg",
-    "prebuild": "pnpm run diagrams"
-  }
-}

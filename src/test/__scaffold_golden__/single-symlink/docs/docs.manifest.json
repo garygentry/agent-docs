@@ -1,0 +1,26 @@
+{
+  "$schema": "./docs.manifest.schema.json",
+  "site": {
+    "title": "Acme Docs",
+    "description": "Documentation for the Acme project.",
+    "social": {
+      "github": "https://github.com/acme-org/acme"
+    }
+  },
+  "pages": [
+    {
+      "slug": "getting-started",
+      "source": "symlink",
+      "from": "docs/getting-started.md"
+    },
+    {
+      "slug": "guides/usage",
+      "source": "symlink",
+      "from": "docs/guides/usage.md"
+    },
+    {
+      "slug": "guides/setup",
+      "source": "native"
+    }
+  ]
+}

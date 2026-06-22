@@ -49,6 +49,15 @@ Rules:
   the file directly).
 - Pages are emitted in **manifest order**.
 
+> **`from` is repo-relative from the repo root, with NO leading `../`.** At runtime
+> `setup-docs.sh`'s `assert_inside_repo` prepends `$REPO_ROOT/$1` and canonicalizes
+> the result, then **refuses** any target that escapes the repo root. A `from` like
+> `../docs/intro.md` resolves to `$REPO_ROOT/../docs/intro.md` — **outside** the
+> repo — and is rejected (exit 1). Write `docs/intro.md`, not `../docs/intro.md`.
+> The same rule applies to `{{IMAGES_SRC_DIR}}` (e.g. `docs/images`, never
+> `../docs/images`). The relative symlink the script writes is computed by
+> `rel_path` from the content dir — you do **not** hand-author the `../` chain.
+
 The generated lines replace the `{{SYMLINK_PAGE_LINES}}` placeholder, which sits
 inside the `# >>> manifest-managed symlinks` … `# <<<` marker block. The
 `link_dir "{{IMAGES_SRC_DIR}}" "images"` line that follows it is part of the

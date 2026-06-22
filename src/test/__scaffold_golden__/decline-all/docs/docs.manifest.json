@@ -1,0 +1,13 @@
+{
+  "$schema": "./docs.manifest.schema.json",
+  "site": {
+    "title": "Minimal Docs",
+    "description": "A minimal documentation site."
+  },
+  "pages": [
+    {
+      "slug": "guides/setup",
+      "source": "native"
+    }
+  ]
+}

@@ -6,7 +6,7 @@
  * never from adapters/ or the emitter:
  *
  *  (a) Token-coverage — enforces 00 §4.1's closed token vocabulary. Every
- *      {{TOKEN}} used in a template must be one of the 18 canonical tokens AND
+ *      {{TOKEN}} used in a template must be one of the 22 canonical tokens AND
  *      appear in SKILL.md (no undefined tokens); every canonical token must be
  *      exercised by at least one template (no orphan tokens); and SKILL.md's
  *      substitution table must mirror the canonical set exactly.
@@ -34,7 +34,7 @@ const MANIFEST_FIXTURES = path.join(
   "manifests",
 );
 
-/** Canonical token set — the in-test mirror of 00 §4.1 (exactly 18 tokens). */
+/** Canonical token set — the in-test mirror of 00 §4.1 (exactly 22 tokens). */
 const CANONICAL_TOKENS = [
   "SITE_TITLE",
   "SITE_TITLE_SLUG",
@@ -54,6 +54,12 @@ const CANONICAL_TOKENS = [
   "STARLIGHT_VERSION",
   "DOCS_PKG_DIR_TO_ROOT",
   "SYMLINK_PAGE_LINES",
+  // Derived toolchain tokens (pure functions of RUNTIME/PKG_MANAGER) — decouple the
+  // runtime and package-manager axes so CI/deploy fragments stay single-form.
+  "CI_SETUP_ACTION",
+  "INSTALL_CMD",
+  "RUN_PREFIX",
+  "WORKSPACE_BUILD",
 ] as const;
 
 const TOKEN_RE = /\{\{([A-Z0-9_]+)\}\}/g;
@@ -169,10 +175,11 @@ describe("doc-site manifest schema (Draft 2020-12 fixtures)", () => {
   });
 
   // 10 §4.3 caveat: JSON Schema cannot express slug-uniqueness across array items
-  // (uniqueItems compares whole items). The schema delegates this to the symlinker
-  // and the drift guard (check-docs.mjs sidebar-parity/orphaned-symlink rules), so
-  // the static schema legitimately ACCEPTS a duplicate-slug manifest.
-  it.skip("rejects invalid-duplicate-slug (delegated to symlinker/drift-guard)", () => {
-    expect(validate(load("invalid-duplicate-slug"))).toBe(false);
+  // (uniqueItems compares whole items). The schema delegates this to the drift
+  // guard (check-docs.mjs `duplicate-slug` rule, exit 2), so the static schema
+  // legitimately ACCEPTS a duplicate-slug manifest. The ACTIVE rejection is
+  // exercised by doc-site-smoke.test.ts (runs check-docs.mjs → exit 2).
+  it("accepts invalid-duplicate-slug at the schema level (slug-uniqueness delegated to drift guard)", () => {
+    expect(validate(load("invalid-duplicate-slug"))).toBe(true);
   });
 });
