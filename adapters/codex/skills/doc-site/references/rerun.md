@@ -66,6 +66,15 @@ is precisely what makes an identical re-run a no-op (§3).
 After Phase 4, write the updated `.doc-site-scaffold.json` back to the target root (a
 managed write, governed by §5.1).
 
+**Determinism (byte-stable provenance).** Serialize `.doc-site-scaffold.json` with a
+fixed key order so an identical re-run is a no-op (§3): top level `version`,
+`astroPin`, `starlightPin`, then `diagramContract` **only when diagrams are
+emitted** (omitted otherwise, `00 §3.2`), then `files`. The `files` map is ordered
+by **lexicographically sorted repo-relative path**, each value the literal
+`sha256:<lowercase-hex>` digest over the emitted bytes (§1.1). Pretty-print with
+2-space indent and a trailing newline. Native content pages are never present in
+`files` (§1.2).
+
 ---
 
 ## 2. Re-run decision algorithm (`00 §3.3`)

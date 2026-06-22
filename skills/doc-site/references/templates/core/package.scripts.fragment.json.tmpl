@@ -1,0 +1,18 @@
+// package.scripts.fragment.json — conditional script keys merged into the core
+// package.json `scripts` block by the agent per the selection record (04/05/06).
+// This is a MERGE FRAGMENT, not a standalone emitted file: the agent never
+// hand-authors plumbing, so this asset is the byte source for the conditional
+// keys. The base `dev`/`build`/`preview` keys live in package.json.tmpl; the
+// keys below are added only when their component is selected.
+//
+//   * symlink | mixed content mode → `predev` + `prebuild` (sh ./setup-docs.sh)
+//   * diagrams                      → `diagrams` (from diagrams.prebuild.snippet)
+//                                     and `prebuild` = `{{PKG_MANAGER}} run diagrams`
+//   * symlink|mixed + diagrams      → `prebuild` composes both, symlink first:
+//                                     `sh ./setup-docs.sh && {{PKG_MANAGER}} run diagrams`
+//   * driftGuard                    → `docs:check` = `{{RUNTIME}} check-docs.mjs`
+{
+  "predev": "sh ./setup-docs.sh",
+  "prebuild": "sh ./setup-docs.sh",
+  "docs:check": "{{RUNTIME}} check-docs.mjs"
+}

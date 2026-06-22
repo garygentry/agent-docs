@@ -1,0 +1,18 @@
+{
+  "name": "acme-docs-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "sh ./setup-docs.sh",
+    "dev": "astro dev",
+    "prebuild": "sh ./setup-docs.sh",
+    "build": "astro build",
+    "preview": "astro preview",
+    "docs:check": "node check-docs.mjs"
+  },
+  "dependencies": {
+    "astro": "5.6.1",
+    "@astrojs/starlight": "0.32.2"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "widget-monorepo-docs-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "sh ./setup-docs.sh",
+    "dev": "astro dev",
+    "prebuild": "sh ./setup-docs.sh && pnpm run diagrams",
+    "build": "astro build",
+    "preview": "astro preview",
+    "diagrams": "bun scripts/diagram-render.mjs src/diagrams/arch.json --theme light --accent '#7c3aed' --format svg --out-file public/diagrams/arch.light.svg && bun scripts/diagram-render.mjs src/diagrams/arch.json --theme dark --accent '#a78bfa' --format svg --out-file public/diagrams/arch.dark.svg",
+    "docs:check": "bun check-docs.mjs"
+  },
+  "dependencies": {
+    "astro": "5.6.1",
+    "@astrojs/starlight": "0.32.2"
+  }
+}

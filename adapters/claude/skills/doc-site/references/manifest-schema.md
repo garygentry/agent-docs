@@ -37,12 +37,12 @@ contract, its validation rules, and the `unmanaged` escape hatch.
 
 ## 2. PageEntry field contract
 
-| Field       | Type                        | Required                                                      | Meaning                                                                                                           |
-| ----------- | --------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `slug`      | string                      | yes                                                           | Route slug, POSIX-style (`guides/setup`); **unique** across `pages`.                                              |
-| `source`    | `"symlink"` \| `"native"`   | required **unless** `unmanaged`                               | Where the page body comes from.                                                                                   |
-| `from`      | string (repo-relative path) | required **iff** `source: "symlink"`; **forbidden** otherwise | Repo-root markdown file to symlink in.                                                                            |
-| `unmanaged` | boolean (default `false`)   | no                                                            | Escape hatch (see below). When `true`, `source`/`from` are not required and the generator does not wire the page. |
+| Field       | Type                        | Required                                                      | Meaning                                                                                                                                                                                                                        |
+| ----------- | --------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `slug`      | string                      | yes                                                           | Route slug, POSIX-style (`guides/setup`); **unique** across `pages`.                                                                                                                                                           |
+| `source`    | `"symlink"` \| `"native"`   | required **unless** `unmanaged`                               | Where the page body comes from.                                                                                                                                                                                                |
+| `from`      | string (repo-relative path) | required **iff** `source: "symlink"`; **forbidden** otherwise | Repo-root markdown file to symlink in. **Repo-relative from the repo root, NO leading `../`** (e.g. `docs/intro.md`). `setup-docs.sh` prepends `$REPO_ROOT/$1` and rejects any target that escapes the root (`symlink.md §2`). |
+| `unmanaged` | boolean (default `false`)   | no                                                            | Escape hatch (see below). When `true`, `source`/`from` are not required and the generator does not wire the page.                                                                                                              |
 
 ---
 
@@ -55,12 +55,18 @@ Enforced by `docs.manifest.schema.json`:
 3. `unmanaged: true` ⇒ `source`/`from` are optional; the page is exempt from
    sidebar ↔ manifest parity **only** (see below).
 4. `unmanaged` absent or `false` ⇒ `source` is required.
-5. `slug` values are unique across `pages`.
+5. `slug` values are unique across `pages`. **Not expressible in JSON Schema**
+   (`uniqueItems` compares whole items, not one property), so this rule is **not**
+   in `docs.manifest.schema.json` — it is enforced by the drift guard's
+   `duplicate-slug` rule (`check-docs.mjs`, **exit 2**; `drift-guard.md §2`). The
+   agent also pre-checks slug-uniqueness during emit ("validate before wiring",
+   `core.md §1`): a duplicate slug is rejected before any sidebar/symlink wiring.
 6. Strict: `additionalProperties: false` at **every** level — no unknown keys
    anywhere.
 
-A manifest that breaks any rule is a `SCHEMA_VIOLATION`: reject with the schema
-error before writing anything further.
+A manifest that breaks rule 1, 2, 3, 4, or 6 is a `SCHEMA_VIOLATION`: reject with
+the schema error before writing anything further. A duplicate slug (rule 5) is
+caught by the agent's emit-time pre-check and by the drift guard at check time.
 
 ---
 

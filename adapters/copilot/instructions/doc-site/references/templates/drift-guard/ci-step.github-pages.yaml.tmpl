@@ -1,0 +1,12 @@
+# ci-step.github-pages.yaml — drift-guard CI step for .github/workflows/docs.yml.
+# Injected by the agent at the `# <<DRIFT_STEP>>` sentinel in docs.yml ONLY when
+# driftGuard is selected AND the github-pages deploy target is selected
+# (drift-guard.md §4). Runs AFTER the build (whose `prebuild` already materialized
+# the symlinked pages) and BEFORE deploy, so a drifted or broken page never ships.
+#
+# The `sh setup-docs.sh &&` prefix makes the step self-contained for symlink /
+# mixed mode. In native mode the agent drops the prefix (there are no symlinks to
+# create) and runs just `{{RUN_PREFIX}} docs:check`.
+      - name: Docs drift guard
+        run: sh setup-docs.sh && {{RUN_PREFIX}} docs:check
+        working-directory: "{{DOCS_PKG_DIR}}"

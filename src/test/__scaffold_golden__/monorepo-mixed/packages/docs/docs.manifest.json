@@ -1,0 +1,30 @@
+{
+  "$schema": "./docs.manifest.schema.json",
+  "site": {
+    "title": "Widget Monorepo Docs",
+    "description": "Documentation for the Widget monorepo.",
+    "social": {
+      "github": "https://github.com/widget-co/widget"
+    }
+  },
+  "pages": [
+    {
+      "slug": "intro",
+      "source": "symlink",
+      "from": "docs/intro.md"
+    },
+    {
+      "slug": "api/reference",
+      "source": "symlink",
+      "from": "docs/api/reference.md"
+    },
+    {
+      "slug": "about",
+      "source": "native"
+    },
+    {
+      "slug": "guides/setup",
+      "source": "native"
+    }
+  ]
+}

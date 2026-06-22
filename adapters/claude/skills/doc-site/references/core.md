@@ -109,9 +109,21 @@ sidebar order** — the sidebar algorithm below relies on this.
 **Before writing any sidebar or wiring,** validate the assembled manifest against
 `docs.manifest.schema.json`. A violation is a `SCHEMA_VIOLATION`: reject with the
 schema error and **write nothing further** (the sidebar cannot be generated
-without a valid manifest). Duplicate slugs, a `from` on a `native` page, or a
-missing `from` on a `symlink` page are all caught by the schema and surfaced as
-`SCHEMA_VIOLATION` — never silently fixed.
+without a valid manifest). A `from` on a `native` page, or a missing `from` on a
+`symlink` page, are caught by the schema and surfaced as `SCHEMA_VIOLATION` —
+never silently fixed.
+
+**Slug-uniqueness is NOT in the schema** (JSON Schema can't express
+"unique property across array items"). Pre-check it yourself at emit time: if any
+two pages share a `slug`, reject before wiring — duplicate slugs are otherwise
+caught at check time by the drift guard's `duplicate-slug` rule (exit 2,
+`drift-guard.md §2`).
+
+**Determinism (byte-stable manifest).** Emit `docs.manifest.json` with a fixed key
+order so re-runs are byte-identical (rerun.md §3): top level `$schema`, `site`,
+`pages`; `site` as `title`, `description`, then `social` (omit when absent); each
+page as `slug`, then `source`, `from`, `unmanaged` (omit absent keys). Pretty-print
+with 2-space indent and a trailing newline.
 
 ---
 
@@ -127,8 +139,12 @@ important mechanic of the core scaffold: one source, cannot drift.
   IS sidebar order.**
 - **Output:** a Starlight `sidebar` array literal, substituted into
   `astro.config.mjs` at the `// <<SIDEBAR>>` sentinel — the agent replaces the
-  `sidebar: []` line's `[]` with the computed array (pretty-printed, 2-space
-  indent, matching surrounding style).
+  `sidebar: []` line's `[]` with the computed array. **Serialization (byte-stable):**
+  array elements are indented two spaces deeper than the `sidebar:` key (which sits
+  at 6 spaces, so elements at 8); a group's `label`/`items:` lines nest two further
+  and its leaves two beyond that; the closing `]` aligns with the `sidebar:` key.
+  Every element line ends with a trailing comma; labels and slugs are
+  double-quoted. (The §2.4 worked example shows the shape at zero indent.)
 
 The template ships this anchor:
 

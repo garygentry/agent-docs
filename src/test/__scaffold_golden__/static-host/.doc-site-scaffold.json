@@ -1,0 +1,19 @@
+{
+  "version": "1",
+  "astroPin": "5.6.1",
+  "starlightPin": "0.32.2",
+  "files": {
+    "netlify.toml": "sha256:b674bb3e7ad0302c8df569e34450f0f3231a0e90bc95a368c6a073bf1b744748",
+    "site/.gitignore": "sha256:fdd155e829158da0b21172e24f4d370c845deae47038c166a12d00a0f5d6493d",
+    "site/astro.config.mjs": "sha256:416b1b871b78de5ddd340d1c8bdcca8a9f9b1503a14c9ce63774bd071041f535",
+    "site/docs.manifest.json": "sha256:01f6485484e7e5b6a80e40556e5bb444e0b732cbeba20bfb359608f4c511fc42",
+    "site/docs.manifest.schema.json": "sha256:6f528da63224ca2cdf2f312cb85b8f55f4de18f7c23169e0b2da67a709a3419c",
+    "site/package.json": "sha256:889f418127885b2126663ce7ac21f9ceb8fbcda7f5a954477bd62acce8639d12",
+    "site/public/favicon.svg": "sha256:c5502606818d508b5d91a75ceef9a00e59b36c3cbcfcfa8659313cfb9cb3d064",
+    "site/setup-docs.sh": "sha256:ca9e7ef2dac7d69893850fd76ad7cfce4010afb1d809e62824032d7bda135b39",
+    "site/src/content.config.ts": "sha256:1f8b206b5f7c0afb44c3715a3fe79954b448885fe9e753ba372dddf1210ecfd5",
+    "site/src/content/docs/index.mdx": "sha256:0b13ba3d320508fdac80820bcacb42333b41c1515f13c5a3e4204f0cd5959a76",
+    "site/src/styles/custom.css": "sha256:259cd48a373369e52a3a533ace642253491643564963cd2b8532059b914dd0c6",
+    "site/tsconfig.json": "sha256:974b0a3b37e52f3649d9df63e72e374794e9e797c8ae61eca4812f844406f7ef"
+  }
+}

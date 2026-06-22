@@ -1,0 +1,14 @@
+{
+  "name": "widget",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "dev:docs": "pnpm --filter ./packages/docs dev",
+    "build:docs": "pnpm --filter ./packages/docs build"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  }
+}

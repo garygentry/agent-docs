@@ -14,35 +14,37 @@ never edits site code (REQ-DEPLOY-02).
 
 ## Tokens consumed (all from `00 §4.1`)
 
-| Token                | Role                                                     |
-| -------------------- | -------------------------------------------------------- |
-| `{{DEFAULT_BRANCH}}` | Branch whose pushes trigger a deploy (default `main`).   |
-| `{{DOCS_PKG_DIR}}`   | Path-filter prefix, build scope, and artifact directory. |
-| `{{PKG_MANAGER}}`    | Selects the toolchain fragment (`pnpm` vs `npm`).        |
-| `{{RUNTIME}}`        | Selects the setup action (`bun` vs `node`).              |
-| `{{REPO_SLUG}}`      | Only for the rare literal-base fallback (see below).     |
+| Token                 | Role                                                          |
+| --------------------- | ------------------------------------------------------------- |
+| `{{DEFAULT_BRANCH}}`  | Branch whose pushes trigger a deploy (default `main`).        |
+| `{{DOCS_PKG_DIR}}`    | Path-filter prefix, build scope, and artifact directory.      |
+| `{{CI_SETUP_ACTION}}` | **Derived** from `{{RUNTIME}}` — the runtime setup action.    |
+| `{{INSTALL_CMD}}`     | **Derived** from `{{PKG_MANAGER}}` — frozen-lockfile install. |
+| `{{WORKSPACE_BUILD}}` | **Derived** — the workspace/filter build invocation.          |
+| `{{REPO_SLUG}}`       | Only for the rare literal-base fallback (see below).          |
 
 > The `${{ ... }}` sequences in the workflow are **GitHub Actions expressions**,
 > not generator tokens. Generator tokens are `{{UPPER_SNAKE}}` with no leading
 > `$`, so the token-coverage test (`10`) does not flag the Actions expressions.
 
-## Toolchain fragment selection (REQ-PORT-01)
+## Toolchain via derived tokens (REQ-PORT-01)
 
-The template ships **two named fragments**, selected by the agent from the
-detected `{{RUNTIME}}`/`{{PKG_MANAGER}}` — **never** an in-YAML conditional
-(`00 §4`):
+The workflow is a **single tokenized form** — there is no longer a coupled
+Bun+pnpm / Node+npm pair to swap by hand. The runtime and package-manager axes
+are **orthogonal**, expressed through the derived toolchain tokens (`SKILL.md`,
+_Derived toolchain tokens_): `{{CI_SETUP_ACTION}}` (runtime), `{{INSTALL_CMD}}`
+and `{{WORKSPACE_BUILD}}` (package manager). `npm`/`pnpm`/`yarn`/`bun` are all
+supported.
 
-| Detected   | `{{RUNTIME}}` | `{{PKG_MANAGER}}` | Setup action            | Install                          | Build invocation                                                                                                               |
-| ---------- | ------------- | ----------------- | ----------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Bun + pnpm | `bun`         | `pnpm`            | `oven-sh/setup-bun@v2`  | `pnpm install --frozen-lockfile` | `pnpm --filter ./{{DOCS_PKG_DIR}} build`                                                                                       |
-| Node + npm | `node`        | `npm`             | `actions/setup-node@v4` | `npm ci`                         | `npm run build --workspace {{DOCS_PKG_DIR}}` (monorepo) or `npm run build` with `working-directory: {{DOCS_PKG_DIR}}` (single) |
+Two structural mechanics are applied at the comment sentinels (not by an in-YAML
+conditional, `00 §4`):
 
-In `docs.yml.tmpl` the **Bun + pnpm** fragment is the active set of steps; the
-**Node + npm** fragment is provided as a clearly delimited commented block. The
-agent emits exactly one fragment: it leaves Bun+pnpm in place, or replaces those
-steps with the Node+npm block (and picks the monorepo `--workspace` line vs the
-single-package `working-directory` line). The single-vs-monorepo build line is
-the same fragment-selection mechanism.
+- **`# <<PKG_SETUP>>`** — when `{{PKG_MANAGER}}` is `pnpm`, inject a
+  `pnpm/action-setup@v4` step (pnpm needs its own setup regardless of runtime);
+  for `npm`/`yarn`/`bun` the sentinel line is removed (no extra setup step).
+- **`# <<DRIFT_STEP>>`** — when `driftGuard` is selected, inject the drift-guard CI
+  step from `templates/drift-guard/ci-step.github-pages.yaml.tmpl`; otherwise the
+  sentinel line is removed (see `drift-guard.md §4`).
 
 ## Path-filtered triggers (canon faithfulness)
 
@@ -50,10 +52,16 @@ The workflow triggers on `push` to `{{DEFAULT_BRANCH}}` filtered to docs-relevan
 paths (plus `workflow_dispatch`):
 
 - `{{DOCS_PKG_DIR}}/**` — the docs package source.
-- `docs/**` — repo-root markdown bridged in by symlink mode (`04`).
-- `docs.manifest.json` — the single source of truth (`00 §2`); sidebar/page
-  changes must rebuild.
+- `docs/**` — repo-root markdown bridged in by symlink mode (`04`); meaningful
+  **only** in symlink/mixed mode.
+- `{{DOCS_PKG_DIR}}/docs.manifest.json` — the single source of truth (`00 §2`).
 - `.github/workflows/docs.yml` — self-trigger so workflow edits redeploy.
+
+**Dedup the resolved list.** When `{{DOCS_PKG_DIR}}` is `docs`, the
+`{{DOCS_PKG_DIR}}/**` filter and the literal `docs/**` bridge resolve to the same
+string — the agent emits it **once** (the resolver dedupes preserving order). In
+native mode the `docs/**` bridge is dropped entirely (no symlinked repo-root
+markdown to watch).
 
 ## Shared env-driven SITE/BASE_PATH (REQ-DEPLOY-02, REQ-CORE-02)
 

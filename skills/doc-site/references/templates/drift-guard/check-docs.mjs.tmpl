@@ -74,6 +74,27 @@ const pages = Array.isArray(manifest.pages) ? manifest.pages : [];
 const managedPages = pages.filter((p) => p.unmanaged !== true);
 const pageFiles = walkPages(CONTENT_DIR);
 
+// Manifest-validity: slug uniqueness (00 §2.2 rule 5). JSON Schema can't express
+// "unique slug property across array items", so the guard owns it. A duplicate
+// slug is a MANIFEST ERROR (not page drift): report it and exit 2 — the same
+// class as a missing/invalid manifest — distinct from exit 1 (drift findings).
+function assertUniqueSlugs() {
+  const counts = new Map();
+  for (const p of pages) {
+    if (typeof p?.slug !== "string") continue;
+    counts.set(p.slug, (counts.get(p.slug) ?? 0) + 1);
+  }
+  const dupes = [...counts.entries()]
+    .filter(([, n]) => n > 1)
+    .sort((a, b) => a[0].localeCompare(b[0]));
+  if (dupes.length === 0) return;
+  for (const [slug, n] of dupes) {
+    console.error(`check-docs: [duplicate-slug] docs.manifest.json — slug '${slug}' appears ${n} times`);
+  }
+  process.exit(2);
+}
+assertUniqueSlugs();
+
 // ── (d) Built-in rules (§4) ──────────────────────────────────────
 
 // §4.1 — Rule 1: broken internal links. Applies to all pages, incl. unmanaged.

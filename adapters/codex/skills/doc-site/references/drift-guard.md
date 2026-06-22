@@ -54,7 +54,19 @@ The script reads (no network — `REQ-SEC-03`):
 | `src/content/docs/**` (pages/links) | 1, 3, 4      |
 | `docs.drift.rules.mjs` (optional)   | custom       |
 
-It applies four generic rules and exits:
+Before any drift rule runs, the guard performs a **manifest-validity** check:
+
+- **`duplicate-slug`** — on manifest load, if any `slug` value repeats across
+  `pages`, the guard prints
+  `check-docs: [duplicate-slug] docs.manifest.json — slug 'X' appears N times`
+  for each duplicate and **exits 2**. Slug-uniqueness (`00 §2.2` rule 5) cannot be
+  expressed in JSON Schema (`uniqueItems` compares whole items, not one property),
+  so the guard owns it. A duplicate slug is a **manifest error** (exit 2), the same
+  class as a missing/invalid manifest — **not** a drift finding (exit 1). The agent
+  also pre-checks slug-uniqueness during emit (`core.md` / `manifest-schema.md`,
+  "validate before wiring").
+
+It then applies four generic drift rules and exits:
 
 - **`broken-link` (Rule 1)** — flags local Markdown/image links that do not resolve
   on disk, skipping external/anchor/`mailto:`/`tel:`/`data:` targets, with a
@@ -76,11 +88,11 @@ It applies four generic rules and exits:
 `emitReportAndExit` prints a deterministic, grep-friendly report and sets the exit
 code (`REQ-VERIFY-02`):
 
-| Exit | Meaning                                                                                                                                                                   |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0`  | Clean — no findings (`check-docs: OK — no drift detected.`).                                                                                                              |
-| `1`  | One or more drift findings; each printed as `[<rule>] <file>:<line> — <message>`, followed by a single machine-readable `check-docs-json: {…}` trailer for CI annotators. |
-| `2`  | Guard error — `docs.manifest.json` missing or invalid JSON. This lets CI distinguish "drift found" from "guard broken".                                                   |
+| Exit | Meaning                                                                                                                                                                                         |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | Clean — no findings (`check-docs: OK — no drift detected.`).                                                                                                                                    |
+| `1`  | One or more drift findings; each printed as `[<rule>] <file>:<line> — <message>`, followed by a single machine-readable `check-docs-json: {…}` trailer for CI annotators.                       |
+| `2`  | Manifest-validity error — `docs.manifest.json` missing, invalid JSON, or **duplicate slugs** (`duplicate-slug` rule). Distinct from exit 1 so CI can tell "drift found" from "manifest broken". |
 
 ---
 
@@ -111,9 +123,13 @@ When emitted, the agent adds a `docs:check` script to the docs package's
 ## 4. Optional CI guard step (GitHub Pages, REQ-DRIFT-01)
 
 When the repo has CI **and** the GitHub Pages deploy target is selected, the agent
-inserts the guard as a job step in the emitted `.github/workflows/docs.yml`
-(`deploy-github-pages.md`), positioned **after the build (or after `setup-docs.sh`)
-and before the deploy**, so a drifted or broken page never ships.
+injects the guard step into the emitted `.github/workflows/docs.yml` at the
+`# <<DRIFT_STEP>>` sentinel (`deploy-github-pages.md`). The step body is the
+dedicated fragment `templates/drift-guard/ci-step.github-pages.yaml.tmpl` (it uses
+the derived `{{RUN_PREFIX}}` token), positioned **after the build (whose
+`prebuild` ran `setup-docs.sh`) and before the deploy**, so a drifted or broken
+page never ships. When `driftGuard` is not selected, the sentinel line is removed
+and no step is emitted — the guard never leaks into the workflow.
 
 **Ordering is load-bearing in symlink/mixed mode.** The symlinked page bodies under
 `src/content/docs/**` are materialized by `setup-docs.sh` (run via the build's
@@ -123,13 +139,15 @@ So the step must run after symlinks are in place. The self-contained form compos
 `setup-docs.sh` directly:
 
 ```yaml
-# .github/workflows/docs.yml — added step (toolchain matched per {{PKG_MANAGER}}/{{RUNTIME}})
+# .github/workflows/docs.yml — injected at the `# <<DRIFT_STEP>>` sentinel from
+# templates/drift-guard/ci-step.github-pages.yaml.tmpl ({{RUN_PREFIX}} = the
+# detected package manager's run prefix, e.g. `pnpm run` / `npm run`).
 # symlink / mixed mode — make symlinks exist, then check:
 - name: Docs drift guard
-  run: sh setup-docs.sh && {{PKG_MANAGER}} run docs:check
+  run: sh setup-docs.sh && {{RUN_PREFIX}} docs:check
   working-directory: "{{DOCS_PKG_DIR}}"
 # native mode — no symlinks; drop the `setup-docs.sh &&` prefix:
-#   run: {{PKG_MANAGER}} run docs:check
+#   run: {{RUN_PREFIX}} docs:check
 ```
 
 When there is no CI / no GitHub Pages target, only the `docs:check` script entry is
