@@ -247,26 +247,76 @@ function generateManifest(answers: ScaffoldAnswers): string {
 }
 
 // ── monorepo root-file merge (monorepo.md) ───────────────────────────────────
-function mergeRootPackageJson(existing: string, d: string, pkgManager: string): string {
-  const obj = JSON.parse(existing) as Record<string, unknown>;
-  const scripts = { ...((obj.scripts as Record<string, string>) ?? {}) };
+/**
+ * Select the root-package.json merge fragment by {{PKG_MANAGER}}, mirroring how
+ * the agent picks ONE of the two variants the single template ships (monorepo.md
+ * §7.3): the npm variant is the ACTIVE (uncommented) JSON block; the pnpm variant
+ * lives in the `//`-comment block after its `--- pnpm fragment` marker. Returns
+ * the raw (pre-substitution) JSON text of the selected variant.
+ */
+function selectRootScriptsFragment(pkgManager: string): string {
+  const raw = tmpl("monorepo/root-scripts.fragment.json.tmpl");
+  let region: string;
   if (pkgManager === "npm") {
-    const ws = new Set([...((obj.workspaces as string[]) ?? [])]);
-    ws.add(d);
-    obj.workspaces = [...ws];
-    if (!("dev:docs" in scripts)) scripts["dev:docs"] = `npm run dev --workspace ${d}`;
-    if (!("build:docs" in scripts)) scripts["build:docs"] = `npm run build --workspace ${d}`;
+    // npm fragment is the only uncommented block; stripping `//` lines leaves it
+    // (and drops the commented-out pnpm variant) — exactly what the agent reads.
+    region = stripCommentLines(raw, "//");
   } else {
-    if (!("dev:docs" in scripts)) scripts["dev:docs"] = `pnpm --filter ./${d} dev`;
-    if (!("build:docs" in scripts)) scripts["build:docs"] = `pnpm --filter ./${d} build`;
+    // pnpm fragment is the commented JSON after its marker line; un-comment it.
+    const lines = raw.split("\n");
+    const start = lines.findIndex((l) => l.includes("pnpm fragment"));
+    region = lines
+      .slice(start + 1)
+      .filter((l) => /^\s*\/\//.test(l))
+      .map((l) => l.replace(/^\s*\/\/ ?/, ""))
+      .join("\n");
+  }
+  const open = region.indexOf("{");
+  const close = region.lastIndexOf("}");
+  return region.slice(open, close + 1);
+}
+
+/**
+ * Additive key-merge of the selected root-scripts fragment into the pre-existing
+ * root package.json (monorepo.md §7.3): register `workspaces` membership (npm
+ * variant only) idempotently and add the passthrough scripts. Never-clobber a
+ * user-edited value — an existing script key keeps its value (00 §3.3/§7).
+ */
+function mergeRootPackageJson(existing: string, tokens: Record<string, string>): string {
+  const obj = JSON.parse(existing) as Record<string, unknown>;
+  const frag = JSON.parse(substitute(selectRootScriptsFragment(tokens.PKG_MANAGER!), tokens)) as {
+    workspaces?: string[];
+    scripts?: Record<string, string>;
+  };
+
+  if (Array.isArray(frag.workspaces)) {
+    const ws = new Set([...((obj.workspaces as string[]) ?? [])]);
+    for (const w of frag.workspaces) ws.add(w);
+    obj.workspaces = [...ws];
+  }
+
+  const scripts = { ...((obj.scripts as Record<string, string>) ?? {}) };
+  for (const [k, v] of Object.entries(frag.scripts ?? {})) {
+    if (!(k in scripts)) scripts[k] = v; // never-clobber a user-edited value
   }
   obj.scripts = scripts;
   return JSON.stringify(obj, null, 2) + "\n";
 }
 
-function mergePnpmWorkspace(existing: string, d: string): string {
+/**
+ * Additive merge of the docs package entry into pnpm-workspace.yaml (monorepo.md
+ * §7.4). The entry line is sourced from the fragment template (token-substituted),
+ * appended only when not already present (string-equality on the relative path).
+ */
+function mergePnpmWorkspace(existing: string, tokens: Record<string, string>): string {
+  const d = tokens.DOCS_PKG_DIR!;
   if (existing.includes(`"${d}"`)) return existing;
-  return existing.replace(/\s*$/, "") + `\n  - "${d}"\n`;
+  const fragText = substitute(
+    stripCommentLines(tmpl("monorepo/pnpm-workspace.fragment.yaml.tmpl"), "#"),
+    tokens,
+  );
+  const entry = fragText.split("\n").find((l) => /^\s*-\s/.test(l))!;
+  return existing.replace(/\s*$/, "") + "\n" + entry + "\n";
 }
 
 // ── the renderer vendoring stub (diagrams.md §2 — presence/path/provenance only) ──
@@ -406,11 +456,10 @@ export function finalScaffold(
   // —— monorepo group (additive merges into pre-existing user root files) ————
   if (selection.monorepo) {
     const rootPkg = preexisting["package.json"];
-    if (rootPkg !== undefined)
-      emit("package.json", mergeRootPackageJson(rootPkg, d, tokens.PKG_MANAGER!), false);
+    if (rootPkg !== undefined) emit("package.json", mergeRootPackageJson(rootPkg, tokens), false);
     if (tokens.PKG_MANAGER === "pnpm") {
       const ws = preexisting["pnpm-workspace.yaml"];
-      if (ws !== undefined) emit("pnpm-workspace.yaml", mergePnpmWorkspace(ws, d), false);
+      if (ws !== undefined) emit("pnpm-workspace.yaml", mergePnpmWorkspace(ws, tokens), false);
     }
   }
 

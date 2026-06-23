@@ -20,6 +20,7 @@ import {
   loadAnswers,
   readGoldenTree,
   resolveTree,
+  type ScaffoldAnswers,
 } from "./doc-site-scaffold.shared.js";
 import { finalScaffold, loadPreexisting } from "./doc-site-final-scaffold.shared.js";
 
@@ -82,6 +83,48 @@ describe("thin resolveTree byte-stability guard (fast unit)", () => {
       }
     });
   }
+});
+
+describe("monorepo root-file merge sources its bytes from the fragment templates (#22)", () => {
+  // The pnpm path is golden-covered (monorepo-mixed). The npm fragment variant —
+  // which carries `workspaces` and the npm-form passthrough scripts — has no golden
+  // answer set, so exercise it directly to lock the npm branch + never-clobber.
+  const npmMonorepo = (): ScaffoldAnswers => {
+    const base = loadAnswers("monorepo-mixed.json");
+    return { ...base, tokens: { ...base.tokens, PKG_MANAGER: "npm", RUNTIME: "node" } };
+  };
+
+  it("npm form: registers the docs workspace + npm-form passthrough scripts from the fragment", () => {
+    const d = npmMonorepo().tokens.DOCS_PKG_DIR!;
+    const merged = JSON.parse(
+      finalScaffold(npmMonorepo(), {
+        "package.json": JSON.stringify(
+          { name: "widget", private: true, scripts: { build: "turbo run build" } },
+          null,
+          2,
+        ),
+      }).get("package.json")!,
+    ) as { workspaces: string[]; scripts: Record<string, string> };
+
+    expect(merged.workspaces).toContain(d);
+    expect(merged.scripts["dev:docs"]).toBe(`npm run dev --workspace ${d}`);
+    expect(merged.scripts["build:docs"]).toBe(`npm run build --workspace ${d}`);
+    expect(merged.scripts.build).toBe("turbo run build"); // pre-existing key preserved
+  });
+
+  it("npm form: never-clobbers a user-edited passthrough script value", () => {
+    const merged = JSON.parse(
+      finalScaffold(npmMonorepo(), {
+        "package.json": JSON.stringify(
+          { name: "widget", private: true, scripts: { "dev:docs": "echo custom" } },
+          null,
+          2,
+        ),
+      }).get("package.json")!,
+    ) as { scripts: Record<string, string> };
+
+    expect(merged.scripts["dev:docs"]).toBe("echo custom");
+  });
 });
 
 describe("template-group coverage (10 §6 item 1)", () => {
