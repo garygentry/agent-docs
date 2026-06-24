@@ -267,17 +267,18 @@ export function parseSpec(raw: unknown): DiagramSpecT {
  *        nodes are INTENTIONALLY outline-only, so the {@link assertRoleFills}
  *        guard (#13) is skipped; for `translucent`/`solid` (or when omitted) it
  *        still runs to catch the accidental outline-only regression.
- * @param embedFont - Whether the subset font was embedded (default true). When
- *        false (`--embed-font=false`), the SVG intentionally references a system
+ * @param embedFont - Whether the subset font was embedded (default false, matching
+ *        the engine default). When false the SVG intentionally references a system
  *        font stack, so the {@link assertFontPortable} embedded-face guard
  *        (REQ-OUT-04) is skipped — though the external-URL/`@import` ban still runs.
+ *        Pass true to require an embedded face (`--embed-font true` output).
  * @throws {DiagramOutputError} On the first failed assertion (code OUTPUT_INVALID,
  *         exit 4); `detail` names the assertion that failed.
  */
 export function assertOutputValid(
   svg: string,
   fillStyle?: FillStyle,
-  embedFont: boolean = true,
+  embedFont: boolean = false,
 ): void {
   const doc = assertWellFormed(svg); // parse once, reuse the tree
   assertTier2(svg);

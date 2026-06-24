@@ -84,6 +84,7 @@ describe("postProcess — graph path", () => {
     const raw = await graphRaw(archSpec);
     const { svg } = postProcess(raw, {
       theme: "light",
+      embedFont: true,
       spec: archSpec,
       width: 0,
       height: 0,
@@ -196,9 +197,15 @@ describe("postProcess — accent + errors", () => {
 });
 
 describe("postProcess — shape fill styles (#fill)", () => {
-  it("default (translucent) emits fill-opacity 0.8 on role shapes and legend swatches", async () => {
+  it("translucent emits fill-opacity 0.8 on role shapes and legend swatches", async () => {
     const raw = await graphRaw(archSpec);
-    const { svg } = postProcess(raw, { theme: "light", spec: archSpec, width: 0, height: 0 });
+    const { svg } = postProcess(raw, {
+      theme: "light",
+      fillStyle: "translucent",
+      spec: archSpec,
+      width: 0,
+      height: 0,
+    });
     const light = resolveTheme("light");
     expect(svg).toContain(`fill="${light.roles.frontend.fill}" fill-opacity="0.8"`);
     // Legend swatch for the non-default backend role also carries the opacity.

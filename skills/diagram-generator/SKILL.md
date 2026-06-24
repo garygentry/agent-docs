@@ -62,8 +62,9 @@ When a user asks for a diagram:
 5. **Visually inspect the output before declaring success (#16).** Render at least
    the SVG (or a PNG via `--format both`) and **look at it** — do not assume it is
    correct. Open the image and sanity-check:
-   - **Fills:** role-colored nodes are filled (translucent by default) and match
-     their legend swatches. Pass `--fill-style solid` for opaque fills or
+   - **Fills:** role-colored nodes are solid cards by default (dark-tint fill +
+     vivid border + same-hue label) and match their legend swatches. Pass
+     `--fill-style translucent` to soften over a transparent host, or
      `--fill-style transparent` for outline-only nodes.
    - **Cards & panel:** by default nodes are rounded cards with a soft drop shadow
      (`--card-style flat` for square/shadowless) on an opaque, rounded, bordered
@@ -80,9 +81,10 @@ When a user asks for a diagram:
    - **PNG text:** if you produced a PNG, confirm labels actually render (not blank).
    - **Background:** opaque rounded panel by default — pass `--background transparent`
      when the diagram should blend into the host surface instead.
-   - **File size:** SVGs embed the subset font (~20 KB) so they render identically
-     offline. For a web/docs surface where a system font is acceptable, `--embed-font
-false` trades that guarantee for a much smaller SVG (PNGs always embed).
+   - **Font:** SVGs use a system font stack by default (small, crisp on web/docs).
+     For an artifact that must render byte-identically offline (Inkscape, Office,
+     PDF), pass `--embed-font true` to bake in the subset font (~20 KB). PNGs always
+     embed.
 6. **Report the written artifact path(s)** on success. On a non-zero exit, surface
    the CLI's **stderr verbatim** to the user, correct the spec, and re-invoke.
 
@@ -126,10 +128,10 @@ diagram-render <input.json | -> [options]
   --background <transparent|opaque|#rrggbb>  default: "opaque" (rounded, bordered theme panel)
   --direction <LR|TB|RL|BT>  override layout direction (graph types) to tame long flows
   --padding <px>            uniform canvas margin around content (default 20)
-  --fill-style <translucent|solid|transparent>  role-shape fill; default "translucent" (0.8 opacity)
+  --fill-style <translucent|solid|transparent>  role-shape fill; default "solid" (opaque card)
   --card-style <elevated|flat>  node treatment; default "elevated" (rounded + drop shadow)
   --legend <auto|right|bottom|none>  legend placement; default "auto" (bottom for wide, right for tall)
-  --embed-font <true|false>  embed the subset font for offline-identical SVGs; default true
+  --embed-font <true|false>  embed the subset font for offline-identical SVGs; default false (system stack)
   --format <svg|png|both>   default: "svg"
   --out-file <path>         explicit output path (highest precedence)
   --out-name <base>         base name written into --out-dir (overrides slug)
