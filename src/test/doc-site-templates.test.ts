@@ -34,7 +34,7 @@ const MANIFEST_FIXTURES = path.join(
   "manifests",
 );
 
-/** Canonical token set — the in-test mirror of 00 §4.1 (exactly 23 tokens). */
+/** Canonical token set — the in-test mirror of 00 §4.1 (exactly 22 tokens). */
 const CANONICAL_TOKENS = [
   "SITE_TITLE",
   "SITE_TITLE_SLUG",
@@ -52,7 +52,6 @@ const CANONICAL_TOKENS = [
   "DEFAULT_BRANCH",
   "ASTRO_VERSION",
   "STARLIGHT_VERSION",
-  "REHYPE_LINKS_VERSION",
   "DOCS_PKG_DIR_TO_ROOT",
   "SYMLINK_PAGE_LINES",
   // Derived toolchain tokens (pure functions of RUNTIME/PKG_MANAGER) — decouple the

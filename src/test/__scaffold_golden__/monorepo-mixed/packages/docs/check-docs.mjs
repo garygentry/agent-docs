@@ -114,20 +114,6 @@ function ruleBrokenInternalLinks(files) {
         if (EXTERNAL_RE.test(raw)) continue;
         const target = raw.split("#")[0].split("?")[0];
         if (target === "") continue; // pure anchor already excluded
-        // §4.1a (#24) — internal links to a `.md`/`.mdx` FILE break under a base
-        // path: Astro emits clean extensionless routes and prepends BASE_PATH, so a
-        // verbatim `./foo.mdx` 404s on a hosted subpath. Require root-absolute slug
-        // URLs instead (e.g. `/guides/setup/`). Caught at build time so the link
-        // never ships broken.
-        if (/\.mdx?$/i.test(target)) {
-          report(
-            "relative-md-link",
-            file,
-            i + 1,
-            `internal link \`${raw}\` points at a .md/.mdx file; use a root-absolute slug URL (e.g. /guides/setup/) so it survives a base-path deploy`,
-          );
-          continue;
-        }
         const base = target.startsWith("/") ? CONTENT_DIR : dirname(file);
         const cleaned = target.startsWith("/") ? target.slice(1) : target;
         const abs = resolve(base, cleaned);
@@ -136,6 +122,47 @@ function ruleBrokenInternalLinks(files) {
         const candidates = [`${abs}.md`, `${abs}.mdx`, join(abs, "index.md"), join(abs, "index.mdx")];
         if (candidates.some(resolvesOn)) continue;
         report("broken-link", file, i + 1, `broken internal link: \`${raw}\` (does not resolve)`);
+      }
+    });
+  }
+}
+
+// §4.1b (#24/#29) — Rule 1b: non-canonical (base-unsafe) internal links. A
+// relative internal link (`foo/bar/`, `./x`, `../y`) — or any link to a
+// `.md`/`.mdx` file — renders verbatim on deploy. rehype-base-links.mjs only
+// rewrites relative `.md` links and base-prefixes root-absolute `/slug/` links,
+// so a bare relative route still 404s under a subpath base. Require the
+// root-absolute `/slug/` form for internal links authored natively for the site.
+function ruleNonCanonicalLinks(files) {
+  const LINK_RE = /(!?)\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+  const EXTERNAL_RE = /^(https?:|mailto:|tel:|#|\/\/|data:|\/)/i; // `/` = already canonical
+  // Exempt externally-sourced pages: symlinked spec/architecture docs whose real
+  // path escapes CONTENT_DIR are dual-context (also rendered on GitHub), where
+  // relative `./x.md` links are the correct form and must stay. rehype-base-links.mjs
+  // rewrites those to absolute base-aware slugs for the site build, so we enforce
+  // the root-absolute convention only on pages authored natively for the docs site.
+  let contentReal;
+  try { contentReal = realpathSync(CONTENT_DIR); } catch { contentReal = CONTENT_DIR; }
+  const isExternallySourced = (file) => {
+    try { return !realpathSync(file).startsWith(contentReal); } catch { return false; }
+  };
+  for (const file of files) {
+    if (isExternallySourced(file)) continue;
+    const lines = readFileSync(file, "utf8").split("\n");
+    lines.forEach((line, i) => {
+      let m;
+      LINK_RE.lastIndex = 0;
+      while ((m = LINK_RE.exec(line)) !== null) {
+        const isImage = m[1] === "!";
+        const raw = m[2];
+        if (EXTERNAL_RE.test(raw)) continue;
+        if (isImage) continue; // assets resolve relative to the page; not navigated
+        report(
+          "non-canonical-link",
+          file,
+          i + 1,
+          `non-canonical internal link: \`${raw}\` — use a root-absolute \`/slug/\` form so the deploy base is applied`,
+        );
       }
     });
   }
@@ -212,6 +239,7 @@ function ruleMissingFrontmatter(files) {
 }
 
 ruleBrokenInternalLinks(pageFiles);      // §4.1 — all pages, incl. unmanaged
+ruleNonCanonicalLinks(pageFiles);        // §4.1b — base-unsafe internal links
 ruleSidebarManifestParity();             // §4.2 — managed pages only
 ruleOrphanedSymlinks();                  // §4.3
 ruleMissingFrontmatter(pageFiles);       // §4.4 — all pages, incl. unmanaged

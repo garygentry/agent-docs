@@ -122,24 +122,30 @@ Guidance, learned from real runs:
   check vs. Starlight's relative-`.md` rewriting): a page can build fine yet still be
   flagged. Don't chase phantom build failures — reconcile the link or the slug.
 
-### Internal links: root-absolute slug URLs only (#24)
+### Internal links: root-absolute slug URLs only (#24/#29)
 
 **Author every in-site link as a root-absolute slug URL** — `/guides/setup/`, never
 a relative `.md`/`.mdx` file link like `./setup.mdx` or `../guides/setup.md`. A
 verbatim `.md`/`.mdx` link 404s under a base-path deploy (`BASE_PATH="/repo/"`):
-Astro serves clean, extensionless routes and prepends the base, so the literal file
-path resolves to nothing on a hosted subpath. A leading-slash slug is prefixed with
-the base automatically and survives both root and subpath deploys.
+Astro serves clean, extensionless routes, so the literal file path resolves to
+nothing on a hosted subpath. Note Astro does **not** apply the base to links
+written in Markdown/MDX content (#29) — the rehype backstop below is what prefixes
+them — so a root-absolute slug is the canonical, base-safe form for both root and
+subpath deploys.
 
 Three layers enforce this so the 105-link class can't ship broken:
 
 1. **This convention** — the rule above; all emitted example pages already follow it
    (e.g. `index.mdx` links `guides/setup/`).
-2. **Drift guard** — `check-docs.mjs`'s `relative-md-link` rule **fails the build**
-   on any internal `.md`/`.mdx` link (see `drift-guard.md`).
-3. **Rehype backstop** — `astro-rehype-relative-markdown-links` (wired base-aware in
-   `astro.config.mjs`) rewrites any stray relative `.md`/`.mdx` link to a clean
-   base-prefixed route, so even a missed link renders correctly.
+2. **Drift guard** — `check-docs.mjs`'s `non-canonical-link` rule **fails the build**
+   on any internal link not in root-absolute `/slug/` form (see `drift-guard.md`).
+   Externally-sourced symlinked docs are exempt — they keep relative `./x.md` links
+   so they still render correctly on GitHub.
+3. **Rehype backstop** — `rehype-base-links.mjs` (a zero-dependency plugin wired
+   base-aware in `astro.config.mjs`) both prepends the base to root-absolute links
+   so they survive a subpath deploy (#29), and rewrites any stray relative
+   `.md`/`.mdx` link (including the exempt symlinked docs) to a clean base-prefixed
+   route, so even a missed link renders correctly.
 
 ---
 
