@@ -20,6 +20,8 @@ import { dirname, extname, resolve, sep } from "node:path";
 import {
   Background,
   type Background as BackgroundT,
+  CardStyle,
+  type CardStyle as CardStyleT,
   CONTRACT_VERSION,
   DEFAULT_FORMAT,
   DiagramType,
@@ -27,6 +29,8 @@ import {
   type Direction as DirectionT,
   FillStyle,
   type FillStyle as FillStyleT,
+  LegendPlacement,
+  type LegendPlacement as LegendPlacementT,
   HexColor,
   type DiagramType as DiagramTypeT,
   type HexColor as HexColorT,
@@ -73,6 +77,12 @@ export interface ParsedArgs {
   readonly padding?: number;
   /** `--fill-style` override; `translucent`/`solid`/`transparent`, validated at parse. */
   readonly fillStyle?: FillStyleT;
+  /** `--card-style` override; `elevated`/`flat`, validated at parse. */
+  readonly cardStyle?: CardStyleT;
+  /** `--legend` override; `auto`/`right`/`bottom`/`none`, validated at parse. */
+  readonly legend?: LegendPlacementT;
+  /** `--embed-font` override; `true`/`false`. Omitted → embed (REQ-OUT-04). */
+  readonly embedFont?: boolean;
   /** Requested artifact format(s); defaults to DEFAULT_FORMAT ("svg"). */
   readonly format: OutputFormat;
   /** `--out-file` explicit path (highest precedence, §2.3). */
@@ -94,6 +104,9 @@ const VALUE_FLAGS = new Set([
   "--direction",
   "--padding",
   "--fill-style",
+  "--card-style",
+  "--legend",
+  "--embed-font",
   "--format",
   "--out-file",
   "--out-name",
@@ -134,6 +147,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
   let direction: DirectionT | undefined;
   let padding: number | undefined;
   let fillStyle: FillStyleT | undefined;
+  let cardStyle: CardStyleT | undefined;
+  let legend: LegendPlacementT | undefined;
+  let embedFont: boolean | undefined;
   let format: OutputFormat = DEFAULT_FORMAT;
   let outFile: string | undefined;
   let outName: string | undefined;
@@ -225,6 +241,29 @@ export function parseArgs(argv: string[]): ParsedArgs {
           fillStyle = r.data;
           break;
         }
+        case "--card-style": {
+          const r = CardStyle.safeParse(value);
+          if (!r.success) {
+            throw new DiagramUsageError("--card-style must be elevated or flat", value);
+          }
+          cardStyle = r.data;
+          break;
+        }
+        case "--legend": {
+          const r = LegendPlacement.safeParse(value);
+          if (!r.success) {
+            throw new DiagramUsageError("--legend must be auto, right, bottom, or none", value);
+          }
+          legend = r.data;
+          break;
+        }
+        case "--embed-font": {
+          if (value !== "true" && value !== "false") {
+            throw new DiagramUsageError("--embed-font must be true or false", value);
+          }
+          embedFont = value === "true";
+          break;
+        }
         case "--format": {
           if (!FORMATS.has(value)) {
             throw new DiagramUsageError("--format must be svg, png, or both", value);
@@ -280,6 +319,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
     direction,
     padding,
     fillStyle,
+    cardStyle,
+    legend,
+    embedFont,
     format,
     outFile,
     outName,
@@ -475,7 +517,30 @@ export async function main(argv: string[]): Promise<number> {
       background: args.background,
       padding: args.padding,
       fillStyle: args.fillStyle,
+      cardStyle: args.cardStyle,
+      legend: args.legend,
+      embedFont: args.embedFont,
     });
+
+    // PNG rasterization needs the embedded font, even when the SVG artifact is
+    // slimmed (--embed-font=false). Render a font-embedded variant just for the
+    // raster source in that case; otherwise the SVG result already carries it.
+    const needsPng = args.format === "png" || args.format === "both";
+    const pngSvg =
+      needsPng && args.embedFont === false
+        ? (
+            await render(spec, {
+              theme,
+              accent,
+              background: args.background,
+              padding: args.padding,
+              fillStyle: args.fillStyle,
+              cardStyle: args.cardStyle,
+              legend: args.legend,
+              embedFont: true,
+            })
+          ).svg
+        : result.svg;
 
     // #14/#16 — warn (non-fatal) on extreme aspect ratios that read poorly when
     // embedded; suggest a layout-direction override. Sequence diagrams are exempt
@@ -506,8 +571,7 @@ export async function main(argv: string[]): Promise<number> {
         process.stdout.write(result.svg);
         continue;
       }
-      const bytes: string | Uint8Array =
-        format === "svg" ? result.svg : await renderPng(result.svg);
+      const bytes: string | Uint8Array = format === "svg" ? result.svg : await renderPng(pngSvg);
       const destPath = (format === "svg" ? out.svg : out.png) as string;
       const root =
         args.outFile !== undefined

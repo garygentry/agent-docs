@@ -64,6 +64,22 @@
         "transparent"
       ]
     },
+    "cardStyle": {
+      "type": "string",
+      "enum": [
+        "elevated",
+        "flat"
+      ]
+    },
+    "legend": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "right",
+        "bottom",
+        "none"
+      ]
+    },
     "nodes": {
       "type": "array",
       "items": {

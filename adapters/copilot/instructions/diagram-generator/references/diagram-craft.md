@@ -46,6 +46,24 @@ with `--fill-style` (or the `fill` spec field):
 The choice applies uniformly to every role node and is mirrored on the legend so the
 swatches always match the nodes.
 
+### Card style & panel
+
+Nodes render as **elevated cards by default** — rounded corners plus a soft drop
+shadow — sitting on an **opaque, rounded, bordered theme panel** (`--background
+opaque`, the default). This is what makes a generated diagram read like a polished,
+self-contained figure rather than loose shapes. Override per render:
+
+- `--card-style flat` — square corners, no shadow, for a lighter/plainer look.
+- `--background transparent` — drop the panel so the diagram blends into the host
+  surface (use only when embedding onto an already-styled background).
+
+### Two-line node labels
+
+Give important nodes a **title plus a short descriptor** on a second line with `\n`
+(e.g. `"bun run build\n(emitter)"`). The descriptor adds context without widening the
+layout much and makes each card self-explanatory — prefer it over cramming detail into
+one long line.
+
 ## Z-order (paint order)
 
 The renderer enforces a fixed back→front paint order so the diagram is always
@@ -66,8 +84,10 @@ and the renderer bands them.
   role (a single-role or all-`default` diagram needs no key).
 - One row per role present (excluding `default`): a swatch plus the title-cased role
   name.
-- The legend is placed **outside all boundary boxes** — the canvas is expanded to the
-  right and the legend lives in the new margin, so it can never overlap a container.
+- The legend is placed **outside all boundary boxes** and never overlaps a container.
+  Placement is **automatic** (`--legend auto`): a **bottom row** for wide/horizontal
+  diagrams (so they don't grow even wider) and a **right column** for tall ones. Force
+  a side with `--legend right|bottom`, or omit the key with `--legend none`.
 
 Authoring implication: roles are doing double duty as both color and legend entries.
 Consistent, accurate roles produce a clean, self-documenting key; ad-hoc roles
@@ -83,7 +103,9 @@ produce a noisy one.
 - Keep labels short — they render as plain text inside boxes; long labels widen the
   layout. For ER entities, put each field on its own line with `\n`.
 - Direction is engine-chosen per type (e.g. graphs flow left-to-right or top-down);
-  shape the _graph_, not the pixels.
+  shape the _graph_, not the pixels. For a long linear flow that renders as an
+  unreadable ultra-wide strip (the CLI warns past ~6:1), pass `--direction TB` to wrap
+  it vertically, or group stages into `containers`.
 
 ## Faithfulness (the overriding rule)
 

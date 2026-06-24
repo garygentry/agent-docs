@@ -1,5 +1,14 @@
 import { parseXml, XmlElement, XmlText } from "@rgrove/parse-xml";
-import type { Background, DiagramSpec, FillStyle, HexColor, NodeRole, Theme } from "./schema.js";
+import type {
+  Background,
+  CardStyle,
+  DiagramSpec,
+  FillStyle,
+  HexColor,
+  LegendPlacement,
+  NodeRole,
+  Theme,
+} from "./schema.js";
 import { SVG_COORD_PRECISION } from "./schema.js";
 import { resolveTheme, type ResolvedPalette } from "./theme.js";
 import { DiagramOutputError } from "./errors.js";
@@ -62,6 +71,23 @@ export interface PostProcessOptions {
    * is outline-only. Falls back to `spec.fill`.
    */
   fillStyle?: FillStyle;
+  /**
+   * Node card treatment. `elevated` (default) rounds role nodes and gives them a
+   * drop shadow; `flat` is square + shadowless. Falls back to `spec.cardStyle`.
+   */
+  cardStyle?: CardStyle;
+  /**
+   * Legend placement. `auto` (default) picks bottom for horizontal layouts and
+   * right for vertical; `right`/`bottom` force a side; `none` omits it. Falls back
+   * to `spec.legend`.
+   */
+  legend?: LegendPlacement;
+  /**
+   * When true (default), the subset font is embedded as a `data:` URI so the SVG
+   * renders identically offline (REQ-OUT-04). When false, the SVG references a
+   * system font stack instead — smaller, but not byte-identical across viewers.
+   */
+  embedFont?: boolean;
   /** The validated DiagramSpec; `title`/`description` feed a11y (§3.5), `nodes`/`containers` the legend (§3.4). */
   spec: DiagramSpec;
   /** Intrinsic width from the render path (sequence supplies it; graph passes 0 and it is derived from the SVG). */
@@ -176,11 +202,14 @@ function hasClass(cls: string | undefined, token: string): boolean {
 export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProcessResult {
   const palette = resolveTheme(opts.theme, opts.accent ?? opts.spec.accent);
   const background = resolveBackground(
-    opts.background ?? opts.spec.background ?? "transparent",
+    opts.background ?? opts.spec.background ?? "opaque",
     palette,
   );
   const padding = Math.max(0, opts.padding ?? DEFAULT_PADDING);
   const fillStyle: FillStyle = opts.fillStyle ?? opts.spec.fill ?? "translucent";
+  const cardStyle: CardStyle = opts.cardStyle ?? opts.spec.cardStyle ?? "elevated";
+  const legendPlacement: LegendPlacement = opts.legend ?? opts.spec.legend ?? "auto";
+  const embedFont = opts.embedFont ?? true;
 
   // ── §3.1 Parse ──────────────────────────────────────────────────
   const root = parseRoot(rawSvg);
@@ -198,15 +227,22 @@ export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProce
   const drawParent = findDrawParent(root);
 
   // ── §3.2 Semantic color baking ──────────────────────────────────
-  bakeColors(drawParent, palette, background, fillStyle);
+  bakeColors(drawParent, palette, background, fillStyle, cardStyle);
 
   // ── §3.3 Z-order enforcement ────────────────────────────────────
   enforceZOrder(drawParent);
 
   // ── §3.4 Legend placement (may expand the canvas) ───────────────
-  const legend = buildLegend(opts.spec, palette);
+  const legend = legendPlacement === "none" ? [] : buildLegend(opts.spec, palette);
   if (legend.length > 0) {
-    const expanded = placeLegend(root, legend, palette, fillStyle, minX, minY, vbW, vbH);
+    // `auto`: a wider-than-tall (predominantly horizontal) layout gets a bottom
+    // row so it does not grow even wider; a tall layout gets a right column.
+    const side =
+      legendPlacement === "auto" ? (vbW >= vbH * 1.2 ? "bottom" : "right") : legendPlacement;
+    const expanded =
+      side === "bottom"
+        ? placeLegendBottom(root, legend, palette, fillStyle, minX, minY, vbW, vbH)
+        : placeLegendRight(root, legend, palette, fillStyle, minX, minY, vbW, vbH);
     vbW = expanded.vbW;
     vbH = expanded.vbH;
   }
@@ -215,11 +251,11 @@ export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProce
   injectA11y(root, opts.spec);
 
   // ── §3.6 Font embedding ─────────────────────────────────────────
-  embedFont(root);
+  injectDefs(root, embedFont, cardStyle);
 
   // ── Backdrop rect (full viewBox), behind all drawing content ────
   // Omitted entirely when the background is transparent (#10).
-  insertBackdrop(root, background, minX, minY, vbW, vbH);
+  insertBackdrop(root, background, palette, minX, minY, vbW, vbH);
 
   // Authoritative dimensions on the root (numeric, no `pt`).
   root.attrs["width"] = canonNumber(vbW);
@@ -323,6 +359,7 @@ function bakeColors(
   palette: ResolvedPalette,
   background: HexColor | null,
   fillStyle: FillStyle,
+  cardStyle: CardStyle,
 ): void {
   // Recolor any graphviz backdrop polygon (direct fill="white" child) to the
   // resolved background, or to "none" when transparent so no opaque panel shows (#10).
@@ -349,6 +386,8 @@ function bakeColors(
           // opacity/outline-only (#fill); stroke is always the role stroke.
           applyRoleFill(e, colors.fill, fillStyle);
           e.attrs["stroke"] = colors.stroke;
+          // Elevated cards float on a soft drop shadow (filter defined in §3.6).
+          if (cardStyle === "elevated") e.attrs["filter"] = "url(#card-shadow)";
         } else if (e.name === "text") {
           e.attrs["fill"] = colors.text;
         }
@@ -480,9 +519,10 @@ function buildLegend(spec: DiagramSpec, palette: ResolvedPalette): LegendEntry[]
 
 /**
  * Append a legend group placed in an expanded right-hand margin (outside every
- * boundary box, REQ-COV-01) and return the expanded canvas dimensions.
+ * boundary box, REQ-COV-01) and return the expanded canvas dimensions. Best for
+ * tall/vertical layouts where extra width is cheap.
  */
-function placeLegend(
+function placeLegendRight(
   root: SElement,
   entries: LegendEntry[],
   palette: ResolvedPalette,
@@ -558,6 +598,89 @@ function placeLegend(
   return { vbW: newVbW, vbH: newVbH };
 }
 
+/**
+ * Append a legend laid out as a single horizontal row in an expanded bottom margin
+ * and return the expanded canvas dimensions. Best for wide/horizontal layouts where
+ * extra height (not width) keeps the aspect ratio readable.
+ */
+function placeLegendBottom(
+  root: SElement,
+  entries: LegendEntry[],
+  palette: ResolvedPalette,
+  fillStyle: FillStyle,
+  minX: number,
+  minY: number,
+  vbW: number,
+  vbH: number,
+): { vbW: number; vbH: number } {
+  // Each entry occupies swatch + gap + label + inter-entry gutter.
+  const entryWidths = entries.map((e) => LG_SWATCH + LG_TEXT_GAP + e.text.length * LG_CHAR_W);
+  const rowWidth = entryWidths.reduce((a, w) => a + w, 0) + LG_GUTTER * (entries.length - 1);
+  const bandH = LG_PAD * 2 + LG_ROW_H;
+  const legendY = minY + vbH + LG_GUTTER;
+  const newVbH = vbH + LG_GUTTER + bandH;
+  const newVbW = Math.max(vbW, rowWidth + LG_PAD * 2);
+
+  const group: SElement = {
+    type: "element",
+    name: "g",
+    attrs: { class: "legend" },
+    children: [],
+  };
+  // Legend panel surface spanning the row.
+  group.children.push({
+    type: "element",
+    name: "rect",
+    attrs: {
+      class: "legend-box",
+      x: canonNumber(minX),
+      y: canonNumber(legendY),
+      width: canonNumber(rowWidth + LG_PAD * 2),
+      height: canonNumber(bandH),
+      fill: palette.surface,
+      stroke: palette.boundary,
+    },
+    children: [],
+  });
+
+  let cursorX = minX + LG_PAD;
+  const rowY = legendY + LG_PAD;
+  entries.forEach((entry, i) => {
+    const swatch: SElement = {
+      type: "element",
+      name: "rect",
+      attrs: {
+        x: canonNumber(cursorX),
+        y: canonNumber(rowY),
+        width: canonNumber(LG_SWATCH),
+        height: canonNumber(LG_SWATCH),
+        fill: entry.fill,
+        stroke: entry.stroke,
+      },
+      children: [],
+    };
+    applyRoleFill(swatch, entry.fill, fillStyle);
+    group.children.push(swatch);
+    group.children.push({
+      type: "element",
+      name: "text",
+      attrs: {
+        x: canonNumber(cursorX + LG_SWATCH + LG_TEXT_GAP),
+        y: canonNumber(rowY + LG_SWATCH - 2),
+        fill: palette.label,
+        "font-family": EMBEDDED_FONT_FAMILY,
+        "font-size": String(LG_FONT_SIZE),
+      },
+      children: [{ type: "text", value: entry.text }],
+    });
+    cursorX += entryWidths[i]! + LG_GUTTER;
+  });
+
+  // Legend paints last (never occluded, §3.3/§3.4).
+  root.children.push(group);
+  return { vbW: newVbW, vbH: newVbH };
+}
+
 // ---------------------------------------------------------------------------
 // §3.5 Accessibility injection (REQ-A11Y-01)
 // ---------------------------------------------------------------------------
@@ -588,31 +711,66 @@ function injectA11y(root: SElement, spec: DiagramSpec): void {
 // §3.6 Font embedding (REQ-OUT-04)
 // ---------------------------------------------------------------------------
 
-/** Embed the subset font as a data-URI `@font-face` and normalize `font-family`. */
-function embedFont(root: SElement): void {
-  const css =
-    `@font-face{font-family:"${EMBEDDED_FONT_FAMILY}";font-style:normal;` +
-    `font-weight:400;src:url(${FONT_SUBSET_DATA_URI}) format("woff2");}`;
-  const style: SElement = {
-    type: "element",
-    name: "style",
-    attrs: { type: "text/css" },
-    children: [{ type: "text", value: css }],
-    rawText: true,
-  };
-  const defs: SElement = {
-    type: "element",
-    name: "defs",
-    attrs: {},
-    children: [style],
-  };
-  // Defs is inserted after the a11y nodes so <title>/<desc> stay first/second.
-  root.children.splice(2, 0, defs);
+/**
+ * System font stack used when the subset font is NOT embedded (`--embed-font=false`).
+ * `DiagramSans` is listed first so an embedded face (if present) still wins; the
+ * rest are widely-installed sans fallbacks matching the subset's metrics closely.
+ */
+const SYSTEM_FONT_STACK = "DiagramSans, Segoe UI, Roboto, Helvetica, Arial, sans-serif" as const;
 
-  // Rewrite every font-family reference to the single embedded face.
+/**
+ * Build and insert the `<defs>` (subset `@font-face` when `embedFont`; a card drop
+ * shadow when `cardStyle==="elevated"`) and normalize every `font-family`.
+ *
+ * When `embedFont` is false the SVG references {@link SYSTEM_FONT_STACK} instead of
+ * the embedded face — smaller output that trades the offline byte-identical
+ * guarantee (REQ-OUT-04) for portability across installed fonts.
+ */
+function injectDefs(root: SElement, embedFont: boolean, cardStyle: CardStyle): void {
+  const defChildren: SNode[] = [];
+
+  if (embedFont) {
+    const css =
+      `@font-face{font-family:"${EMBEDDED_FONT_FAMILY}";font-style:normal;` +
+      `font-weight:400;src:url(${FONT_SUBSET_DATA_URI}) format("woff2");}`;
+    defChildren.push({
+      type: "element",
+      name: "style",
+      attrs: { type: "text/css" },
+      children: [{ type: "text", value: css }],
+      rawText: true,
+    });
+  }
+
+  // Soft drop shadow giving role cards depth (elevated card style only).
+  if (cardStyle === "elevated") {
+    defChildren.push({
+      type: "element",
+      name: "filter",
+      attrs: { id: "card-shadow", x: "-6%", y: "-8%", width: "112%", height: "120%" },
+      children: [
+        {
+          type: "element",
+          name: "feDropShadow",
+          attrs: { dx: "1.5", dy: "2", stdDeviation: "2.5", "flood-opacity": "0.4" },
+          children: [],
+        },
+      ],
+    });
+  }
+
+  if (defChildren.length > 0) {
+    const defs: SElement = { type: "element", name: "defs", attrs: {}, children: defChildren };
+    // Defs is inserted after the a11y nodes so <title>/<desc> stay first/second.
+    root.children.splice(2, 0, defs);
+  }
+
+  // Rewrite every font-family reference: the embedded face when embedding, else
+  // the system stack.
+  const family = embedFont ? EMBEDDED_FONT_FAMILY : SYSTEM_FONT_STACK;
   walk(root, (e) => {
     if (e.attrs["font-family"] !== undefined) {
-      e.attrs["font-family"] = EMBEDDED_FONT_FAMILY;
+      e.attrs["font-family"] = family;
     }
   });
 }
@@ -629,6 +787,7 @@ function embedFont(root: SElement): void {
 function insertBackdrop(
   root: SElement,
   background: HexColor | null,
+  palette: ResolvedPalette,
   minX: number,
   minY: number,
   vbW: number,
@@ -644,7 +803,9 @@ function insertBackdrop(
       y: canonNumber(minY),
       width: canonNumber(vbW),
       height: canonNumber(vbH),
+      rx: "14",
       fill: background,
+      stroke: palette.boundary,
     },
     children: [],
   };

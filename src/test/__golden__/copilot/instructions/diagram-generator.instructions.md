@@ -63,14 +63,24 @@ When a user asks for a diagram:
    - **Fills:** role-colored nodes are filled (translucent by default) and match
      their legend swatches. Pass `--fill-style solid` for opaque fills or
      `--fill-style transparent` for outline-only nodes.
+   - **Cards & panel:** by default nodes are rounded cards with a soft drop shadow
+     (`--card-style flat` for square/shadowless) on an opaque, rounded, bordered
+     theme panel. Pass `--background transparent` only when the diagram must blend
+     into the host surface (it then loses the panel framing).
+   - **Legend:** placed automatically — a bottom row for wide/horizontal diagrams,
+     a right column for tall ones. Force it with `--legend right|bottom`, or drop
+     it with `--legend none`.
    - **Margins:** content is not flush against the canvas edge (default `--padding`
      handles this; raise it if cramped).
    - **Aspect ratio / legibility:** the diagram is not an unreadable ultra-wide or
      ultra-tall strip. The CLI prints a `warning:` to stderr when the ratio exceeds
      ~6:1 — heed it and pass `--direction TB`/`LR` (or restructure) for long flows.
    - **PNG text:** if you produced a PNG, confirm labels actually render (not blank).
-   - **Background:** transparent by default — pass `--background opaque` if the host
-     surface needs a painted panel.
+   - **Background:** opaque rounded panel by default — pass `--background transparent`
+     when the diagram should blend into the host surface instead.
+   - **File size:** SVGs embed the subset font (~20 KB) so they render identically
+     offline. For a web/docs surface where a system font is acceptable, `--embed-font
+false` trades that guarantee for a much smaller SVG (PNGs always embed).
 6. **Report the written artifact path(s)** on success. On a non-zero exit, surface
    the CLI's **stderr verbatim** to the user, correct the spec, and re-invoke.
 
@@ -111,10 +121,13 @@ diagram-render <input.json | -> [options]
   --type   <architecture|flowchart|sequence|er|state|dataflow>  override spec.diagramType
   --theme  <light|dark>     default: spec.theme (else "light")
   --accent <#rrggbb>        override spec.accent (validated as #rrggbb)
-  --background <transparent|opaque|#rrggbb>  default: "transparent" (omits the backdrop)
+  --background <transparent|opaque|#rrggbb>  default: "opaque" (rounded, bordered theme panel)
   --direction <LR|TB|RL|BT>  override layout direction (graph types) to tame long flows
   --padding <px>            uniform canvas margin around content (default 20)
   --fill-style <translucent|solid|transparent>  role-shape fill; default "translucent" (0.8 opacity)
+  --card-style <elevated|flat>  node treatment; default "elevated" (rounded + drop shadow)
+  --legend <auto|right|bottom|none>  legend placement; default "auto" (bottom for wide, right for tall)
+  --embed-font <true|false>  embed the subset font for offline-identical SVGs; default true
   --format <svg|png|both>   default: "svg"
   --out-file <path>         explicit output path (highest precedence)
   --out-name <base>         base name written into --out-dir (overrides slug)

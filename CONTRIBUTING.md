@@ -162,7 +162,9 @@ node skills/diagram-generator/scripts/diagram-render.mjs /tmp/sample-architectur
 ```
 
 The output is deterministic, so re-rendering an unchanged spec produces byte-identical
-SVGs. The samples are transparent by default and embedded via a light/dark `<picture>`.
+SVGs. The samples render on an opaque, rounded theme panel by default (pass
+`--background transparent` to blend into the host) and are embedded via a light/dark
+`<picture>`.
 
 ## Specs and architecture docs
 

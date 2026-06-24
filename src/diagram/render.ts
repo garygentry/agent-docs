@@ -1,8 +1,10 @@
 import type {
   Background,
+  CardStyle,
   DiagramSpec,
   FillStyle,
   HexColor,
+  LegendPlacement,
   RenderResult,
   Theme,
 } from "./schema.js";
@@ -24,6 +26,12 @@ export interface RenderOptions {
   padding?: number;
   /** Optional shape-fill style override; falls back to `spec.fill` (default translucent). */
   fillStyle?: FillStyle;
+  /** Optional node card treatment override; falls back to `spec.cardStyle` (default elevated). */
+  cardStyle?: CardStyle;
+  /** Optional legend placement override; falls back to `spec.legend` (default auto). */
+  legend?: LegendPlacement;
+  /** When false, reference a system font stack instead of embedding the subset font (default true). */
+  embedFont?: boolean;
 }
 
 /**
@@ -61,7 +69,7 @@ export async function render(spec: DiagramSpec, opts: RenderOptions): Promise<Re
     width = seq.width;
     height = seq.height;
   } else {
-    const dot = emitDot(spec);
+    const dot = emitDot(spec, opts.cardStyle ?? spec.cardStyle);
     rawSvg = await renderGraph(dot);
     // Graphviz sets width/height/viewBox on its <svg>; postProcess (04 §3) reads
     // and canonicalizes them and returns the authoritative dimensions.
@@ -77,14 +85,18 @@ export async function render(spec: DiagramSpec, opts: RenderOptions): Promise<Re
     background: opts.background ?? spec.background,
     padding: opts.padding,
     fillStyle: opts.fillStyle ?? spec.fill,
+    cardStyle: opts.cardStyle ?? spec.cardStyle,
+    legend: opts.legend ?? spec.legend,
+    embedFont: opts.embedFont,
     spec,
     width,
     height,
   });
 
   // 4. Output assertion (REQ-REL-01) — throws DiagramOutputError; nothing written.
-  //    The fill style governs whether outline-only role nodes are valid (#fill/#13).
-  assertOutputValid(post.svg, opts.fillStyle ?? spec.fill);
+  //    The fill style governs whether outline-only role nodes are valid (#fill/#13);
+  //    embedFont governs whether the embedded-font invariant (REQ-OUT-04) applies.
+  assertOutputValid(post.svg, opts.fillStyle ?? spec.fill, opts.embedFont ?? true);
 
   // 5. Result.
   return {
