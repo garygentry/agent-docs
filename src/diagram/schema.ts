@@ -45,10 +45,11 @@ export const HexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "accent must be a 
 export type HexColor = z.infer<typeof HexColor>;
 
 /**
- * Canvas background choice (#10). `transparent` (the default) omits the backdrop
- * rect so the diagram blends into any host surface; `opaque` paints the theme's
- * background color; a `#rrggbb` value paints an explicit color. Text/stroke colors
- * still come from `theme`, so a transparent diagram reads on the consumer's
+ * Canvas background choice (#10). `opaque` (the default) paints the theme's
+ * background as a rounded, bordered panel so the diagram reads as a self-contained
+ * card on any host surface; `transparent` omits the backdrop rect so the diagram
+ * blends into the host; a `#rrggbb` value paints an explicit color. Text/stroke
+ * colors still come from `theme`, so a transparent diagram reads on the consumer's
  * surface as long as the matching theme is chosen.
  */
 export const Background = z.union([z.enum(["transparent", "opaque"]), HexColor]);
@@ -77,6 +78,27 @@ export type Direction = z.infer<typeof Direction>;
 export const FillStyle = z.enum(["translucent", "solid", "transparent"]);
 /** Shape-fill presentation for role-colored nodes. */
 export type FillStyle = z.infer<typeof FillStyle>;
+
+/**
+ * Visual treatment of role-colored nodes. `elevated` (the default) gives nodes
+ * rounded corners and a soft drop shadow so they read as cards lifted off the
+ * panel; `flat` keeps square corners and no shadow for a plainer, lighter look.
+ * CLI `--card-style` overrides.
+ */
+export const CardStyle = z.enum(["elevated", "flat"]);
+/** Visual treatment of role-colored nodes. */
+export type CardStyle = z.infer<typeof CardStyle>;
+
+/**
+ * Where the role legend is placed. `auto` (the default) chooses by layout —
+ * predominantly horizontal diagrams get a legend row along the bottom, vertical
+ * ones a column on the right — so the legend never distorts the aspect ratio.
+ * `right`/`bottom` force a side; `none` omits the legend entirely. CLI `--legend`
+ * overrides.
+ */
+export const LegendPlacement = z.enum(["auto", "right", "bottom", "none"]);
+/** Legend placement choice. */
+export type LegendPlacement = z.infer<typeof LegendPlacement>;
 
 // ---------------------------------------------------------------------------
 // Node, edge, and container (00 §2.2)
@@ -231,12 +253,16 @@ export const DiagramSpec = z
     theme: Theme.default("light"),
     /** Optional accent/brand color; CLI `--accent` overrides (REQ-THEME-01). */
     accent: HexColor.optional(),
-    /** Canvas background; CLI `--background` overrides. Omitted → `"transparent"` (#10). */
+    /** Canvas background; CLI `--background` overrides. Omitted → `"opaque"` (#10). */
     background: Background.optional(),
     /** Optional layout direction override for graph types; CLI `--direction` overrides (#14). */
     direction: Direction.optional(),
     /** Shape-fill style for role nodes + legend swatches; CLI `--fill-style` overrides. Omitted → `"translucent"`. */
     fill: FillStyle.optional(),
+    /** Node card treatment; CLI `--card-style` overrides. Omitted → `"elevated"`. */
+    cardStyle: CardStyle.optional(),
+    /** Legend placement; CLI `--legend` overrides. Omitted → `"auto"`. */
+    legend: LegendPlacement.optional(),
     /** Graph nodes (empty for sequence diagrams). */
     nodes: z.array(Node).default([]),
     /** Graph edges (empty for sequence diagrams). */
@@ -294,7 +320,7 @@ export type DiagramErrorCode =
  * consumers like doc-site can pin against a known release. Semantic
  * versioning: MAJOR = breaking contract change.
  */
-export const CONTRACT_VERSION = "1.1.0" as const;
+export const CONTRACT_VERSION = "1.2.0" as const;
 
 /**
  * Exit-code map keyed by error code (00 §5). `0` is success. Distinct non-zero

@@ -257,3 +257,73 @@ describe("postProcess — shape fill styles (#fill)", () => {
     }
   });
 });
+
+describe("postProcess — panel, cards, legend placement, font embedding", () => {
+  it("defaults to an opaque rounded bordered panel backdrop", async () => {
+    const raw = await graphRaw(archSpec);
+    const { svg } = postProcess(raw, { theme: "dark", spec: archSpec, width: 0, height: 0 });
+    const dark = resolveTheme("dark");
+    // A backdrop rect painted the theme background, rounded, with a boundary border.
+    expect(svg).toMatch(/<rect class="backdrop"[^>]*rx="14"/);
+    expect(svg).toContain(`fill="${dark.background}"`);
+    expect(svg).toMatch(/<rect class="backdrop"[^>]*stroke="/);
+  });
+
+  it("omits the backdrop entirely when background is transparent", async () => {
+    const raw = await graphRaw(archSpec);
+    const { svg } = postProcess(raw, {
+      theme: "dark",
+      background: "transparent",
+      spec: archSpec,
+      width: 0,
+      height: 0,
+    });
+    expect(svg).not.toContain('class="backdrop"');
+  });
+
+  it("elevated cards (default) attach a drop-shadow filter; flat cards do not", async () => {
+    const raw = await graphRaw(archSpec);
+    const elevated = postProcess(raw, { theme: "light", spec: archSpec, width: 0, height: 0 }).svg;
+    // The filter id is canonicalized to e-N; assert the shadow primitive exists and
+    // a role shape references the filter.
+    expect(elevated).toContain("feDropShadow");
+    expect(elevated).toMatch(/filter="url\(#e-\d+\)"/);
+
+    const flat = postProcess(raw, {
+      theme: "light",
+      cardStyle: "flat",
+      spec: archSpec,
+      width: 0,
+      height: 0,
+    }).svg;
+    expect(flat).not.toContain("feDropShadow");
+    expect(flat).not.toContain('filter="url(#');
+  });
+
+  it("legend=none omits the legend", async () => {
+    const raw = await graphRaw(archSpec);
+    const { svg } = postProcess(raw, {
+      theme: "light",
+      legend: "none",
+      spec: archSpec,
+      width: 0,
+      height: 0,
+    });
+    expect(svg).not.toContain('class="legend"');
+  });
+
+  it("embed-font off references the system stack and embeds no data-URI face", async () => {
+    const raw = await graphRaw(archSpec);
+    const { svg } = postProcess(raw, {
+      theme: "light",
+      embedFont: false,
+      spec: archSpec,
+      width: 0,
+      height: 0,
+    });
+    expect(svg).not.toMatch(/@font-face/);
+    expect(svg).toContain("Segoe UI");
+    // Still valid output when the embed-font invariant is waived for this run.
+    expect(() => assertOutputValid(svg, undefined, false)).not.toThrow();
+  });
+});

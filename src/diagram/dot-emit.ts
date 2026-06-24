@@ -1,5 +1,5 @@
 import { DiagramRenderError } from "./errors.js";
-import type { Container, DiagramSpec, Node } from "./schema.js";
+import type { CardStyle, Container, DiagramSpec, Node } from "./schema.js";
 
 /**
  * `dot-emit.ts` — compile a graph-shaped `DiagramSpec` into a Graphviz DOT string
@@ -169,7 +169,7 @@ function emitNode(node: Node, defaultShape: NonNullable<Node["shape"]>, indent: 
  *   references an id absent from `nodes` — though referential integrity is already
  *   guaranteed by validation (02 §2), this is a defensive fail-loud guard.
  */
-export function emitDot(spec: DiagramSpec): string {
+export function emitDot(spec: DiagramSpec, cardStyle: CardStyle = "elevated"): string {
   if (spec.diagramType === "sequence") {
     throw new DiagramRenderError(
       "emitDot does not handle sequence diagrams — use renderSequence",
@@ -178,6 +178,16 @@ export function emitDot(spec: DiagramSpec): string {
   }
 
   const defaults = TYPE_DEFAULTS[spec.diagramType];
+
+  // Elevated cards round architecture/dataflow boxes (the "card" look); flat keeps
+  // square corners. Types whose default is already non-box (state=rounded) or
+  // shape-significant (er) are left as their per-type default.
+  const defaultShape: NonNullable<Node["shape"]> =
+    cardStyle === "elevated" &&
+    defaults.defaultShape === "box" &&
+    (spec.diagramType === "architecture" || spec.diagramType === "dataflow")
+      ? "rounded"
+      : defaults.defaultShape;
 
   // Defensive referential-integrity guards (§2.8). Validation (02 §2) already
   // guarantees these, but emitDot fails loudly rather than producing dangling DOT.
@@ -243,7 +253,7 @@ export function emitDot(spec: DiagramSpec): string {
     for (const childId of container.children) {
       const node = nodeById.get(childId);
       if (node !== undefined) {
-        lines.push(emitNode(node, defaults.defaultShape, inner));
+        lines.push(emitNode(node, defaultShape, inner));
       }
     }
     for (const child of spec.containers) {
@@ -263,7 +273,7 @@ export function emitDot(spec: DiagramSpec): string {
   // Top-level nodes: those not enclosed by any container, in spec.nodes order.
   for (const node of spec.nodes) {
     if (!nodesInContainers.has(node.id)) {
-      lines.push(emitNode(node, defaults.defaultShape, "  "));
+      lines.push(emitNode(node, defaultShape, "  "));
     }
   }
 

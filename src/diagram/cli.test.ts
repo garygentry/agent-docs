@@ -107,6 +107,12 @@ describe("parseArgs", () => {
       "#2563eb",
       "--fill-style",
       "solid",
+      "--card-style",
+      "flat",
+      "--legend",
+      "bottom",
+      "--embed-font",
+      "false",
       "--format",
       "both",
       "--out-dir",
@@ -120,6 +126,9 @@ describe("parseArgs", () => {
     expect(a.theme).toBe("dark");
     expect(a.accent).toBe("#2563eb");
     expect(a.fillStyle).toBe("solid");
+    expect(a.cardStyle).toBe("flat");
+    expect(a.legend).toBe("bottom");
+    expect(a.embedFont).toBe(false);
     expect(a.format).toBe("both");
     expect(a.outDir).toBe("out");
     expect(a.outName).toBe("base");
@@ -144,6 +153,9 @@ describe("parseArgs", () => {
     ["bad theme", ["spec.json", "--theme", "neon"]],
     ["bad format", ["spec.json", "--format", "gif"]],
     ["bad fill-style", ["spec.json", "--fill-style", "ghostly"]],
+    ["bad card-style", ["spec.json", "--card-style", "puffy"]],
+    ["bad legend", ["spec.json", "--legend", "middle"]],
+    ["bad embed-font", ["spec.json", "--embed-font", "maybe"]],
     ["out-file with out-dir", ["spec.json", "--out-file", "a.svg", "--out-dir", "d"]],
     ["out-file with out-name", ["spec.json", "--out-file", "a.svg", "--out-name", "n"]],
     ["out-name without out-dir", ["spec.json", "--out-name", "n"]],

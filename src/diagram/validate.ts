@@ -267,14 +267,22 @@ export function parseSpec(raw: unknown): DiagramSpecT {
  *        nodes are INTENTIONALLY outline-only, so the {@link assertRoleFills}
  *        guard (#13) is skipped; for `translucent`/`solid` (or when omitted) it
  *        still runs to catch the accidental outline-only regression.
+ * @param embedFont - Whether the subset font was embedded (default true). When
+ *        false (`--embed-font=false`), the SVG intentionally references a system
+ *        font stack, so the {@link assertFontPortable} embedded-face guard
+ *        (REQ-OUT-04) is skipped — though the external-URL/`@import` ban still runs.
  * @throws {DiagramOutputError} On the first failed assertion (code OUTPUT_INVALID,
  *         exit 4); `detail` names the assertion that failed.
  */
-export function assertOutputValid(svg: string, fillStyle?: FillStyle): void {
+export function assertOutputValid(
+  svg: string,
+  fillStyle?: FillStyle,
+  embedFont: boolean = true,
+): void {
   const doc = assertWellFormed(svg); // parse once, reuse the tree
   assertTier2(svg);
   assertStructural(svg, doc);
-  assertFontPortable(svg);
+  assertFontPortable(svg, embedFont);
   assertA11y(doc);
   if (fillStyle !== "transparent") assertRoleFills(doc);
 }
@@ -428,13 +436,16 @@ export function assertStructural(svg: string, doc: XmlDocument): void {
  * @throws {DiagramOutputError} If no embedded data-URI font face is present, or an
  *         external font URL/import is present.
  */
-export function assertFontPortable(svg: string): void {
+export function assertFontPortable(svg: string, embedFont: boolean = true): void {
   if (/@import\b/.test(svg) || /url\(\s*["']?https?:/i.test(svg)) {
     throw new DiagramOutputError(
       "rendered SVG references an external font/URL; fonts must be embedded (REQ-OUT-04)",
       "assertFontPortable",
     );
   }
+  // With --embed-font=false the SVG deliberately uses a system font stack (no
+  // embedded face); the offline byte-identical guarantee is waived for that run.
+  if (!embedFont) return;
   const hasEmbeddedFace = /@font-face\b[^}]*\bsrc\s*:[^}]*url\(\s*["']?data:/is.test(svg);
   if (!hasEmbeddedFace) {
     throw new DiagramOutputError(
