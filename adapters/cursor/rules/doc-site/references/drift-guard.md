@@ -72,6 +72,13 @@ It then applies four generic drift rules and exits:
   on disk, skipping external/anchor/`mailto:`/`tel:`/`data:` targets, with a
   Starlight slug-style fallback (`foo` → `foo.md` / `foo.mdx` / `foo/index.mdx`).
   Runs over **every** page on disk, including symlinked and `unmanaged` pages.
+- **`relative-md-link` (Rule 1a, #24)** — fails on any **internal** link that points
+  at a `.md`/`.mdx` FILE (relative or root-absolute), because such links 404 under a
+  base-path deploy (`BASE_PATH="/repo/"`): Astro serves clean extensionless routes
+  and prepends the base. The message points to the fix — write a root-absolute slug
+  URL (`/guides/setup/`) instead. Catches the whole class at build time; the
+  `astro.config.mjs` rehype plugin is a runtime backstop for any link that predates
+  the guard. Runs over every page (checked before the on-disk resolution above).
 - **`sidebar-parity` (Rule 2)** — checks that `astro.config.mjs`'s generated sidebar
   lists exactly the **managed** manifest slugs, in manifest order. **`unmanaged`
   pages are exempt** — allow-listed, so they are never reported as missing-from or

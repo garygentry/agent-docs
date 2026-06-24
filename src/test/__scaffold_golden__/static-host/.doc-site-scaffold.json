@@ -5,10 +5,10 @@
   "files": {
     "netlify.toml": "sha256:b674bb3e7ad0302c8df569e34450f0f3231a0e90bc95a368c6a073bf1b744748",
     "site/.gitignore": "sha256:fdd155e829158da0b21172e24f4d370c845deae47038c166a12d00a0f5d6493d",
-    "site/astro.config.mjs": "sha256:416b1b871b78de5ddd340d1c8bdcca8a9f9b1503a14c9ce63774bd071041f535",
+    "site/astro.config.mjs": "sha256:80be615137d6f07719477dc9218a4d82aed759775c94fdd9cb275432234cfbbc",
     "site/docs.manifest.json": "sha256:01f6485484e7e5b6a80e40556e5bb444e0b732cbeba20bfb359608f4c511fc42",
     "site/docs.manifest.schema.json": "sha256:6f528da63224ca2cdf2f312cb85b8f55f4de18f7c23169e0b2da67a709a3419c",
-    "site/package.json": "sha256:889f418127885b2126663ce7ac21f9ceb8fbcda7f5a954477bd62acce8639d12",
+    "site/package.json": "sha256:524d9e25e747429eb7510938993bb853cc862b4fb6c7b8eb0a9d438d484bdd21",
     "site/public/favicon.svg": "sha256:c5502606818d508b5d91a75ceef9a00e59b36c3cbcfcfa8659313cfb9cb3d064",
     "site/setup-docs.sh": "sha256:ca9e7ef2dac7d69893850fd76ad7cfce4010afb1d809e62824032d7bda135b39",
     "site/src/content.config.ts": "sha256:1f8b206b5f7c0afb44c3715a3fe79954b448885fe9e753ba372dddf1210ecfd5",

@@ -194,3 +194,66 @@ describe("postProcess — accent + errors", () => {
     ).toThrow(/well-formed XML/);
   });
 });
+
+describe("postProcess — shape fill styles (#fill)", () => {
+  it("default (translucent) emits fill-opacity 0.8 on role shapes and legend swatches", async () => {
+    const raw = await graphRaw(archSpec);
+    const { svg } = postProcess(raw, { theme: "light", spec: archSpec, width: 0, height: 0 });
+    const light = resolveTheme("light");
+    expect(svg).toContain(`fill="${light.roles.frontend.fill}" fill-opacity="0.8"`);
+    // Legend swatch for the non-default backend role also carries the opacity.
+    expect(svg).toContain('fill-opacity="0.8"');
+    expect((svg.match(/fill-opacity="0.8"/g) ?? []).length).toBeGreaterThan(1);
+  });
+
+  it("solid omits fill-opacity entirely", async () => {
+    const raw = await graphRaw(archSpec);
+    const { svg } = postProcess(raw, {
+      theme: "light",
+      spec: archSpec,
+      fillStyle: "solid",
+      width: 0,
+      height: 0,
+    });
+    const light = resolveTheme("light");
+    expect(svg).toContain(`fill="${light.roles.frontend.fill}"`);
+    expect(svg).not.toContain("fill-opacity");
+  });
+
+  it("transparent yields outline-only role shapes (fill=none, stroke kept)", async () => {
+    const raw = await graphRaw(archSpec);
+    const { svg } = postProcess(raw, {
+      theme: "light",
+      spec: archSpec,
+      fillStyle: "transparent",
+      width: 0,
+      height: 0,
+    });
+    const light = resolveTheme("light");
+    expect(svg).not.toContain("fill-opacity");
+    // Role fill removed, but the role stroke remains.
+    expect(svg).not.toContain(`fill="${light.roles.frontend.fill}"`);
+    expect(svg).toContain(`stroke="${light.roles.frontend.stroke}"`);
+  });
+
+  it("spec.fill is honored when no explicit override is passed", async () => {
+    const solidSpec: DiagramSpec = { ...archSpec, fill: "solid" };
+    const raw = await graphRaw(solidSpec);
+    const { svg } = postProcess(raw, { theme: "light", spec: solidSpec, width: 0, height: 0 });
+    expect(svg).not.toContain("fill-opacity");
+  });
+
+  it("output stays well-formed and tier-2 valid for every fill style", async () => {
+    for (const fillStyle of ["translucent", "solid", "transparent"] as const) {
+      const raw = await graphRaw(archSpec);
+      const { svg } = postProcess(raw, {
+        theme: "light",
+        spec: archSpec,
+        fillStyle,
+        width: 0,
+        height: 0,
+      });
+      expect(() => assertOutputValid(svg, fillStyle)).not.toThrow();
+    }
+  });
+});

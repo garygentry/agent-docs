@@ -1,4 +1,11 @@
-import type { Background, DiagramSpec, HexColor, RenderResult, Theme } from "./schema.js";
+import type {
+  Background,
+  DiagramSpec,
+  FillStyle,
+  HexColor,
+  RenderResult,
+  Theme,
+} from "./schema.js";
 import { assertOutputValid } from "./validate.js"; // 02 §3
 import { emitDot } from "./dot-emit.js"; // §2
 import { renderGraph } from "./graph-render.js"; // §3
@@ -15,6 +22,8 @@ export interface RenderOptions {
   background?: Background;
   /** Optional uniform canvas padding in px (#15); falls back to the postprocess default. */
   padding?: number;
+  /** Optional shape-fill style override; falls back to `spec.fill` (default translucent). */
+  fillStyle?: FillStyle;
 }
 
 /**
@@ -67,13 +76,15 @@ export async function render(spec: DiagramSpec, opts: RenderOptions): Promise<Re
     accent: opts.accent ?? spec.accent,
     background: opts.background ?? spec.background,
     padding: opts.padding,
+    fillStyle: opts.fillStyle ?? spec.fill,
     spec,
     width,
     height,
   });
 
   // 4. Output assertion (REQ-REL-01) — throws DiagramOutputError; nothing written.
-  assertOutputValid(post.svg);
+  //    The fill style governs whether outline-only role nodes are valid (#fill/#13).
+  assertOutputValid(post.svg, opts.fillStyle ?? spec.fill);
 
   // 5. Result.
   return {

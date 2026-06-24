@@ -114,6 +114,20 @@ function ruleBrokenInternalLinks(files) {
         if (EXTERNAL_RE.test(raw)) continue;
         const target = raw.split("#")[0].split("?")[0];
         if (target === "") continue; // pure anchor already excluded
+        // §4.1a (#24) — internal links to a `.md`/`.mdx` FILE break under a base
+        // path: Astro emits clean extensionless routes and prepends BASE_PATH, so a
+        // verbatim `./foo.mdx` 404s on a hosted subpath. Require root-absolute slug
+        // URLs instead (e.g. `/guides/setup/`). Caught at build time so the link
+        // never ships broken.
+        if (/\.mdx?$/i.test(target)) {
+          report(
+            "relative-md-link",
+            file,
+            i + 1,
+            `internal link \`${raw}\` points at a .md/.mdx file; use a root-absolute slug URL (e.g. /guides/setup/) so it survives a base-path deploy`,
+          );
+          continue;
+        }
         const base = target.startsWith("/") ? CONTENT_DIR : dirname(file);
         const cleaned = target.startsWith("/") ? target.slice(1) : target;
         const abs = resolve(base, cleaned);

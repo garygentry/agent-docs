@@ -26,6 +26,72 @@ const SHAPE_MAP: Record<NonNullable<Node["shape"]>, { shape: string; style?: str
 };
 
 /**
+ * Graph node label font size in px (direct feedback: text was too small at 14).
+ * The Workstream-A width math (`nodeSizing`) keys off this same constant so node
+ * boxes track text size. Emitted as `node [fontsize=…]` in {@link emitDot}.
+ */
+const NODE_FONT_SIZE = 16;
+
+/** Edge label font size in px; emitted as `edge [fontsize=…]`. */
+const EDGE_FONT_SIZE = 14;
+
+/**
+ * Per-character advance width for `DiagramSans`, expressed as px-of-width per
+ * px-of-font-size. Derived from the legend metric `LG_CHAR_W = 7.5` px/char at
+ * 13px in `svg-postprocess.ts` (`7.5 / 13 ≈ 0.577`), so node and legend width
+ * estimates use the SAME per-char ratio and stay mutually consistent.
+ */
+const CHAR_W_RATIO = 7.5 / 13;
+
+/** Horizontal padding (px) reserved inside a node box on each side, beyond text. */
+const NODE_H_PAD = 16;
+
+/** Safety factor on the estimated text width so DiagramSans never overflows (#23). */
+const NODE_WIDTH_SAFETY = 1.08;
+
+/**
+ * Per-shape horizontal-room multiplier. Non-rectangular shapes inscribe their
+ * label in a smaller interior than their bounding box, so they clip sooner (#23
+ * notes `rounded` clips earlier; diamond/ellipse need the most room).
+ */
+const SHAPE_WIDTH_FACTOR: Record<NonNullable<Node["shape"]>, number> = {
+  box: 1,
+  rounded: 1.05,
+  cylinder: 1.1,
+  ellipse: 1.4,
+  diamond: 1.6,
+};
+
+/**
+ * Estimate a node's minimum box `width` (inches) and `margin` (inches) from its
+ * label so the rendered `DiagramSans` text is always enclosed (#23). Graphviz
+ * sizes boxes with a fallback metric, then `svg-postprocess` swaps in the wider
+ * embedded `DiagramSans` — without a floor, labels ≥ ~16 chars/line overflow.
+ *
+ * The widest `\n`-delimited line drives the estimate (on the RAW label, before
+ * `escapeDot` turns `\n` into the literal `\\n`). px→inches via ÷72 (Graphviz
+ * `width`/`margin` are inches). Pure → deterministic.
+ */
+function nodeSizing(
+  label: string,
+  shape: NonNullable<Node["shape"]>,
+): {
+  width: string;
+  margin: string;
+} {
+  const lines = label.split("\n");
+  const maxChars = Math.max(...lines.map((l) => l.length));
+  const charWidth = NODE_FONT_SIZE * CHAR_W_RATIO;
+  const textPx = maxChars * charWidth;
+  const widthPx = (textPx * NODE_WIDTH_SAFETY + NODE_H_PAD * 2) * SHAPE_WIDTH_FACTOR[shape];
+  const widthIn = (widthPx / 72).toFixed(3);
+  // Explicit horizontal margin from the same padding; modest vertical breathing
+  // room (Graphviz default is ~0.055in) for the larger node font.
+  const marginIn = `${(NODE_H_PAD / 72).toFixed(3)},0.08`;
+  return { width: widthIn, margin: marginIn };
+}
+
+/**
  * Per-`diagramType` DOT defaults (03 §2.2). `rankdir` is a deterministic function
  * of `diagramType` (not user-configurable, §2.2); `defaultShape` is the node shape
  * used when a `Node` has no explicit `shape`; `defaultEdgeDir` is the edge
@@ -65,7 +131,8 @@ function clusterName(id: string): string {
 /** Emit a single node declaration line (label + role class + shape). */
 function emitNode(node: Node, defaultShape: NonNullable<Node["shape"]>, indent: string): string {
   const role = node.role ?? "default";
-  const shapeInfo = SHAPE_MAP[node.shape ?? defaultShape];
+  const shapeName = node.shape ?? defaultShape;
+  const shapeInfo = SHAPE_MAP[shapeName];
   const attrs = [
     `label="${escapeDot(node.label)}"`,
     `class="role-${role}"`,
@@ -74,6 +141,11 @@ function emitNode(node: Node, defaultShape: NonNullable<Node["shape"]>, indent: 
   if (shapeInfo.style !== undefined) {
     attrs.push(`style=${shapeInfo.style}`);
   }
+  // #23: force a minimum width (a floor — `fixedsize` stays default false, so
+  // Graphviz may still grow a larger box) sized to the rendered DiagramSans text.
+  const sizing = nodeSizing(node.label, shapeName);
+  attrs.push(`width=${sizing.width}`);
+  attrs.push(`margin="${sizing.margin}"`);
   return `${indent}"${escapeDot(node.id)}" [${attrs.join(", ")}];`;
 }
 
@@ -148,7 +220,8 @@ export function emitDot(spec: DiagramSpec): string {
   const lines: string[] = [];
   lines.push("digraph {");
   lines.push(`  rankdir=${rankdir};`);
-  lines.push(`  node [fontname="DiagramSans"];`);
+  lines.push(`  node [fontname="DiagramSans", fontsize=${NODE_FONT_SIZE}];`);
+  lines.push(`  edge [fontname="DiagramSans", fontsize=${EDGE_FONT_SIZE}];`);
 
   // Track which nodes are emitted inside a cluster so the top-level pass skips
   // them (Graphviz assigns cluster membership by lexical scope, §2.4).

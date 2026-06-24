@@ -3,6 +3,7 @@
 // array is generated from docs.manifest.json — edit the manifest, not this file.
 import { defineConfig, passthroughImageService } from "astro/config";
 import starlight from "@astrojs/starlight";
+import rehypeRelativeMarkdownLinks from "astro-rehype-relative-markdown-links";
 
 export default defineConfig({
   // REQ-CORE-02: derive site/base from env so the SAME build works on a hosted
@@ -14,6 +15,19 @@ export default defineConfig({
   // REQ-CORE-03: SVG diagrams need no rasterization; the passthrough image
   // service serves them as-is and keeps the install free of the Sharp dependency.
   image: { service: passthroughImageService() },
+  // #24 safety net: authors SHOULD write internal links as root-absolute slug URLs
+  // (see doc-site SKILL.md); the drift-guard fails the build on relative .md/.mdx
+  // links. As a backstop, rewrite any that slip through to clean, base-prefixed
+  // routes so they never 404 under BASE_PATH. `collectionBase: false` matches
+  // Starlight's extensionless `docs` routes; `basePath` keeps the rewrite base-aware.
+  markdown: {
+    rehypePlugins: [
+      [
+        rehypeRelativeMarkdownLinks,
+        { collectionBase: false, basePath: process.env.BASE_PATH },
+      ],
+    ],
+  },
   integrations: [
     starlight({
       title: "Widget Monorepo Docs",

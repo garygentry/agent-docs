@@ -64,8 +64,9 @@ When a user asks for a diagram:
 5. **Visually inspect the output before declaring success (#16).** Render at least
    the SVG (or a PNG via `--format both`) and **look at it** — do not assume it is
    correct. Open the image and sanity-check:
-   - **Fills:** role-colored nodes are solid-filled, not outline-only, and match
-     their legend swatches.
+   - **Fills:** role-colored nodes are filled (translucent by default) and match
+     their legend swatches. Pass `--fill-style solid` for opaque fills or
+     `--fill-style transparent` for outline-only nodes.
    - **Margins:** content is not flush against the canvas edge (default `--padding`
      handles this; raise it if cramped).
    - **Aspect ratio / legibility:** the diagram is not an unreadable ultra-wide or
@@ -116,7 +117,8 @@ diagram-render <input.json | -> [options]
   --accent <#rrggbb>        override spec.accent (validated as #rrggbb)
   --background <transparent|opaque|#rrggbb>  default: "transparent" (omits the backdrop)
   --direction <LR|TB|RL|BT>  override layout direction (graph types) to tame long flows
-  --padding <px>            uniform canvas margin around content (default 14)
+  --padding <px>            uniform canvas margin around content (default 20)
+  --fill-style <translucent|solid|transparent>  role-shape fill; default "translucent" (0.8 opacity)
   --format <svg|png|both>   default: "svg"
   --out-file <path>         explicit output path (highest precedence)
   --out-name <base>         base name written into --out-dir (overrides slug)

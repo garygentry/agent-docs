@@ -1,5 +1,5 @@
 import { parseXml, XmlElement, XmlText } from "@rgrove/parse-xml";
-import type { Background, DiagramSpec, HexColor, NodeRole, Theme } from "./schema.js";
+import type { Background, DiagramSpec, FillStyle, HexColor, NodeRole, Theme } from "./schema.js";
 import { SVG_COORD_PRECISION } from "./schema.js";
 import { resolveTheme, type ResolvedPalette } from "./theme.js";
 import { DiagramOutputError } from "./errors.js";
@@ -20,7 +20,10 @@ import { FONT_SUBSET_DATA_URI } from "./assets/font.subset.js";
 const EMBEDDED_FONT_FAMILY = "DiagramSans" as const;
 
 /** Default uniform canvas padding in px between content bbox and the edges (#15). */
-export const DEFAULT_PADDING = 14 as const;
+export const DEFAULT_PADDING = 20 as const;
+
+/** `fill-opacity` applied to role shapes + legend swatches under `translucent` fill. */
+const FILL_TRANSLUCENT_OPACITY = "0.8" as const;
 
 /**
  * Resolve a {@link Background} choice against the theme palette to a concrete fill,
@@ -53,6 +56,12 @@ export interface PostProcessOptions {
    * edges (#15). Falls back to {@link DEFAULT_PADDING}.
    */
   padding?: number;
+  /**
+   * Shape-fill style for role nodes + legend swatches. `translucent` (default)
+   * paints role color at `fill-opacity="0.8"`; `solid` is opaque; `transparent`
+   * is outline-only. Falls back to `spec.fill`.
+   */
+  fillStyle?: FillStyle;
   /** The validated DiagramSpec; `title`/`description` feed a11y (§3.5), `nodes`/`containers` the legend (§3.4). */
   spec: DiagramSpec;
   /** Intrinsic width from the render path (sequence supplies it; graph passes 0 and it is derived from the SVG). */
@@ -171,6 +180,7 @@ export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProce
     palette,
   );
   const padding = Math.max(0, opts.padding ?? DEFAULT_PADDING);
+  const fillStyle: FillStyle = opts.fillStyle ?? opts.spec.fill ?? "translucent";
 
   // ── §3.1 Parse ──────────────────────────────────────────────────
   const root = parseRoot(rawSvg);
@@ -188,7 +198,7 @@ export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProce
   const drawParent = findDrawParent(root);
 
   // ── §3.2 Semantic color baking ──────────────────────────────────
-  bakeColors(drawParent, palette, background);
+  bakeColors(drawParent, palette, background, fillStyle);
 
   // ── §3.3 Z-order enforcement ────────────────────────────────────
   enforceZOrder(drawParent);
@@ -196,7 +206,7 @@ export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProce
   // ── §3.4 Legend placement (may expand the canvas) ───────────────
   const legend = buildLegend(opts.spec, palette);
   if (legend.length > 0) {
-    const expanded = placeLegend(root, legend, palette, minX, minY, vbW, vbH);
+    const expanded = placeLegend(root, legend, palette, fillStyle, minX, minY, vbW, vbH);
     vbW = expanded.vbW;
     vbH = expanded.vbH;
   }
@@ -288,11 +298,31 @@ function findDrawParent(root: SElement): SElement {
 
 const SHAPE_NAMES = new Set(["polygon", "ellipse", "path", "rect", "circle"]);
 
+/**
+ * Apply the resolved {@link FillStyle} to a role shape: `translucent` sets the
+ * role color + `fill-opacity="0.8"`; `solid` sets the opaque color; `transparent`
+ * is outline-only (`fill="none"`, stroke kept by the caller). Clears any stale
+ * `fill-opacity` for the non-translucent modes so serialization stays clean.
+ */
+function applyRoleFill(e: SElement, fill: HexColor, fillStyle: FillStyle): void {
+  if (fillStyle === "transparent") {
+    e.attrs["fill"] = "none";
+    delete e.attrs["fill-opacity"];
+  } else if (fillStyle === "solid") {
+    e.attrs["fill"] = fill;
+    delete e.attrs["fill-opacity"];
+  } else {
+    e.attrs["fill"] = fill;
+    e.attrs["fill-opacity"] = FILL_TRANSLUCENT_OPACITY;
+  }
+}
+
 /** Apply role/edge/container/backdrop colors inline to the drawing subtree. */
 function bakeColors(
   drawParent: SElement,
   palette: ResolvedPalette,
   background: HexColor | null,
+  fillStyle: FillStyle,
 ): void {
   // Recolor any graphviz backdrop polygon (direct fill="white" child) to the
   // resolved background, or to "none" when transparent so no opaque panel shows (#10).
@@ -315,8 +345,9 @@ function bakeColors(
           // spec and the filled legend swatches. Role-classed groups are graph
           // nodes (sequence header outline boxes are not role-classed; they keep
           // fill="none" via the container/primitive paths), so baking the role
-          // fill here unconditionally is safe.
-          e.attrs["fill"] = colors.fill;
+          // fill here unconditionally is safe. The resolved fill style governs
+          // opacity/outline-only (#fill); stroke is always the role stroke.
+          applyRoleFill(e, colors.fill, fillStyle);
           e.attrs["stroke"] = colors.stroke;
         } else if (e.name === "text") {
           e.attrs["fill"] = colors.text;
@@ -420,7 +451,10 @@ const LG_ROW_H = 22;
 const LG_GUTTER = 24;
 const LG_PAD = 12;
 const LG_TEXT_GAP = 8;
-const LG_CHAR_W = 7.5;
+/** Legend label font size in px; bumped with the graph scale (direct feedback). */
+const LG_FONT_SIZE = 14;
+/** Per-char advance at {@link LG_FONT_SIZE} using the shared 7.5px@13px ratio. */
+const LG_CHAR_W = LG_FONT_SIZE * (7.5 / 13);
 
 /** Compute the distinct non-default roles present, in canonical role order. */
 function buildLegend(spec: DiagramSpec, palette: ResolvedPalette): LegendEntry[] {
@@ -452,6 +486,7 @@ function placeLegend(
   root: SElement,
   entries: LegendEntry[],
   palette: ResolvedPalette,
+  fillStyle: FillStyle,
   minX: number,
   minY: number,
   vbW: number,
@@ -487,7 +522,9 @@ function placeLegend(
   });
   entries.forEach((entry, i) => {
     const rowY = minY + LG_PAD + i * LG_ROW_H;
-    group.children.push({
+    // Swatch fill mirrors the node fill style (per user choice): translucent at
+    // 0.8, solid opaque, or outline-only for transparent.
+    const swatch: SElement = {
       type: "element",
       name: "rect",
       attrs: {
@@ -499,7 +536,9 @@ function placeLegend(
         stroke: entry.stroke,
       },
       children: [],
-    });
+    };
+    applyRoleFill(swatch, entry.fill, fillStyle);
+    group.children.push(swatch);
     group.children.push({
       type: "element",
       name: "text",
@@ -508,7 +547,7 @@ function placeLegend(
         y: canonNumber(rowY + LG_SWATCH - 2),
         fill: palette.label,
         "font-family": EMBEDDED_FONT_FAMILY,
-        "font-size": "13",
+        "font-size": String(LG_FONT_SIZE),
       },
       children: [{ type: "text", value: entry.text }],
     });
@@ -748,6 +787,7 @@ const ATTR_PRIORITY = [
   "cy",
   "r",
   "fill",
+  "fill-opacity",
   "stroke",
   "stroke-width",
   "stroke-dasharray",

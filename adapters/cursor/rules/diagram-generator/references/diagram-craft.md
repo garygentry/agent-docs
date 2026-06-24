@@ -33,6 +33,19 @@ Guidance:
 - `accent` (`#rrggbb`) recolors edges and the default stroke only — it does not
   change semantic role fills, so brand color never overrides meaning.
 
+### Fill style
+
+Role shapes (and the matching legend swatches) are **translucent by default**
+(`fill-opacity` 0.8), which reads softly over any host surface. Override per render
+with `--fill-style` (or the `fill` spec field):
+
+- `translucent` — role color at 0.8 opacity (default).
+- `solid` — opaque role color.
+- `transparent` — outline-only (`fill="none"`, role stroke kept) for a wireframe look.
+
+The choice applies uniformly to every role node and is mirrored on the legend so the
+swatches always match the nodes.
+
 ## Z-order (paint order)
 
 The renderer enforces a fixed back→front paint order so the diagram is always
