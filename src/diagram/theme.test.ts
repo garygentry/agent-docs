@@ -37,25 +37,25 @@ describe("resolveTheme", () => {
 
   it("leaves theme defaults when no accent is supplied", () => {
     const defaults = resolveTheme("light");
-    expect(defaults.accent).toBe("#2563eb");
-    expect(defaults.edge).toBe("#475569");
-    expect(defaults.roles.default.stroke).toBe("#94a3b8");
-    expect(resolveTheme("dark").accent).toBe("#60a5fa");
+    expect(defaults.accent).toBe("#0969da");
+    expect(defaults.edge).toBe("#6e7781");
+    expect(defaults.roles.default.stroke).toBe("#cbd5e1");
+    expect(resolveTheme("dark").accent).toBe("#58a6ff");
   });
 
   it("does not override semantic role fills with the accent", () => {
     const accent = "#ff0000";
     const resolved = resolveTheme("light", accent);
-    expect(resolved.roles.frontend.fill).toBe("#22d3ee");
-    expect(resolved.roles.default.fill).toBe("#e2e8f0");
+    expect(resolved.roles.frontend.fill).toBe("#cffafe");
+    expect(resolved.roles.default.fill).toBe("#f1f5f9");
   });
 
   it("returns a deep clone that does not mutate the frozen source", () => {
     const a = resolveTheme("light", "#abcdef");
     const b = resolveTheme("light");
-    expect(b.edge).toBe("#475569");
-    expect(b.roles.default.stroke).toBe("#94a3b8");
+    expect(b.edge).toBe("#6e7781");
+    expect(b.roles.default.stroke).toBe("#cbd5e1");
     a.roles.default.fill = "#000000";
-    expect(resolveTheme("light").roles.default.fill).toBe("#e2e8f0");
+    expect(resolveTheme("light").roles.default.fill).toBe("#f1f5f9");
   });
 });

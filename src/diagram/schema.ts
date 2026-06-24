@@ -68,12 +68,12 @@ export type Direction = z.infer<typeof Direction>;
 
 /**
  * Shape-fill presentation for role-colored nodes (and the matching legend
- * swatches). `translucent` (the default) paints the role color at
- * `fill-opacity="0.8"` so diagrams read softly over any surface; `solid` paints
- * the opaque role color; `transparent` is outline-only (`fill="none"`, stroke
- * kept). Implemented with the `fill-opacity` attribute (well-supported by
- * resvg/tier-2 viewers), never 8-digit hex (which `HexColor` rejects). CLI
- * `--fill-style` overrides.
+ * swatches). `solid` (the default) paints the opaque role color as a crisp card on
+ * the panel; `translucent` paints it at `fill-opacity="0.8"` to read softly over a
+ * transparent host; `transparent` is outline-only (`fill="none"`, stroke kept).
+ * Implemented with the `fill-opacity` attribute (well-supported by resvg/tier-2
+ * viewers), never 8-digit hex (which `HexColor` rejects). CLI `--fill-style`
+ * overrides.
  */
 export const FillStyle = z.enum(["translucent", "solid", "transparent"]);
 /** Shape-fill presentation for role-colored nodes. */
@@ -257,7 +257,7 @@ export const DiagramSpec = z
     background: Background.optional(),
     /** Optional layout direction override for graph types; CLI `--direction` overrides (#14). */
     direction: Direction.optional(),
-    /** Shape-fill style for role nodes + legend swatches; CLI `--fill-style` overrides. Omitted → `"translucent"`. */
+    /** Shape-fill style for role nodes + legend swatches; CLI `--fill-style` overrides. Omitted → `"solid"`. */
     fill: FillStyle.optional(),
     /** Node card treatment; CLI `--card-style` overrides. Omitted → `"elevated"`. */
     cardStyle: CardStyle.optional(),
@@ -320,7 +320,7 @@ export type DiagramErrorCode =
  * consumers like doc-site can pin against a known release. Semantic
  * versioning: MAJOR = breaking contract change.
  */
-export const CONTRACT_VERSION = "1.2.0" as const;
+export const CONTRACT_VERSION = "1.3.0" as const;
 
 /**
  * Exit-code map keyed by error code (00 §5). `0` is success. Distinct non-zero

@@ -206,10 +206,10 @@ export function postProcess(rawSvg: string, opts: PostProcessOptions): PostProce
     palette,
   );
   const padding = Math.max(0, opts.padding ?? DEFAULT_PADDING);
-  const fillStyle: FillStyle = opts.fillStyle ?? opts.spec.fill ?? "translucent";
+  const fillStyle: FillStyle = opts.fillStyle ?? opts.spec.fill ?? "solid";
   const cardStyle: CardStyle = opts.cardStyle ?? opts.spec.cardStyle ?? "elevated";
   const legendPlacement: LegendPlacement = opts.legend ?? opts.spec.legend ?? "auto";
-  const embedFont = opts.embedFont ?? true;
+  const embedFont = opts.embedFont ?? false;
 
   // ── §3.1 Parse ──────────────────────────────────────────────────
   const root = parseRoot(rawSvg);
@@ -545,21 +545,7 @@ function placeLegendRight(
     attrs: { class: "legend" },
     children: [],
   };
-  // Legend panel surface.
-  group.children.push({
-    type: "element",
-    name: "rect",
-    attrs: {
-      class: "legend-box",
-      x: canonNumber(legendX),
-      y: canonNumber(minY + LG_PAD / 2),
-      width: canonNumber(colWidth),
-      height: canonNumber(neededH - LG_PAD),
-      fill: palette.surface,
-      stroke: palette.boundary,
-    },
-    children: [],
-  });
+  // No container box — bare swatches + muted labels sit directly on the panel.
   entries.forEach((entry, i) => {
     const rowY = minY + LG_PAD + i * LG_ROW_H;
     // Swatch fill mirrors the node fill style (per user choice): translucent at
@@ -627,21 +613,7 @@ function placeLegendBottom(
     attrs: { class: "legend" },
     children: [],
   };
-  // Legend panel surface spanning the row.
-  group.children.push({
-    type: "element",
-    name: "rect",
-    attrs: {
-      class: "legend-box",
-      x: canonNumber(minX),
-      y: canonNumber(legendY),
-      width: canonNumber(rowWidth + LG_PAD * 2),
-      height: canonNumber(bandH),
-      fill: palette.surface,
-      stroke: palette.boundary,
-    },
-    children: [],
-  });
+  // No container box — bare swatches + muted labels sit directly on the panel.
 
   let cursorX = minX + LG_PAD;
   const rowY = legendY + LG_PAD;

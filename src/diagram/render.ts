@@ -77,6 +77,11 @@ export async function render(spec: DiagramSpec, opts: RenderOptions): Promise<Re
     height = 0;
   }
 
+  // Embedding defaults OFF (system font stack) so SVGs stay small and match the
+  // reference text rendering; pass embedFont:true (CLI `--embed-font true`) for an
+  // offline-identical artifact. The CLI always embeds for the PNG raster source.
+  const embedFont = opts.embedFont ?? false;
+
   // 3. Theme + a11y + font + canonicalization (04 §3). Returns the final SVG and
   //    its authoritative dimensions/slug.
   const post = postProcess(rawSvg, {
@@ -87,7 +92,7 @@ export async function render(spec: DiagramSpec, opts: RenderOptions): Promise<Re
     fillStyle: opts.fillStyle ?? spec.fill,
     cardStyle: opts.cardStyle ?? spec.cardStyle,
     legend: opts.legend ?? spec.legend,
-    embedFont: opts.embedFont,
+    embedFont,
     spec,
     width,
     height,
@@ -96,7 +101,7 @@ export async function render(spec: DiagramSpec, opts: RenderOptions): Promise<Re
   // 4. Output assertion (REQ-REL-01) — throws DiagramOutputError; nothing written.
   //    The fill style governs whether outline-only role nodes are valid (#fill/#13);
   //    embedFont governs whether the embedded-font invariant (REQ-OUT-04) applies.
-  assertOutputValid(post.svg, opts.fillStyle ?? spec.fill, opts.embedFont ?? true);
+  assertOutputValid(post.svg, opts.fillStyle ?? spec.fill, embedFont);
 
   // 5. Result.
   return {

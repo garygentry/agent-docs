@@ -59,9 +59,12 @@ describe("golden SVG output properties (REQ-OUT-*, REQ-A11Y-01, REQ-SEC-02)", ()
         expect(svg).toMatch(/<svg\b[^>]*\bheight="/);
       });
 
-      it("embeds a data-URI font and references no external font/URL (REQ-OUT-04/SEC-02)", () => {
-        expect(() => assertFontPortable(svg)).not.toThrow();
-        expect(svg).toMatch(/@font-face[^}]*url\(\s*["']?data:/is);
+      it("uses a system font stack and references no external font/URL (REQ-OUT-04/SEC-02)", () => {
+        // Default output is non-embedded (system stack); the embed-portability guard
+        // is opt-in (`--embed-font true`). The external-URL/@import ban always holds.
+        expect(() => assertFontPortable(svg, false)).not.toThrow();
+        expect(svg).not.toMatch(/@font-face/);
+        expect(svg).toContain("Segoe UI");
         expect(svg).not.toMatch(/url\(\s*["']?https?:/i);
         expect(svg).not.toMatch(/@import\b/);
       });

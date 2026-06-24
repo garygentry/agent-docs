@@ -522,12 +522,12 @@ export async function main(argv: string[]): Promise<number> {
       embedFont: args.embedFont,
     });
 
-    // PNG rasterization needs the embedded font, even when the SVG artifact is
-    // slimmed (--embed-font=false). Render a font-embedded variant just for the
-    // raster source in that case; otherwise the SVG result already carries it.
+    // PNG rasterization needs the embedded font. SVGs default to a system stack
+    // (--embed-font defaults false), so render a font-embedded variant just for the
+    // raster source unless the SVG artifact itself already embeds (--embed-font true).
     const needsPng = args.format === "png" || args.format === "both";
     const pngSvg =
-      needsPng && args.embedFont === false
+      needsPng && args.embedFont !== true
         ? (
             await render(spec, {
               theme,

@@ -35,12 +35,14 @@ Guidance:
 
 ### Fill style
 
-Role shapes (and the matching legend swatches) are **translucent by default**
-(`fill-opacity` 0.8), which reads softly over any host surface. Override per render
-with `--fill-style` (or the `fill` spec field):
+Each role is a coordinated triple — a dark-tint (light-tint on the light theme)
+**fill**, a vivid **border**, and a same-hue **label** — so a card reads as a tinted
+panel with a glowing edge. Role shapes (and the matching legend swatches) are
+**solid by default**. Override per render with `--fill-style` (or the `fill` spec
+field):
 
-- `translucent` — role color at 0.8 opacity (default).
-- `solid` — opaque role color.
+- `solid` — opaque role fill, a crisp card on the panel (default).
+- `translucent` — role fill at 0.8 opacity, to soften over a transparent host.
 - `transparent` — outline-only (`fill="none"`, role stroke kept) for a wireframe look.
 
 The choice applies uniformly to every role node and is mirrored on the legend so the
