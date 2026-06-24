@@ -3,7 +3,7 @@
 // array is generated from docs.manifest.json — edit the manifest, not this file.
 import { defineConfig, passthroughImageService } from "astro/config";
 import starlight from "@astrojs/starlight";
-import rehypeRelativeMarkdownLinks from "astro-rehype-relative-markdown-links";
+import rehypeBaseLinks from "./rehype-base-links.mjs";
 
 export default defineConfig({
   // REQ-CORE-02: derive site/base from env so the SAME build works on a hosted
@@ -15,18 +15,16 @@ export default defineConfig({
   // REQ-CORE-03: SVG diagrams need no rasterization; the passthrough image
   // service serves them as-is and keeps the install free of the Sharp dependency.
   image: { service: passthroughImageService() },
-  // #24 safety net: authors SHOULD write internal links as root-absolute slug URLs
-  // (see doc-site SKILL.md); the drift-guard fails the build on relative .md/.mdx
-  // links. As a backstop, rewrite any that slip through to clean, base-prefixed
-  // routes so they never 404 under BASE_PATH. `collectionBase: false` matches
-  // Starlight's extensionless `docs` routes; `basePath` keeps the rewrite base-aware.
+  // #24/#29 — Astro does NOT apply `base` to links written in Markdown/MDX
+  // content. Authors SHOULD write internal links as root-absolute slug URLs (see
+  // doc-site SKILL.md) and the drift-guard enforces it; this zero-dependency
+  // plugin is the runtime backstop. It (1) prepends BASE_PATH to root-absolute
+  // links so `/start-here/install/` → `/repo/start-here/install/` on a subpath
+  // deploy (no-op at root, #29), and (2) rewrites relative `.md`/`.mdx` links in
+  // dual-context symlinked docs to absolute base-aware slugs (#24), leaving the
+  // source files untouched so GitHub rendering stays correct.
   markdown: {
-    rehypePlugins: [
-      [
-        rehypeRelativeMarkdownLinks,
-        { collectionBase: false, basePath: process.env.BASE_PATH },
-      ],
-    ],
+    rehypePlugins: [[rehypeBaseLinks, { base: process.env.BASE_PATH }]],
   },
   integrations: [
     starlight({

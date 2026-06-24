@@ -389,6 +389,13 @@ export function finalScaffold(
   );
   emit(`${d}/astro.config.mjs`, astro, true);
 
+  // rehype-base-links.mjs — zero-dependency plugin wired by astro.config.mjs (#24/#29).
+  emit(
+    `${d}/rehype-base-links.mjs`,
+    substitute(tmpl("core/rehype-base-links.mjs.tmpl"), tokens),
+    true,
+  );
+
   emit(`${d}/src/content.config.ts`, substitute(tmpl("core/content.config.ts.tmpl"), tokens), true);
   emit(`${d}/src/styles/custom.css`, substitute(tmpl("core/custom.css.tmpl"), tokens), true);
   emit(`${d}/public/favicon.svg`, tmpl("core/favicon.svg"), true);

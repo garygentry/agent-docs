@@ -122,7 +122,6 @@ hardcode a coupled Bun+pnpm / Node+npm pair (see _Derived toolchain tokens_ belo
 | `{{DEFAULT_BRANCH}}`       | detection (`git symbolic-ref`)                                           | `main`                                         |
 | `{{ASTRO_VERSION}}`        | resolution (latest @ first scaffold; pin on re-run)                      | latest                                         |
 | `{{STARLIGHT_VERSION}}`    | resolution                                                               | latest                                         |
-| `{{REHYPE_LINKS_VERSION}}` | resolution (`astro-rehype-relative-markdown-links`; pin on re-run)       | latest                                         |
 | `{{DOCS_PKG_DIR_TO_ROOT}}` | **derived** (one `..` per `{{DOCS_PKG_DIR}}` segment)                    | derived                                        |
 | `{{SYMLINK_PAGE_LINES}}`   | **derived/generated** (one link line per `source: symlink` page)         | generated                                      |
 | `{{CI_SETUP_ACTION}}`      | **derived** from `{{RUNTIME}}` (CI runtime setup action)                 | `actions/setup-node@v4`                        |
