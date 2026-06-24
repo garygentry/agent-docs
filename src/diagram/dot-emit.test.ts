@@ -178,3 +178,53 @@ describe("emitDot — defensive guards (§2.8)", () => {
     expect(() => emitDot(seq)).toThrow(DiagramRenderError);
   });
 });
+
+describe("emitDot — node sizing so text never clips (#23)", () => {
+  it("emits global node/edge fontsize directives", () => {
+    const dot = emitDot(architecture);
+    expect(dot).toMatch(/node \[fontname="DiagramSans", fontsize=16\]/);
+    expect(dot).toMatch(/edge \[fontname="DiagramSans", fontsize=14\]/);
+  });
+
+  it("emits an explicit width= and margin= on every node", () => {
+    const dot = emitDot(architecture);
+    const nodeLines = dot.split("\n").filter((l) => l.includes('class="role-'));
+    expect(nodeLines.length).toBeGreaterThan(0);
+    for (const line of nodeLines) {
+      expect(line).toMatch(/width=\d+(\.\d+)?/);
+      expect(line).toMatch(/margin="[\d.]+,[\d.]+"/);
+    }
+  });
+
+  it("scales node width with label length", () => {
+    const widthOf = (label: string): number => {
+      const dot = emitDot(
+        spec({
+          diagramType: "flowchart",
+          title: "t",
+          description: "d",
+          nodes: [{ id: "n", label }],
+        }),
+      );
+      const m = /width=(\d+(?:\.\d+)?)/.exec(dot);
+      return m ? Number(m[1]) : 0;
+    };
+    expect(widthOf("Stage 2 · Tech Spec (forge-2-tech)")).toBeGreaterThan(widthOf("OK"));
+  });
+
+  it("sizes from the widest line of a multi-line label", () => {
+    const widthOf = (label: string): number => {
+      const dot = emitDot(
+        spec({
+          diagramType: "flowchart",
+          title: "t",
+          description: "d",
+          nodes: [{ id: "n", label }],
+        }),
+      );
+      return Number(/width=(\d+(?:\.\d+)?)/.exec(dot)![1]);
+    };
+    // The widest line, not the total character count, drives the width.
+    expect(widthOf("short\na-much-longer-line-here")).toBeGreaterThan(widthOf("short\nalso"));
+  });
+});

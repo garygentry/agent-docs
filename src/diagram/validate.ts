@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { parseXml, XmlElement, type XmlDocument } from "@rgrove/parse-xml";
-import { DiagramSpec, type DiagramSpec as DiagramSpecT, type DiagramType } from "./schema.js";
+import {
+  DiagramSpec,
+  type DiagramSpec as DiagramSpecT,
+  type DiagramType,
+  type FillStyle,
+} from "./schema.js";
 import { DiagramInputError, DiagramOutputError } from "./errors.js";
 
 /**
@@ -258,16 +263,20 @@ export function parseSpec(raw: unknown): DiagramSpecT {
  * to disk — a failure here means NO artifact is emitted (REQ-REL-01/02).
  *
  * @param svg - The post-processed SVG markup produced by the render pipeline.
+ * @param fillStyle - The resolved shape-fill style. When `"transparent"`, role
+ *        nodes are INTENTIONALLY outline-only, so the {@link assertRoleFills}
+ *        guard (#13) is skipped; for `translucent`/`solid` (or when omitted) it
+ *        still runs to catch the accidental outline-only regression.
  * @throws {DiagramOutputError} On the first failed assertion (code OUTPUT_INVALID,
  *         exit 4); `detail` names the assertion that failed.
  */
-export function assertOutputValid(svg: string): void {
+export function assertOutputValid(svg: string, fillStyle?: FillStyle): void {
   const doc = assertWellFormed(svg); // parse once, reuse the tree
   assertTier2(svg);
   assertStructural(svg, doc);
   assertFontPortable(svg);
   assertA11y(doc);
-  assertRoleFills(doc);
+  if (fillStyle !== "transparent") assertRoleFills(doc);
 }
 
 /** Shape element names whose `fill` carries a node's role color (mirrors §3.2). */

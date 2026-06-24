@@ -25,6 +25,8 @@ import {
   DiagramType,
   Direction,
   type Direction as DirectionT,
+  FillStyle,
+  type FillStyle as FillStyleT,
   HexColor,
   type DiagramType as DiagramTypeT,
   type HexColor as HexColorT,
@@ -69,6 +71,8 @@ export interface ParsedArgs {
   readonly direction?: DirectionT;
   /** `--padding` override in px; non-negative integer, validated at parse (#15). */
   readonly padding?: number;
+  /** `--fill-style` override; `translucent`/`solid`/`transparent`, validated at parse. */
+  readonly fillStyle?: FillStyleT;
   /** Requested artifact format(s); defaults to DEFAULT_FORMAT ("svg"). */
   readonly format: OutputFormat;
   /** `--out-file` explicit path (highest precedence, §2.3). */
@@ -89,6 +93,7 @@ const VALUE_FLAGS = new Set([
   "--background",
   "--direction",
   "--padding",
+  "--fill-style",
   "--format",
   "--out-file",
   "--out-name",
@@ -128,6 +133,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
   let background: BackgroundT | undefined;
   let direction: DirectionT | undefined;
   let padding: number | undefined;
+  let fillStyle: FillStyleT | undefined;
   let format: OutputFormat = DEFAULT_FORMAT;
   let outFile: string | undefined;
   let outName: string | undefined;
@@ -208,6 +214,17 @@ export function parseArgs(argv: string[]): ParsedArgs {
           padding = Number(value);
           break;
         }
+        case "--fill-style": {
+          const r = FillStyle.safeParse(value);
+          if (!r.success) {
+            throw new DiagramUsageError(
+              "--fill-style must be translucent, solid, or transparent",
+              value,
+            );
+          }
+          fillStyle = r.data;
+          break;
+        }
         case "--format": {
           if (!FORMATS.has(value)) {
             throw new DiagramUsageError("--format must be svg, png, or both", value);
@@ -262,6 +279,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     background,
     direction,
     padding,
+    fillStyle,
     format,
     outFile,
     outName,
@@ -456,6 +474,7 @@ export async function main(argv: string[]): Promise<number> {
       accent,
       background: args.background,
       padding: args.padding,
+      fillStyle: args.fillStyle,
     });
 
     // #14/#16 — warn (non-fatal) on extreme aspect ratios that read poorly when

@@ -64,8 +64,8 @@ describe("DiagramSpec", () => {
 });
 
 describe("constants", () => {
-  it("CONTRACT_VERSION is 1.0.0", () => {
-    expect(CONTRACT_VERSION).toBe("1.0.0");
+  it("CONTRACT_VERSION is 1.1.0", () => {
+    expect(CONTRACT_VERSION).toBe("1.1.0");
   });
 
   it("EXIT_CODES has the six mappings exactly as specified", () => {

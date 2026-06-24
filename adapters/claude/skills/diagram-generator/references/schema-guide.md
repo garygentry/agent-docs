@@ -10,18 +10,21 @@ JSON path — correct it and re-invoke.
 
 ## Top-level fields
 
-| Field          | Type                  | Required               | Notes                                          |
-| -------------- | --------------------- | ---------------------- | ---------------------------------------------- |
-| `diagramType`  | one of the six types  | yes                    | selects the render path                        |
-| `title`        | string                | yes                    | → SVG `<title>`; also the filename slug source |
-| `description`  | string                | yes                    | → SVG `<desc>` (accessibility)                 |
-| `theme`        | `"light"` \| `"dark"` | no (default `"light"`) | CLI `--theme` overrides                        |
-| `accent`       | `#rrggbb` hex         | no                     | CLI `--accent` overrides                       |
-| `nodes`        | `Node[]`              | graph types            | empty for `sequence`                           |
-| `edges`        | `Edge[]`              | graph types            | empty for `sequence`                           |
-| `containers`   | `Container[]`         | optional (graph)       | boundary/group clusters                        |
-| `participants` | `Participant[]`       | `sequence` only        | lifelines                                      |
-| `messages`     | `Message[]`           | `sequence` only        | ordered arrows                                 |
+| Field          | Type                                      | Required                   | Notes                                          |
+| -------------- | ----------------------------------------- | -------------------------- | ---------------------------------------------- |
+| `diagramType`  | one of the six types                      | yes                        | selects the render path                        |
+| `title`        | string                                    | yes                        | → SVG `<title>`; also the filename slug source |
+| `description`  | string                                    | yes                        | → SVG `<desc>` (accessibility)                 |
+| `theme`        | `"light"` \| `"dark"`                     | no (default `"light"`)     | CLI `--theme` overrides                        |
+| `accent`       | `#rrggbb` hex                             | no                         | CLI `--accent` overrides                       |
+| `background`   | `transparent` \| `opaque` \| `#rrggbb`    | no (default `transparent`) | CLI `--background` overrides                   |
+| `direction`    | `LR` \| `TB` \| `RL` \| `BT`              | no (per-type default)      | graph layout; CLI `--direction` overrides      |
+| `fill`         | `translucent` \| `solid` \| `transparent` | no (default `translucent`) | role-shape fill; CLI `--fill-style` overrides  |
+| `nodes`        | `Node[]`                                  | graph types                | empty for `sequence`                           |
+| `edges`        | `Edge[]`                                  | graph types                | empty for `sequence`                           |
+| `containers`   | `Container[]`                             | optional (graph)           | boundary/group clusters                        |
+| `participants` | `Participant[]`                           | `sequence` only            | lifelines                                      |
+| `messages`     | `Message[]`                               | `sequence` only            | ordered arrows                                 |
 
 ### `diagramType` ↔ field agreement
 

@@ -105,6 +105,8 @@ describe("parseArgs", () => {
       "dark",
       "--accent",
       "#2563eb",
+      "--fill-style",
+      "solid",
       "--format",
       "both",
       "--out-dir",
@@ -117,6 +119,7 @@ describe("parseArgs", () => {
     expect(a.type).toBe("flowchart");
     expect(a.theme).toBe("dark");
     expect(a.accent).toBe("#2563eb");
+    expect(a.fillStyle).toBe("solid");
     expect(a.format).toBe("both");
     expect(a.outDir).toBe("out");
     expect(a.outName).toBe("base");
@@ -140,6 +143,7 @@ describe("parseArgs", () => {
     ["bad type", ["spec.json", "--type", "bogus"]],
     ["bad theme", ["spec.json", "--theme", "neon"]],
     ["bad format", ["spec.json", "--format", "gif"]],
+    ["bad fill-style", ["spec.json", "--fill-style", "ghostly"]],
     ["out-file with out-dir", ["spec.json", "--out-file", "a.svg", "--out-dir", "d"]],
     ["out-file with out-name", ["spec.json", "--out-file", "a.svg", "--out-name", "n"]],
     ["out-name without out-dir", ["spec.json", "--out-name", "n"]],

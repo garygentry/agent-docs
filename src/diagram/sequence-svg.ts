@@ -39,8 +39,8 @@ const ACTIVATION_WIDTH = 12;
 const SELF_MESSAGE_EXTRA = Math.round(MESSAGE_ROW_HEIGHT / 2);
 /** Right-offset of a self-message loop from its lifeline center. */
 const SELF_MESSAGE_LOOP_WIDTH = 40;
-/** Font size for participant headers and message labels (matches graph path). */
-const FONT_SIZE = 13;
+/** Font size for participant headers and message labels (matches graph scale). */
+const FONT_SIZE = 14;
 /** Stable font family placeholder; `04` rewrites to the embedded data-URI face. */
 const FONT_FAMILY = "DiagramSans";
 /** Length of an arrowhead's barbs. */

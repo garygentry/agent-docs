@@ -123,6 +123,47 @@ Do not edit it by hand — change the source under `src/diagram/` and run
 `bun run build:diagram`.
 `bun run gate` includes `build:diagram:check`, so a stale bundle fails the gate.
 
+### Regenerating the README sample diagrams
+
+`assets/sample-architecture.{light,dark}.svg` (the `<picture>` pair in `README.md`)
+are rendered from the spec below. The spec is intentionally **not** committed — the
+diagram-generator skill treats specs as throwaway intermediates — so it lives here.
+To refresh the samples (e.g. after a renderer change), write the spec to a temp file
+and render both themes through the bundled CLI:
+
+```bash
+cat > /tmp/sample-architecture.spec.json << 'JSON'
+{
+  "diagramType": "architecture",
+  "title": "agent-docs build pipeline",
+  "description": "Canonical Claude-native skills are emitted by one build into per-target adapter bundles and a Claude plugin.",
+  "nodes": [
+    { "id": "skills", "label": "Canonical skills\n(skills/*/SKILL.md)", "role": "storage" },
+    { "id": "manifest", "label": "tools.manifest.json", "role": "default" },
+    { "id": "build", "label": "bun run build\n(emitter)", "role": "compute" },
+    { "id": "adapters", "label": "adapters/<target>\nclaude · codex · copilot · cursor · gemini", "role": "backend" },
+    { "id": "plugin", "label": ".claude-plugin\n(plugin + marketplace)", "role": "gateway" }
+  ],
+  "edges": [
+    { "from": "skills", "to": "build", "label": "discover" },
+    { "from": "manifest", "to": "build", "label": "config + registry" },
+    { "from": "build", "to": "adapters", "label": "emit" },
+    { "from": "build", "to": "plugin", "label": "generate" }
+  ],
+  "containers": [
+    { "id": "authored", "label": "Authored once (Claude-native)", "children": ["skills", "manifest"] }
+  ]
+}
+JSON
+node skills/diagram-generator/scripts/diagram-render.mjs /tmp/sample-architecture.spec.json \
+  --theme light --out-file assets/sample-architecture.light.svg
+node skills/diagram-generator/scripts/diagram-render.mjs /tmp/sample-architecture.spec.json \
+  --theme dark  --out-file assets/sample-architecture.dark.svg
+```
+
+The output is deterministic, so re-rendering an unchanged spec produces byte-identical
+SVGs. The samples are transparent by default and embedded via a light/dark `<picture>`.
+
 ## Specs and architecture docs
 
 Design intent lives outside this file:
