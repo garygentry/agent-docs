@@ -1,7 +1,10 @@
 # agent-docs
 
-Agent skills for project documentation: scaffold a Starlight docs site from an
-interview, generate portable diagrams, and write house-style docs.
+> Agent skills for project documentation — scaffold a Starlight docs site, generate portable diagrams, and write house-style docs.
+
+[![Bun](https://img.shields.io/badge/built%20with-Bun-000?logo=bun&logoColor=white)](https://bun.sh)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 Authored once in Claude-native form and emitted to **Claude, Codex, Copilot, Cursor,
 and Gemini** — so the same skills work across every agent you use.
@@ -162,4 +165,4 @@ In short: edit the canonical source under `skills/`, register it in
 
 ## Author
 
-Gary Gentry. No license file is currently included in this repository.
+Gary Gentry. Released under the [MIT License](LICENSE).
