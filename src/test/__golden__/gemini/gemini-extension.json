@@ -17,6 +17,10 @@
     {
       "name": "docs-helper",
       "description": "Helps write and review project documentation following the repo's house style. Use when authoring or editing docs, READMEs, or reference pages."
+    },
+    {
+      "name": "readme-author",
+      "description": "Create a polished, professional README.md for a project, or restructure an existing one to a high bar. Use whenever the user wants to write, generate, improve, refresh, or restructure a README / repo landing page — including adding a hero (title, tagline, badges), install and quickstart sections, feature tables, and an architecture diagram. Trigger on \"write a README\", \"improve my README\", \"make a landing page for this repo\", even if they don't name the file."
     }
   ]
 }

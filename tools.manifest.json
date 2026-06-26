@@ -28,6 +28,12 @@
       "type": "skill",
       "source": "skills/doc-site",
       "description": "Scaffolds an Astro 5 + Starlight docs site into a target repo from an agent-driven interview: env-driven site/base, manifest-driven sidebar/symlinker/drift guard, optional diagrams (via diagram-generator) and deploy wiring."
+    },
+    {
+      "name": "readme-author",
+      "type": "skill",
+      "source": "skills/readme-author",
+      "description": "Create or restructure a polished, professional README.md, with an optional architecture diagram."
     }
   ]
 }
