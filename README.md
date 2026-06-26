@@ -11,13 +11,14 @@ and Gemini** — so the same skills work across every agent you use.
 
 ## What's inside
 
-Three skills ship in this plugin:
+Four skills ship in this plugin:
 
-| Skill                 | What it does                                                                                             | Invoke                             |
-| --------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| **doc-site**          | Scaffolds an Astro + Starlight documentation site into a repo from a short interview.                    | `/doc-site [target repo path]`     |
-| **diagram-generator** | Turns a prose description into a polished SVG/PNG diagram (architecture, flowchart, sequence, and more). | `/diagram-generator [description]` |
-| **docs-helper**       | Reviews and edits documentation to match a project's house style.                                        | `/docs-helper [doc path]`          |
+| Skill                 | What it does                                                                                             | Invoke                                 |
+| --------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **doc-site**          | Scaffolds an Astro + Starlight documentation site into a repo from a short interview.                    | `/doc-site [target repo path]`         |
+| **diagram-generator** | Turns a prose description into a polished SVG/PNG diagram (architecture, flowchart, sequence, and more). | `/diagram-generator [description]`     |
+| **docs-helper**       | Reviews and edits documentation to match a project's house style.                                        | `/docs-helper [doc path]`              |
+| **readme-author**     | Creates or restructures a polished, professional README, with an optional architecture diagram.          | `/readme-author [target repo or path]` |
 
 Each skill is self-contained: it carries its own reference docs (and, for
 diagram-generator, a bundled renderer) so it runs without network access beyond what
@@ -31,8 +32,8 @@ Add it from this repository — the marketplace entry
 
 1. Clone the repo (or point Claude Code at its URL).
 2. Add it as a plugin marketplace source in Claude Code.
-3. The three skills become available as `/doc-site`, `/diagram-generator`, and
-   `/docs-helper`.
+3. The four skills become available as `/doc-site`, `/diagram-generator`,
+   `/docs-helper`, and `/readme-author`.
 
 Using a different agent?
 The same skills are emitted to four other targets under `adapters/<target>/` —
@@ -124,6 +125,24 @@ It suggests concrete edits rather than rewriting wholesale.
 The full style guide is at
 [`skills/docs-helper/references/style-guide.md`](skills/docs-helper/references/style-guide.md).
 
+### readme-author — polished README from scratch
+
+`readme-author` writes a professional `README.md` for a project, or restructures an
+existing one to a high bar.
+It detects what the project is — library, app/CLI, or framework — asks only the gaps it
+can't infer, then composes a scannable README in a canonical order: hero, install,
+quickstart, and license-last.
+
+It reuses two sibling skills rather than duplicating them: prose follows `docs-helper`'s
+house style, and — when a project is architecturally non-trivial and you approve — it
+renders a light/dark architecture diagram through `diagram-generator` and embeds it with
+`<picture>`.
+Where `docs-helper` reviews arbitrary docs for style, `readme-author` authors the README
+structure itself.
+
+The section order, hero conventions, and update policy ride alongside the skill under
+[`skills/readme-author/references/`](skills/readme-author/references/).
+
 ## Multi-target support
 
 The skills are authored once in Claude-native form and emitted to five targets, each
@@ -148,6 +167,7 @@ skills/                  Canonical skill sources (the single source of truth)
   doc-site/              SKILL.md + references/ (+ templates)
   diagram-generator/     SKILL.md + references/ + bundled renderer
   docs-helper/           SKILL.md + references/style-guide.md
+  readme-author/         SKILL.md + references/ (structure, header, diagrams, update)
 adapters/<target>/       Generated per-target bundles (committed, drift-guarded)
 .claude-plugin/          Generated plugin.json + marketplace.json
 src/                     The emitter and the diagram runtime
