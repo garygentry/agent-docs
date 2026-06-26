@@ -11,7 +11,7 @@
     "docs/public/favicon.svg": "sha256:c5502606818d508b5d91a75ceef9a00e59b36c3cbcfcfa8659313cfb9cb3d064",
     "docs/rehype-base-links.mjs": "sha256:e30cad6562f33c42cf35e9a7b0a0226d3e23a6272936247af3aec53a52393795",
     "docs/src/content.config.ts": "sha256:1f8b206b5f7c0afb44c3715a3fe79954b448885fe9e753ba372dddf1210ecfd5",
-    "docs/src/content/docs/index.mdx": "sha256:b06f9c23bde5d6c826f1c388d0ad984dfbffa605fda876cf1f0eb2dec53cacd1",
+    "docs/src/content/docs/index.mdx": "sha256:f47d04ced450c384957d333b9dfa1d3b5ccc87ccb1effe9fd8083810fca50e33",
     "docs/src/styles/custom.css": "sha256:4cc33e77daf1dad9ac9459fd29d7e0f389f11e806e0d765950fd324a611f3110",
     "docs/tsconfig.json": "sha256:974b0a3b37e52f3649d9df63e72e374794e9e797c8ae61eca4812f844406f7ef"
   }

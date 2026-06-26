@@ -323,10 +323,53 @@ Before declaring success, you MUST run the emitted build end-to-end and require 
    exercising **real** diagram generation. Any nonzero renderer exit (`2/3/4/5/6/64`,
    `00 §8`) fails the build and is surfaced, not masked (§6.3).
 4. **Site build**:
+
    ```sh
    npm run build        # or pnpm/bun run build — the emitted package.json script
    ```
+
    (Astro build; the `prebuild` from step 3 runs automatically as part of it.)
+
+5. **Base-path smoke crawl** — only when a **subpath deploy target** is selected (GitHub
+   Pages **project** Pages, `BASE_PATH="/<repo>/"`; skip for root/Vercel/user-Pages).
+   The step-4 build runs with `site`/`base` **unset** (root deploy), so it never
+   exercises base-path linking — a base-unsafe link (a root-absolute `hero.actions[].link`,
+   or any frontmatter/body link the guard missed) builds green yet 404s in production.
+   Re-build under the real base and crawl the emitted HTML:
+   ```sh
+   # rebuild with the deploy base applied, then verify every internal link resolves
+   BASE_PATH="/<repo>/" SITE="https://<owner>.github.io" npm run build
+   node --input-type=module -e '
+     import { readFileSync, readdirSync, existsSync } from "node:fs";
+     import { join } from "node:path";
+     const DIST = "dist", BASE = (process.env.BASE_PATH || "/").replace(/\/+$/, "") + "/";
+     const html = [];
+     (function walk(d){ for (const e of readdirSync(d, { withFileTypes:true })) {
+       const p = join(d, e.name);
+       e.isDirectory() ? walk(p) : e.name.endsWith(".html") && html.push(p);
+     }})(DIST);
+     const bad = [];
+     for (const f of html) {
+       const text = readFileSync(f, "utf8");
+       for (const m of text.matchAll(/(?:href|src)="([^"]+)"/g)) {
+         const u = m[1];
+         if (!u.startsWith(BASE) || u.startsWith("//")) continue;        // external / off-base
+         const [path] = u.slice(BASE.length).split(/[#?]/);              // strip base + anchor
+         if (!path || /\.[a-z0-9]+$/i.test(path)) {                      // dir route or asset
+           if (path && !existsSync(join(DIST, path))) bad.push([f, u]);
+           else if (!path) continue;
+         } else if (!existsSync(join(DIST, path, "index.html")) && !existsSync(join(DIST, path))) {
+           bad.push([f, u]);
+         }
+       }
+     }
+     if (bad.length) { for (const [f,u] of bad) console.error(`base-link 404: ${u}  (in ${f})`); process.exit(1); }
+     console.log(`base-path crawl: OK — all internal links under ${BASE} resolve.`);
+   '
+   ```
+   Any unresolved internal link is `BUILD_RED` (§6.3): report the offending `href` and the
+   emitting page. (A dedicated committed `check-built-links.mjs` is a possible follow-up;
+   the inline crawl avoids expanding the managed scaffold surface.)
 
 The smoke test is GREEN only if every applicable step exits 0.
 
@@ -339,8 +382,8 @@ green, the outcome is `OK` and you proceed to print next steps (Phase 7, §6.4).
 
 If any smoke-test step exits nonzero, the outcome is `BUILD_RED`. You MUST:
 
-- Report **which step** failed (install / content setup / diagram prebuild / build) and
-  the captured error output / exit code.
+- Report **which step** failed (install / content setup / diagram prebuild / build /
+  base-path crawl) and the captured error output / exit code.
 - Provide **remediation** (e.g. "diagram renderer exited 3 (render error) on
   `architecture.json`; fix the spec and re-run", "install failed — check
   network/registry", "build failed: missing frontmatter on `docs/intro.md`").

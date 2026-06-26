@@ -87,9 +87,11 @@ locally:
 ### Default seed: the `guides/setup` starter page (all modes)
 
 The `starter-page.mdx` core asset is **always emitted** to
-`src/content/docs/guides/setup.mdx`, and the home splash (`index.mdx`) hard-links to
-`guides/setup/`. So the manifest **always seeds** the matching native page entry —
-in **every** content mode, not just native — so the hero link resolves and the
+`src/content/docs/guides/setup.mdx`, and the home splash (`index.mdx`) links to it
+from two places: the **hero action** uses the relative `guides/setup/` (frontmatter is
+not base-prefixed — see `symlink.md` §"Internal links"), while the **body card** uses
+the root-absolute `/guides/setup/`. So the manifest **always seeds** the matching native
+page entry — in **every** content mode, not just native — so both links resolve and the
 drift guard's `broken-link` rule does not fire on a missing target:
 
 ```jsonc

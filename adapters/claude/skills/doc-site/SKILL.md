@@ -93,6 +93,13 @@ Install deps, then run the emitted build (after setup-docs and any diagram prebu
 remediation and **never report success on red**. A failure mid-emission is
 `PARTIAL_EMISSION`: no rollback, flag the partial state and the failed step.
 
+**When a subpath deploy target is selected** (GitHub Pages **project** Pages →
+`BASE_PATH="/<repo>/"`), the root build above does not exercise base-path linking, so
+add a **base-path build + link crawl** — it catches base-unsafe links the drift guard
+can't see (frontmatter or otherwise) at the layer the site is actually served from. See
+`references/rerun.md` ("base-path smoke crawl") for the exact recipe; a stray/404 link
+is `BUILD_RED`.
+
 ### Phase 7 — next steps (`references/rerun.md`; REQ-VERIFY-03)
 
 Print run/preview/deploy guidance and the collected assumption records so the user

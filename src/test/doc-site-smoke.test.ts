@@ -126,3 +126,35 @@ describe("check-docs.mjs executable smoke — duplicate-slug rule (exit 2)", () 
     expect(res.stderr).toMatch(/\[duplicate-slug\]/);
   });
 });
+
+describe("check-docs.mjs executable smoke — frontmatter-link rule (#32)", () => {
+  /** Minimal docs package whose only page is an index.mdx with the given hero link. */
+  function scaffoldWithHeroLink(heroLink: string): string {
+    const repo = mkRepo();
+    const tree = finalScaffold(loadAnswers("single-symlink.json"));
+    fs.writeFileSync(path.join(repo, "check-docs.mjs"), tree.get("docs/check-docs.mjs")!);
+    // Empty manifest + empty sidebar → no broken-link / sidebar-parity noise; the
+    // index.mdx body is link-free so only the frontmatter hero link is under test.
+    fs.writeFileSync(path.join(repo, "docs.manifest.json"), JSON.stringify({ pages: [] }));
+    fs.writeFileSync(path.join(repo, "astro.config.mjs"), "export default { sidebar: [] };\n");
+    const docs = path.join(repo, "src", "content", "docs");
+    fs.mkdirSync(docs, { recursive: true });
+    fs.writeFileSync(
+      path.join(docs, "index.mdx"),
+      `---\ntitle: Home\ntemplate: splash\nhero:\n  actions:\n    - text: Get Started\n      link: ${heroLink}\n---\n\nWelcome.\n`,
+    );
+    return repo;
+  }
+
+  it("flags a root-absolute hero link as base-unsafe (exit 1)", () => {
+    const res = run(process.execPath, ["check-docs.mjs"], scaffoldWithHeroLink("/guides/setup/"));
+    expect(res.status, res.stderr).toBe(1);
+    expect(res.stderr).toMatch(/\[frontmatter-link\]/);
+    expect(res.stderr).toMatch(/\/guides\/setup\//);
+  });
+
+  it("passes the shipped relative hero link (exit 0)", () => {
+    const res = run(process.execPath, ["check-docs.mjs"], scaffoldWithHeroLink("guides/setup/"));
+    expect(res.status, res.stderr).toBe(0);
+  });
+});
