@@ -20,7 +20,7 @@ const rel = (p) => relative(DOCS_PKG_DIR, p);
 // ── (b) Finding model + collector ────────────────────────────────
 /**
  * @typedef {Object} Finding
- * @property {string} rule  - rule id, e.g. "broken-link" | "sidebar-parity" | "orphaned-symlink" | "missing-frontmatter" | custom
+ * @property {string} rule  - rule id, e.g. "broken-link" | "non-canonical-link" | "frontmatter-link" | "sidebar-parity" | "orphaned-symlink" | "missing-frontmatter" | custom
  * @property {string} file  - repo-relative path the finding is about ("" if not file-scoped)
  * @property {number|null} line - 1-based line number, or null if not line-scoped
  * @property {string} message - human-readable explanation of the drift
@@ -168,6 +168,48 @@ function ruleNonCanonicalLinks(files) {
   }
 }
 
+// §4.1c (#32) — Rule 1c: base-unsafe FRONTMATTER links. The inverse of Rule 1b.
+// Astro does NOT apply `base` to links in frontmatter (e.g. the splash hero's
+// `hero.actions[].link`), and rehype-base-links.mjs only rewrites the rendered
+// body — so a frontmatter link must be RELATIVE (`slug/`) to survive a subpath
+// deploy. A root-absolute (`/slug/`) or `.md`/`.mdx` frontmatter link drops the
+// base and 404s. We scan `link:`/`href:` scalars inside the frontmatter block of
+// natively-authored pages and flag those base-unsafe forms.
+function ruleFrontmatterLinks(files) {
+  // External / non-navigable schemes are exempt. NOTE: unlike Rule 1b, a leading
+  // `/` is the FAILURE here (not "already canonical"), so it is NOT in this set.
+  const EXTERNAL_RE = /^(https?:|mailto:|tel:|data:|#|\/\/)/i;
+  const KEY_RE = /^\s*(?:-\s*)?([A-Za-z0-9_]*(?:link|href))\s*:\s*(.+?)\s*$/i;
+  let contentReal;
+  try { contentReal = realpathSync(CONTENT_DIR); } catch { contentReal = CONTENT_DIR; }
+  const isExternallySourced = (file) => {
+    try { return !realpathSync(file).startsWith(contentReal); } catch { return false; }
+  };
+  for (const file of files) {
+    if (isExternallySourced(file)) continue;
+    const text = readFileSync(file, "utf8");
+    const fm = text.match(/^---\n([\s\S]*?)\n---/);
+    if (!fm) continue;
+    // Block content begins on file line 2 (line 1 is the opening `---`).
+    fm[1].split("\n").forEach((line, i) => {
+      const m = KEY_RE.exec(line);
+      if (!m) return;
+      // Strip an inline `# comment` (only when preceded by whitespace) and quotes.
+      let raw = m[2].split(/\s+#/)[0].trim().replace(/^["'`]|["'`]$/g, "");
+      if (!raw || EXTERNAL_RE.test(raw)) return;
+      const [pathPart] = raw.split(/[#?]/);
+      if (raw.startsWith("/") || /\.mdx?$/.test(pathPart)) {
+        report(
+          "frontmatter-link",
+          file,
+          i + 2,
+          `base-unsafe frontmatter link: \`${raw}\` — frontmatter is not base-prefixed; use a relative \`slug/\` form so it survives a subpath deploy`,
+        );
+      }
+    });
+  }
+}
+
 // §4.2 — Rule 2: sidebar↔manifest parity (managed pages only; unmanaged exempt).
 function ruleSidebarManifestParity() {
   if (!existsSync(ASTRO_CONFIG_PATH)) {
@@ -239,7 +281,8 @@ function ruleMissingFrontmatter(files) {
 }
 
 ruleBrokenInternalLinks(pageFiles);      // §4.1 — all pages, incl. unmanaged
-ruleNonCanonicalLinks(pageFiles);        // §4.1b — base-unsafe internal links
+ruleNonCanonicalLinks(pageFiles);        // §4.1b — base-unsafe internal body links
+ruleFrontmatterLinks(pageFiles);         // §4.1c — base-unsafe frontmatter links (#32)
 ruleSidebarManifestParity();             // §4.2 — managed pages only
 ruleOrphanedSymlinks();                  // §4.3
 ruleMissingFrontmatter(pageFiles);       // §4.4 — all pages, incl. unmanaged

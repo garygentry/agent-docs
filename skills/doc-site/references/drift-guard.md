@@ -66,7 +66,7 @@ Before any drift rule runs, the guard performs a **manifest-validity** check:
   also pre-checks slug-uniqueness during emit (`core.md` / `manifest-schema.md`,
   "validate before wiring").
 
-It then applies five generic drift rules and exits:
+It then applies six generic drift rules and exits:
 
 - **`broken-link` (Rule 1)** — flags local Markdown/image links that do not resolve
   on disk, skipping external/anchor/`mailto:`/`tel:`/`data:` targets, with a
@@ -82,6 +82,14 @@ It then applies five generic drift rules and exits:
   GitHub, and the `rehype-base-links.mjs` plugin rewrites them at build. Catches the
   whole class at build time; the plugin is the runtime backstop. Runs over every
   natively-authored page.
+- **`frontmatter-link` (Rule 1c, #32)** — the **inverse** of `non-canonical-link`, for
+  links that live in **frontmatter** (e.g. the splash hero's `hero.actions[].link`).
+  Neither the rehype backstop nor `non-canonical-link` covers frontmatter, and Astro
+  does not apply `base` to it, so a frontmatter link must be **relative** (`slug/`) to
+  survive a subpath deploy. The rule scans `link:`/`href:` scalars in each native page's
+  frontmatter block and **fails on a root-absolute (`/slug/`) or `.md`/`.mdx` value** —
+  the mirror of the body rule. External/anchor schemes are exempt, and externally-sourced
+  symlinked pages are exempt (same as Rule 1b). Runs over every natively-authored page.
 - **`sidebar-parity` (Rule 2)** — checks that `astro.config.mjs`'s generated sidebar
   lists exactly the **managed** manifest slugs, in manifest order. **`unmanaged`
   pages are exempt** — allow-listed, so they are never reported as missing-from or

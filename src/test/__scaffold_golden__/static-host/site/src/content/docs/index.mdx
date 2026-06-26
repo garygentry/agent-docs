@@ -6,6 +6,9 @@ hero:
   tagline: Documentation deployed to a static host.
   actions:
     - text: Get Started
+      # Hero/frontmatter links MUST be relative (`slug/`, not `/slug/`): Astro does
+      # not apply `base` to frontmatter, and the rehype backstop only touches the
+      # rendered body — a root-absolute hero link 404s on a subpath deploy.
       link: guides/setup/
       icon: right-arrow
 ---
@@ -16,7 +19,7 @@ Welcome to the **Static Host Docs** documentation.
 
 <CardGrid>
   <Card title="Get started" icon="rocket">
-    Head to the [setup guide](guides/setup/) to begin.
+    Head to the [setup guide](/guides/setup/) to begin.
   </Card>
   <Card title="Single source of truth" icon="document">
     Pages are driven by `docs.manifest.json`; edit the manifest to change the

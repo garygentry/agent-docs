@@ -124,7 +124,17 @@ Guidance, learned from real runs:
 
 ### Internal links: root-absolute slug URLs only (#24/#29)
 
-**Author every in-site link as a root-absolute slug URL** — `/guides/setup/`, never
+> **Frontmatter is the inverse exception (#32).** This root-absolute rule is for links
+> in the rendered **body**. Links in **frontmatter** — most notably the splash hero's
+> `hero.actions[].link` — must be **relative** (`guides/setup/`, not `/guides/setup/`).
+> Astro does not apply `base` to frontmatter and the rehype backstop only touches the
+> body, so a root-absolute hero link drops the base and 404s on a subpath deploy; a
+> relative one resolves browser-relative to the page (already under the base) and works.
+> The `frontmatter-link` drift rule enforces this inverse (see `drift-guard.md`). The
+> emitted `index.mdx` follows both: its body card link is `/guides/setup/`, its hero
+> action link is `guides/setup/`.
+
+**Author every in-site body link as a root-absolute slug URL** — `/guides/setup/`, never
 a relative `.md`/`.mdx` file link like `./setup.mdx` or `../guides/setup.md`. A
 verbatim `.md`/`.mdx` link 404s under a base-path deploy (`BASE_PATH="/repo/"`):
 Astro serves clean, extensionless routes, so the literal file path resolves to
@@ -136,11 +146,13 @@ subpath deploys.
 Three layers enforce this so the 105-link class can't ship broken:
 
 1. **This convention** — the rule above; all emitted example pages already follow it
-   (e.g. `index.mdx` links `guides/setup/`).
+   (e.g. `index.mdx`'s body card links `/guides/setup/`, while its hero action link is
+   the relative `guides/setup/` per the frontmatter exception).
 2. **Drift guard** — `check-docs.mjs`'s `non-canonical-link` rule **fails the build**
-   on any internal link not in root-absolute `/slug/` form (see `drift-guard.md`).
-   Externally-sourced symlinked docs are exempt — they keep relative `./x.md` links
-   so they still render correctly on GitHub.
+   on any body link not in root-absolute `/slug/` form, and the `frontmatter-link` rule
+   fails on any base-unsafe (root-absolute or `.md`/`.mdx`) frontmatter link (see
+   `drift-guard.md`). Externally-sourced symlinked docs are exempt — they keep relative
+   `./x.md` links so they still render correctly on GitHub.
 3. **Rehype backstop** — `rehype-base-links.mjs` (a zero-dependency plugin wired
    base-aware in `astro.config.mjs`) both prepends the base to root-absolute links
    so they survive a subpath deploy (#29), and rewrites any stray relative
