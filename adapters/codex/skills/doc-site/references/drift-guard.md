@@ -49,10 +49,13 @@ The script reads (no network — `REQ-SEC-03`):
 
 | Path                                | Used by rule |
 | ----------------------------------- | ------------ |
-| `docs.manifest.json`                | 1, 2, 3, 4   |
-| `astro.config.mjs` (sidebar)        | 2            |
+| `docs.manifest.json`                | 1, 3, 4      |
 | `src/content/docs/**` (pages/links) | 1, 3, 4      |
 | `docs.drift.rules.mjs` (optional)   | custom       |
+
+(Rule 2 — `sidebar-parity` — is retired; the guard no longer reads
+`astro.config.mjs`. The sidebar is build-time derived from the manifest, so it
+cannot drift. See §4.2 below and core.md §2.)
 
 Before any drift rule runs, the guard performs a **manifest-validity** check:
 
@@ -90,10 +93,11 @@ It then applies six generic drift rules and exits:
   frontmatter block and **fails on a root-absolute (`/slug/`) or `.md`/`.mdx` value** —
   the mirror of the body rule. External/anchor schemes are exempt, and externally-sourced
   symlinked pages are exempt (same as Rule 1b). Runs over every natively-authored page.
-- **`sidebar-parity` (Rule 2)** — checks that `astro.config.mjs`'s generated sidebar
-  lists exactly the **managed** manifest slugs, in manifest order. **`unmanaged`
-  pages are exempt** — allow-listed, so they are never reported as missing-from or
-  not-in the manifest (`00 §2.3`, OQ-2).
+- **`sidebar-parity` (Rule 2) — RETIRED (#34).** The sidebar is now derived from
+  `docs.manifest.json` at build time (`astro.config.mjs` imports the manifest and
+  maps it via `sidebar.mjs`), so there is no parallel array that can drift — the
+  parity this rule once enforced is structurally guaranteed. The guard no longer
+  reads `astro.config.mjs`. Rule numbering is preserved for stable cross-references.
 - **`orphaned-symlink` (Rule 3)** — flags dangling content-dir symlinks (target
   missing) **and** stale `source: "symlink"` manifest pages whose content-dir link
   is absent.

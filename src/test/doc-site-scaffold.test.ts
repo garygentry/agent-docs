@@ -1,7 +1,7 @@
 /**
  * Scaffold-output goldens (10 §5). Applies a fixed interview-answer set to the REAL
  * references/templates/** and the documented scaffold-time mechanics (script merge,
- * sidebar injection, deploy-fragment selection, manifest/provenance generation) via
+ * sidebar.mjs emission, deploy-fragment selection, manifest/provenance generation) via
  * `finalScaffold`, and asserts the resolved FINAL TARGET TREE is byte-identical to
  * the checked-in __scaffold_golden__/<answer-set>/ tree (keyed by real target paths,
  * 10 §7). Proves the emit procedure is deterministic / agent-agnostic without a live

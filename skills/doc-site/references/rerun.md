@@ -138,8 +138,11 @@ clobbered:
    (hash mismatch), it is **skipped + flagged**, and the run uses the **on-disk** manifest
    as the source of truth for the steps below (user intent wins). If unedited, you may
    regenerate it from new interview answers.
-2. **Sidebar** — generated deterministically from the on-disk manifest by the core
-   scaffold (`core.md`); it tracks the manifest with no parallel hand-kept copy.
+2. **Sidebar** — nothing to reconcile. It is no longer materialized into
+   `astro.config.mjs`; `astro.config.mjs` imports the manifest and derives the sidebar
+   via `sidebar.mjs` at **build time** (`core.md §2`). Both files are static managed
+   plumbing that follow §2.1 like any other, and a manifest edit takes effect at the
+   next build — so adding a page needs no skill re-run at all (#34).
 3. **Symlinks** — reconciled by re-running `setup-docs.sh` (`symlink.md`), which is
    idempotent: it creates missing links, leaves correct links untouched, and clears the
    `.astro` cache. Native pages on disk are never symlinked and never removed.

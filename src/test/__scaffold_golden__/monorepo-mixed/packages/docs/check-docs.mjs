@@ -11,7 +11,6 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 // guard is location-independent (works under docs/, packages/docs/, docs-site/, …).
 const DOCS_PKG_DIR = dirname(fileURLToPath(import.meta.url));
 const MANIFEST_PATH = join(DOCS_PKG_DIR, "docs.manifest.json");
-const ASTRO_CONFIG_PATH = join(DOCS_PKG_DIR, "astro.config.mjs");
 const CONTENT_DIR = join(DOCS_PKG_DIR, "src", "content", "docs");
 const CUSTOM_RULES_PATH = join(DOCS_PKG_DIR, "docs.drift.rules.mjs");
 const REQUIRED_FRONTMATTER = ["title"]; // Starlight's minimum (see §4.4)
@@ -20,7 +19,7 @@ const rel = (p) => relative(DOCS_PKG_DIR, p);
 // ── (b) Finding model + collector ────────────────────────────────
 /**
  * @typedef {Object} Finding
- * @property {string} rule  - rule id, e.g. "broken-link" | "non-canonical-link" | "frontmatter-link" | "sidebar-parity" | "orphaned-symlink" | "missing-frontmatter" | custom
+ * @property {string} rule  - rule id, e.g. "broken-link" | "non-canonical-link" | "frontmatter-link" | "orphaned-symlink" | "missing-frontmatter" | custom
  * @property {string} file  - repo-relative path the finding is about ("" if not file-scoped)
  * @property {number|null} line - 1-based line number, or null if not line-scoped
  * @property {string} message - human-readable explanation of the drift
@@ -210,34 +209,11 @@ function ruleFrontmatterLinks(files) {
   }
 }
 
-// §4.2 — Rule 2: sidebar↔manifest parity (managed pages only; unmanaged exempt).
-function ruleSidebarManifestParity() {
-  if (!existsSync(ASTRO_CONFIG_PATH)) {
-    report("sidebar-parity", ASTRO_CONFIG_PATH, null, "astro.config.mjs not found; cannot verify sidebar");
-    return;
-  }
-  const norm = (s) => s.replace(/^\/+|\/+$/g, "");
-  const expected = managedPages.map((p) => norm(p.slug));
-  const unmanagedSlugs = new Set(pages.filter((p) => p.unmanaged === true).map((p) => norm(p.slug)));
-  const cfg = readFileSync(ASTRO_CONFIG_PATH, "utf8");
-  const SLUG_RE = /\b(?:slug|link):\s*["'`]([^"'`]+)["'`]/g;
-  const sidebar = [];
-  let m;
-  while ((m = SLUG_RE.exec(cfg)) !== null) sidebar.push(norm(m[1]));
-  const sidebarSet = new Set(sidebar);
-  for (const slug of expected) {
-    if (!sidebarSet.has(slug)) report("sidebar-parity", ASTRO_CONFIG_PATH, null, `manifest slug '${slug}' missing from sidebar`);
-  }
-  const expectedSet = new Set(expected);
-  for (const slug of sidebar) {
-    if (!expectedSet.has(slug) && !unmanagedSlugs.has(slug))
-      report("sidebar-parity", ASTRO_CONFIG_PATH, null, `sidebar slug '${slug}' not in manifest`);
-  }
-  // Order check (managed slugs only), once the sets agree.
-  const sidebarManaged = sidebar.filter((s) => expectedSet.has(s));
-  if (sidebarManaged.length === expected.length && sidebarManaged.some((s, i) => s !== expected[i]))
-    report("sidebar-parity", ASTRO_CONFIG_PATH, null, "sidebar order differs from manifest order");
-}
+// §4.2 — Rule 2 RETIRED: sidebar↔manifest parity. The Starlight sidebar is now
+// DERIVED from docs.manifest.json at build time (astro.config.mjs imports the
+// manifest and maps it via sidebar.mjs), so there is no parallel array that can
+// drift — the parity check it once guarded is structurally impossible to fail and
+// has been removed. Rule numbering below is preserved for stable cross-references.
 
 // §4.3 — Rule 3: orphaned symlinks (dangling content-dir links + stale manifest pages).
 function ruleOrphanedSymlinks() {
@@ -283,7 +259,7 @@ function ruleMissingFrontmatter(files) {
 ruleBrokenInternalLinks(pageFiles);      // §4.1 — all pages, incl. unmanaged
 ruleNonCanonicalLinks(pageFiles);        // §4.1b — base-unsafe internal body links
 ruleFrontmatterLinks(pageFiles);         // §4.1c — base-unsafe frontmatter links (#32)
-ruleSidebarManifestParity();             // §4.2 — managed pages only
+// §4.2 (sidebar-parity) retired — sidebar is build-time derived from the manifest.
 ruleOrphanedSymlinks();                  // §4.3
 ruleMissingFrontmatter(pageFiles);       // §4.4 — all pages, incl. unmanaged
 

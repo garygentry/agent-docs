@@ -40,6 +40,8 @@ contract, its validation rules, and the `unmanaged` escape hatch.
 | Field       | Type                        | Required                                                      | Meaning                                                                                                                                                                                                                        |
 | ----------- | --------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `slug`      | string                      | yes                                                           | Route slug, POSIX-style (`guides/setup`); **unique** across `pages`.                                                                                                                                                           |
+| `label`     | string                      | no                                                            | Sidebar leaf-label override. Defaults to the titleized last slug segment (`guides/setup` → `Setup`). Only affects displayed text (core.md §2).                                                                                 |
+| `group`     | string                      | no                                                            | Sidebar group-label override (multi-segment slugs only). Defaults to the titleized first slug segment; the first page in a group that sets it wins. Only affects displayed text (core.md §2).                                  |
 | `source`    | `"symlink"` \| `"native"`   | required **unless** `unmanaged`                               | Where the page body comes from.                                                                                                                                                                                                |
 | `from`      | string (repo-relative path) | required **iff** `source: "symlink"`; **forbidden** otherwise | Repo-root markdown file to symlink in. **Repo-relative from the repo root, NO leading `../`** (e.g. `docs/intro.md`). `setup-docs.sh` prepends `$REPO_ROOT/$1` and rejects any target that escapes the root (`symlink.md §2`). |
 | `unmanaged` | boolean (default `false`)   | no                                                            | Escape hatch (see below). When `true`, `source`/`from` are not required and the generator does not wire the page.                                                                                                              |
@@ -52,8 +54,8 @@ Enforced by `docs.manifest.schema.json`:
 
 1. `source: "symlink"` ⇒ `from` present and non-empty.
 2. `source: "native"` ⇒ `from` absent.
-3. `unmanaged: true` ⇒ `source`/`from` are optional; the page is exempt from
-   sidebar ↔ manifest parity **only** (see below).
+3. `unmanaged: true` ⇒ `source`/`from` are optional; the page gets no sidebar entry
+   (`buildSidebar` skips it at build time) and no symlink (see below).
 4. `unmanaged` absent or `false` ⇒ `source` is required.
 5. `slug` values are unique across `pages`. **Not expressible in JSON Schema**
    (`uniqueItems` compares whole items, not one property), so this rule is **not**
@@ -74,9 +76,10 @@ caught by the agent's emit-time pre-check and by the drift guard at check time.
 
 A page with `"unmanaged": true` is owned by the **user**, not the generator:
 
-- The generator creates **no sidebar entry and no symlink** for it.
-- The drift guard **exempts it from sidebar ↔ manifest parity**, but **still
-  applies** broken-internal-link and required-frontmatter checks to it.
+- The generator creates **no sidebar entry and no symlink** for it
+  (`buildSidebar` skips `unmanaged` pages at build time).
+- The drift guard **still applies** broken-internal-link and required-frontmatter
+  checks to it.
 
 This lets the user hand-manage edge cases — for example, a page reachable only by
 a direct link, or a sidebar entry they add themselves — without the generator

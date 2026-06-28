@@ -133,10 +133,10 @@ describe("check-docs.mjs executable smoke — frontmatter-link rule (#32)", () =
     const repo = mkRepo();
     const tree = finalScaffold(loadAnswers("single-symlink.json"));
     fs.writeFileSync(path.join(repo, "check-docs.mjs"), tree.get("docs/check-docs.mjs")!);
-    // Empty manifest + empty sidebar → no broken-link / sidebar-parity noise; the
-    // index.mdx body is link-free so only the frontmatter hero link is under test.
+    // Empty manifest → no broken-link noise; the index.mdx body is link-free so
+    // only the frontmatter hero link is under test. (The sidebar-parity rule was
+    // retired — the sidebar is build-time derived — so no astro.config.mjs is needed.)
     fs.writeFileSync(path.join(repo, "docs.manifest.json"), JSON.stringify({ pages: [] }));
-    fs.writeFileSync(path.join(repo, "astro.config.mjs"), "export default { sidebar: [] };\n");
     const docs = path.join(repo, "src", "content", "docs");
     fs.mkdirSync(docs, { recursive: true });
     fs.writeFileSync(

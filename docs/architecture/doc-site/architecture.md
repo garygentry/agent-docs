@@ -145,21 +145,23 @@ so the one well-known location is stable for every consumer. Three consumers rea
                             │
         ┌───────────────────┼────────────────────┐
         ▼                   ▼                    ▼
-  sidebar generation    the symlinker        the drift guard
-  (core.md)             (setup-docs.sh)      (check-docs.mjs)
-  buildSidebar(pages)   link_file per        sidebar↔manifest parity,
-  → astro.config.mjs    source:symlink page  broken links, orphaned links,
-  at the <<SIDEBAR>>                          missing frontmatter
-  sentinel
+  sidebar derivation    the symlinker        the drift guard
+  (sidebar.mjs)         (setup-docs.sh)      (check-docs.mjs)
+  buildSidebar(pages)   link_file per        broken links, orphaned
+  imported by           source:symlink page  links, missing frontmatter
+  astro.config.mjs                           (sidebar can't drift —
+  at build time                              it's build-time derived)
 ```
 
-**Sidebar generation** is a pure function of `pages`: single-segment slugs become
-top-level leaves, multi-segment slugs group by their titleized first path segment
-(first occurrence fixes order), `unmanaged` pages are skipped, and the `index.mdx`
-splash is never a sidebar entry. Crucially, **`source` is invisible to the sidebar** —
-a `native` and a `symlink` page with the same slug render the identical leaf. That is
-what makes `mixed` mode fully expressible through one manifest. Because the sidebar is
-_generated_, never hand-kept, it cannot drift from the manifest.
+**Sidebar derivation** is a pure function of `pages`: single-segment slugs become
+top-level leaves, multi-segment slugs group by their first path segment (first
+occurrence fixes order; `label`/`group` optionally override the titleized text),
+`unmanaged` pages are skipped, and the `index.mdx` splash is never a sidebar entry.
+Crucially, **`source` is invisible to the sidebar** — a `native` and a `symlink` page
+with the same slug render the identical leaf. That is what makes `mixed` mode fully
+expressible through one manifest. The function lives in the vendored `sidebar.mjs`,
+which `astro.config.mjs` imports and evaluates **at build time** — so the sidebar is
+never materialized into a parallel array and cannot drift from the manifest (#34).
 
 ## Never-clobber re-runs
 
