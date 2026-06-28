@@ -46,6 +46,16 @@
           "type": "string",
           "description": "Route slug, POSIX-style (e.g. 'guides/setup'). Must be unique across pages (enforced by the symlinker/drift-guard, not by this schema — see top-level description)."
         },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional sidebar label override for this page's leaf entry. Defaults to the titleized last slug segment (e.g. 'guides/setup' → 'Setup')."
+        },
+        "group": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional sidebar group-label override (multi-segment slugs only). Defaults to the titleized first slug segment; the first page in a group that sets it wins."
+        },
         "source": {
           "enum": ["symlink", "native"],
           "description": "Where the page body comes from. Required unless unmanaged is true."

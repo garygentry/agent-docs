@@ -1,9 +1,20 @@
 // astro.config.mjs — emitted into packages/docs/
-// MANAGED by doc-site (tracked in .doc-site-scaffold.json). The `sidebar`
-// array is generated from docs.manifest.json — edit the manifest, not this file.
+// MANAGED by doc-site (tracked in .doc-site-scaffold.json). The `sidebar` is
+// DERIVED from docs.manifest.json at build time (see sidebar.mjs) — there is no
+// parallel array to keep in sync, so it cannot drift. Edit the manifest, not this
+// file.
+import { readFileSync } from "node:fs";
 import { defineConfig, passthroughImageService } from "astro/config";
 import starlight from "@astrojs/starlight";
 import rehypeBaseLinks from "./rehype-base-links.mjs";
+import { buildSidebar } from "./sidebar.mjs";
+
+// REQ-CONTENT-03: single source of truth. The manifest is read beside this config
+// and mapped to the Starlight sidebar at build time — adding a page is a one-line
+// manifest edit and the sidebar follows automatically.
+const manifest = JSON.parse(
+  readFileSync(new URL("./docs.manifest.json", import.meta.url), "utf8"),
+);
 
 export default defineConfig({
   // REQ-CORE-02: derive site/base from env so the SAME build works on a hosted
@@ -33,24 +44,9 @@ export default defineConfig({
       social: [
         { icon: "github", label: "GitHub", href: "https://github.com/widget-co/widget" },
       ],
-      // <<SIDEBAR>> — replaced by the array generated in §7 from docs.manifest.json.
-      // REQ-CONTENT-03: single source of truth; never hand-kept in parallel.
-      sidebar: [
-        { label: "Intro", slug: "intro" },
-        {
-          label: "Api",
-          items: [
-            { label: "Reference", slug: "api/reference" },
-          ],
-        },
-        { label: "About", slug: "about" },
-        {
-          label: "Guides",
-          items: [
-            { label: "Setup", slug: "guides/setup" },
-          ],
-        },
-      ],
+      // Derived from docs.manifest.json at build time (see sidebar.mjs) — single
+      // source of truth, never hand-kept in parallel. REQ-CONTENT-03.
+      sidebar: buildSidebar(manifest.pages),
       customCss: ["./src/styles/custom.css"],
     }),
   ],

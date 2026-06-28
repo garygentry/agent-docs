@@ -79,12 +79,14 @@ Written to the **target repo root** (alongside, not inside, the docs package), w
 
 ### 2.1 PageEntry contract
 
-| Field       | Type                        | Required                                                      | Meaning                                                              |
-| ----------- | --------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `slug`      | string                      | yes                                                           | Route slug, POSIX-style (`guides/setup`); **unique** across `pages`. |
-| `source`    | `"symlink"` \| `"native"`   | required **unless** `unmanaged`                               | Where the page body comes from.                                      |
-| `from`      | string (repo-relative path) | required **iff** `source: "symlink"`; **forbidden** otherwise | Repo-root markdown to symlink in.                                    |
-| `unmanaged` | boolean (default `false`)   | no                                                            | Escape hatch — generator wires no sidebar entry or symlink for it.   |
+| Field       | Type                        | Required                                                      | Meaning                                                                  |
+| ----------- | --------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `slug`      | string                      | yes                                                           | Route slug, POSIX-style (`guides/setup`); **unique** across `pages`.     |
+| `label`     | string                      | no                                                            | Sidebar leaf-label override (defaults to titleized last slug segment).   |
+| `group`     | string                      | no                                                            | Sidebar group-label override (defaults to titleized first slug segment). |
+| `source`    | `"symlink"` \| `"native"`   | required **unless** `unmanaged`                               | Where the page body comes from.                                          |
+| `from`      | string (repo-relative path) | required **iff** `source: "symlink"`; **forbidden** otherwise | Repo-root markdown to symlink in.                                        |
+| `unmanaged` | boolean (default `false`)   | no                                                            | Escape hatch — generator wires no sidebar entry or symlink for it.       |
 
 ### 2.2 Schema validation rules
 
@@ -94,8 +96,8 @@ further:
 
 1. `source: "symlink"` ⇒ `from` present and non-empty.
 2. `source: "native"` ⇒ `from` absent.
-3. `unmanaged: true` ⇒ `source`/`from` optional; page exempt from sidebar↔manifest
-   parity **only**.
+3. `unmanaged: true` ⇒ `source`/`from` optional; the generator wires no sidebar
+   entry (the build-time `buildSidebar` skips it) or symlink for it.
 4. `unmanaged` absent/false ⇒ `source` required.
 5. `slug` values unique across `pages`. **Note:** JSON Schema cannot express per-slug
    uniqueness across array items, so this rule is **delegated to the symlinker and the
@@ -106,8 +108,8 @@ further:
 
 ### 2.3 The `unmanaged: true` escape hatch
 
-A page the **user** owns, not the generator: no sidebar entry, no symlink. The drift
-guard exempts it from sidebar↔manifest parity **only** — it still runs broken-link and
+A page the **user** owns, not the generator: no sidebar entry, no symlink.
+`buildSidebar` skips it at build time — it still runs broken-link and
 required-frontmatter checks over it. Scoped per-page, so every _managed_ page stays
 fully generated and cannot drift.
 
@@ -157,14 +159,18 @@ POSIX `sh` (no bashisms), `set -eu`, written to `{{DOCS_PKG_DIR}}/setup-docs.sh`
 stdlib-only ESM (`node:fs`/`path`/`url`), runs identically under `node` and `bun`,
 location-independent (all paths from `import.meta.url`). Written to
 `{{DOCS_PKG_DIR}}/check-docs.mjs`; wired as `docs:check` (`{{RUNTIME}} check-docs.mjs`).
-Four rules:
+Built-in rules:
 
 | Rule                  | Checks                                                                                                                                                                           |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `broken-link`         | Local markdown/image links resolve on disk (skips external/anchor/`mailto:`/`tel:`/`data:`), with a Starlight slug fallback. Runs over every page incl. symlinked & `unmanaged`. |
-| `sidebar-parity`      | `astro.config.mjs` sidebar lists exactly the **managed** manifest slugs in order. `unmanaged` pages exempt.                                                                      |
 | `orphaned-symlink`    | Dangling content-dir symlinks **and** stale `source: symlink` pages whose link is absent.                                                                                        |
 | `missing-frontmatter` | Any `.md`/`.mdx` lacking a `title` frontmatter key (Starlight minimum). Runs over every page incl. `unmanaged`.                                                                  |
+
+The former `sidebar-parity` rule is **retired (#34)**: the sidebar is derived from
+`docs.manifest.json` at build time (`astro.config.mjs` imports it and maps it via
+`sidebar.mjs`), so there is no parallel array to drift and the guard no longer reads
+`astro.config.mjs`.
 
 **Exit codes:** `0` clean · `1` drift findings (each `[<rule>] <file>:<line> — <msg>`
 plus a `check-docs-json: {…}` trailer for CI) · `2` guard error (missing/invalid
@@ -223,6 +229,7 @@ At the target repo root. Drives never-clobber re-runs.
   "starlightPin": "0.36.0",
   "files": {
     "docs/astro.config.mjs": "sha256:<hex>",
+    "docs/sidebar.mjs": "sha256:<hex>",
     "docs/setup-docs.sh": "sha256:<hex>",
     "scripts/diagram-render.mjs": "sha256:<hex>",
     // one entry per managed plumbing file; the sha256 of the exact bytes written

@@ -7,7 +7,7 @@
  *
  * The high-level "final emitted target tree" resolver — the one that models the
  * post-substitution mechanics an agent performs by hand (package-script merges,
- * sidebar injection, deploy-fragment selection, manifest/provenance generation) —
+ * sidebar.mjs emission, deploy-fragment selection, manifest/provenance generation) —
  * lives in `doc-site-final-scaffold.shared.ts`, layered on top of these
  * primitives. That is the surface the scaffold-output goldens assert against.
  *

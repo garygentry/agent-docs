@@ -129,34 +129,38 @@ with 2-space indent and a trailing newline.
 
 ---
 
-## 2. Sidebar-from-manifest algorithm
+## 2. Sidebar-from-manifest derivation (build time)
 
-The Starlight `sidebar` array in `astro.config.mjs` is **generated from
-`docs.manifest.json`** — never hand-kept in parallel. This is the single most
-important mechanic of the core scaffold: one source, cannot drift.
+The Starlight `sidebar` is **derived from `docs.manifest.json` at build time** —
+never serialized into `astro.config.mjs` and never hand-kept in parallel. This is
+the single most important mechanic of the core scaffold: one source, cannot drift.
+
+The emitted `astro.config.mjs` reads the manifest beside it and maps it through a
+vendored, dependency-free helper (`core/sidebar.mjs`, §2.3):
+
+```js
+import { readFileSync } from "node:fs";
+import { buildSidebar } from "./sidebar.mjs";
+
+const manifest = JSON.parse(
+  readFileSync(new URL("./docs.manifest.json", import.meta.url), "utf8"),
+);
+// …
+sidebar: buildSidebar(manifest.pages),
+```
+
+Because the array is computed every build from the manifest, there is **no parallel
+literal to keep in sync** — the old `// <<SIDEBAR>>` emit-time substitution and the
+drift guard's `sidebar-parity` rule are both retired (#34). Adding a page is a
+one-line manifest edit; the sidebar follows automatically on the next build.
 
 ### 2.1 Input → output
 
 - **Input:** the ordered `pages` array from `docs.manifest.json`. **Manifest order
   IS sidebar order.**
-- **Output:** a Starlight `sidebar` array literal, substituted into
-  `astro.config.mjs` at the `// <<SIDEBAR>>` sentinel — the agent replaces the
-  `sidebar: []` line's `[]` with the computed array. **Serialization (byte-stable):**
-  array elements are indented two spaces deeper than the `sidebar:` key (which sits
-  at 6 spaces, so elements at 8); a group's `label`/`items:` lines nest two further
-  and its leaves two beyond that; the closing `]` aligns with the `sidebar:` key.
-  Every element line ends with a trailing comma; labels and slugs are
-  double-quoted. (The §2.4 worked example shows the shape at zero indent.)
-
-The template ships this anchor:
-
-```js
-// <<SIDEBAR>> — replaced by the array generated from docs.manifest.json.
-sidebar: [],
-```
-
-Each leaf entry has the shape `{ label, slug }`; each group has the shape
-`{ label, items: [...] }` (optionally `collapsed`).
+- **Output:** the Starlight `sidebar` array, returned by `buildSidebar(pages)` at
+  build time. Each leaf entry has the shape `{ label, slug }`; each group has the
+  shape `{ label, items: [...] }`.
 
 ### 2.2 The algorithm
 
@@ -166,11 +170,16 @@ Iterate `pages` in manifest order:
    for it).
 2. Split the `slug` by the POSIX separator `/`.
 3. A **single-segment** slug becomes a top-level leaf: `{ label, slug }`, where
-   `label` is the titleized last segment.
-4. A **multi-segment** slug is **grouped** by the titleized **first** path
-   segment into a `{ label, items: [...] }` group. The **first occurrence** of a
-   group label fixes that group's order in the array; later pages with the same
-   first segment append to the existing group's `items`.
+   `label` is the page's optional `label` override, else the titleized last segment.
+4. A **multi-segment** slug is **grouped** by the **first** path segment into a
+   `{ label, items: [...] }` group. The **first occurrence** of a group fixes that
+   group's order in the array and its label (the page's optional `group` override,
+   else the titleized first segment); later pages with the same first segment append
+   to the existing group's `items`.
+
+The optional per-page `label` / `group` fields (manifest-schema.md) only override
+the displayed text — they default to the titleized segments, so a manifest that
+omits them yields the historical labels unchanged.
 
 **`source` does not affect the sidebar.** A `native` page and a `symlink` page
 with the same slug yield the **identical** `{ label, slug }` leaf. `source` only
@@ -185,14 +194,19 @@ sidebar generation — it is the implicit route root `/`, not a sidebar entry.
 `titleize` splits a segment on `-`, capitalizes each word, and joins with a single
 space (e.g. `getting-started` → `Getting Started`).
 
-### 2.3 Reference TypeScript
+### 2.3 The vendored `sidebar.mjs`
 
-The agent computes the array deterministically (a pure function of `pages`, so
-byte-identical across agents):
+`buildSidebar` is emitted verbatim as the managed plumbing file `sidebar.mjs`
+(template `core/sidebar.mjs.tmpl`) beside `astro.config.mjs`, which imports it. It
+is a pure function of `pages` (no I/O, no deps), so it is byte-identical across
+agents and runs the same at build time as it once did at emit time. The shipped
+module is plain JS; the typed reference below is equivalent:
 
 ```ts
 interface PageEntry {
   slug: string; // POSIX, e.g. "guides/setup"
+  label?: string; // optional leaf-label override (defaults to titleized last segment)
+  group?: string; // optional group-label override (defaults to titleized first segment)
   source?: "symlink" | "native";
   from?: string; // present iff source === "symlink"
   unmanaged?: boolean; // escape hatch
@@ -209,7 +223,7 @@ type SidebarEntry = SidebarLeaf | SidebarGroup;
  */
 function buildSidebar(pages: PageEntry[]): SidebarEntry[] {
   const result: SidebarEntry[] = [];
-  const groupIndex = new Map<string, SidebarGroup>(); // group label → group node
+  const groupIndex = new Map<string, SidebarGroup>(); // first slug segment → group node
 
   for (const page of pages) {
     // source (symlink vs native) does NOT affect the sidebar — both render
@@ -217,18 +231,18 @@ function buildSidebar(pages: PageEntry[]): SidebarEntry[] {
     if (page.unmanaged) continue;
 
     const segments = page.slug.split("/");
-    const leaf: SidebarLeaf = { label: titleize(last(segments)), slug: page.slug };
+    const leaf: SidebarLeaf = { label: page.label ?? titleize(last(segments)), slug: page.slug };
 
     if (segments.length === 1) {
       result.push(leaf); // top-level page
       continue;
     }
-    const groupLabel = titleize(segments[0]);
-    let group = groupIndex.get(groupLabel);
+    const key = segments[0]; // group by first segment; label is overridable
+    let group = groupIndex.get(key);
     if (!group) {
-      group = { label: groupLabel, items: [] };
-      groupIndex.set(groupLabel, group);
-      result.push(group); // first occurrence fixes order
+      group = { label: page.group ?? titleize(key), items: [] };
+      groupIndex.set(key, group);
+      result.push(group); // first occurrence fixes order + label
     }
     group.items.push(leaf);
   }
@@ -259,7 +273,7 @@ Manifest `pages` (in order):
 ]
 ```
 
-produces the substituted `sidebar` array:
+produces the `sidebar` array `buildSidebar` returns at build time:
 
 ```js
 sidebar: [
@@ -285,11 +299,10 @@ Note that `intro` (symlink) and `guides/setup` (native) render the same way —
 
 ### 2.5 Re-run behavior
 
-On re-run, recompute `buildSidebar(pages)` from the (possibly updated) manifest
-and re-substitute the `astro.config.mjs` sidebar **in place**. Because the
-algorithm is a pure function of `pages`:
-
-- An **identical manifest** yields a **no-op diff**.
-- If the user hand-edited `astro.config.mjs` (its on-disk hash no longer matches
-  the recorded provenance hash), the file is `RERUN_SKIP`ped and the divergence
-  flagged — never clobbered.
+The sidebar is no longer materialized into `astro.config.mjs`, so there is nothing
+to re-substitute on re-run: both `astro.config.mjs` and `sidebar.mjs` are static
+managed plumbing whose bytes do not depend on the manifest. They follow the normal
+never-clobber decision table (rerun.md §2) — an unchanged template is a no-op diff;
+a user-edited file (on-disk hash ≠ recorded provenance hash) is `RERUN_SKIP`ped and
+flagged. Manifest edits take effect at the **next build**, with no scaffold re-run
+required — that is the whole point of build-time derivation (#34).

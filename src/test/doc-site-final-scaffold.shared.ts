@@ -4,7 +4,7 @@
  * `resolveTree` (doc-site-scaffold.shared.ts) proves byte-stable {{TOKEN}}
  * substitution over the RAW template groups. It does NOT model the **final emitted
  * target repo tree** — the post-substitution mechanics an agent performs by hand:
- * package-script composition, sidebar injection, deploy-fragment selection +
+ * package-script composition, sidebar.mjs emission, deploy-fragment selection +
  * drift-step injection + path-filter dedup, manifest generation, schema copy,
  * provenance hashing, and the monorepo root-file merge. Several genuinely broken
  * template/doc outputs pass `resolveTree` green precisely because it never emits
@@ -30,7 +30,6 @@ import {
   deriveTokens,
   substitute,
   walk,
-  type PageEntry,
   type ScaffoldAnswers,
 } from "./doc-site-scaffold.shared.js";
 
@@ -62,68 +61,9 @@ function sha256(bytes: string): string {
   return "sha256:" + createHash("sha256").update(bytes, "utf8").digest("hex");
 }
 
-// ── sidebar (core.md §2) ─────────────────────────────────────────────────────
-type SidebarLeaf = { label: string; slug: string };
-type SidebarGroup = { label: string; items: SidebarLeaf[] };
-type SidebarEntry = SidebarLeaf | SidebarGroup;
-
-function titleize(segment: string): string {
-  return segment
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
-/** Build the Starlight sidebar from manifest pages, preserving manifest order (core.md §2.3). */
-export function buildSidebar(pages: ReadonlyArray<PageEntry>): SidebarEntry[] {
-  const result: SidebarEntry[] = [];
-  const groupIndex = new Map<string, SidebarGroup>();
-  for (const page of pages) {
-    if (page.unmanaged) continue; // source does not affect sidebar; only unmanaged excludes
-    const segments = page.slug.split("/");
-    const leaf: SidebarLeaf = { label: titleize(segments[segments.length - 1]!), slug: page.slug };
-    if (segments.length === 1) {
-      result.push(leaf);
-      continue;
-    }
-    const groupLabel = titleize(segments[0]!);
-    let group = groupIndex.get(groupLabel);
-    if (!group) {
-      group = { label: groupLabel, items: [] };
-      groupIndex.set(groupLabel, group);
-      result.push(group);
-    }
-    group.items.push(leaf);
-  }
-  return result;
-}
-
-/**
- * Serialize the sidebar to the documented pretty-print (core.md §2): array items
- * at `base + 2` spaces, group bodies nested two further, leaves double-quoted.
- * `base` is the indentation of the `sidebar:` key (6 in astro.config.mjs).
- */
-function serializeSidebar(entries: SidebarEntry[], base: number): string {
-  const ind = base + 2;
-  const pad = " ".repeat(ind);
-  const leaf = (e: SidebarLeaf, n: number) =>
-    `${" ".repeat(n)}{ label: ${JSON.stringify(e.label)}, slug: ${JSON.stringify(e.slug)} },`;
-  const lines = ["["];
-  for (const e of entries) {
-    if ("slug" in e) {
-      lines.push(leaf(e, ind));
-    } else {
-      lines.push(`${pad}{`);
-      lines.push(`${" ".repeat(ind + 2)}label: ${JSON.stringify(e.label)},`);
-      lines.push(`${" ".repeat(ind + 2)}items: [`);
-      for (const it of e.items) lines.push(leaf(it, ind + 4));
-      lines.push(`${" ".repeat(ind + 2)}],`);
-      lines.push(`${pad}},`);
-    }
-  }
-  lines.push(`${" ".repeat(base)}]`);
-  return lines.join("\n");
-}
+// The Starlight sidebar is no longer serialized at scaffold time — it is derived
+// from docs.manifest.json at build time by the vendored core/sidebar.mjs module
+// (imported by astro.config.mjs). See skills/doc-site/references/core.md §2 (#34).
 
 // ── package.json script composition (symlink.md §4, diagrams.md §4, drift-guard.md §3) ──
 function composeScripts(
@@ -381,13 +321,14 @@ export function finalScaffold(
   emit(`${d}/tsconfig.json`, substitute(tmpl("core/tsconfig.json.tmpl"), tokens), true);
   emit(`${d}/.gitignore`, substitute(tmpl("core/.gitignore.tmpl"), tokens), true);
 
-  // astro.config.mjs with sidebar injected at the `sidebar: []` sentinel.
-  const sidebar = serializeSidebar(buildSidebar(effectivePages(answers.pages)), 6);
-  const astro = substitute(tmpl("core/astro.config.mjs.tmpl"), tokens).replace(
-    "sidebar: []",
-    `sidebar: ${sidebar}`,
-  );
-  emit(`${d}/astro.config.mjs`, astro, true);
+  // astro.config.mjs — the sidebar is no longer injected here; it is derived from
+  // docs.manifest.json at build time by sidebar.mjs (imported by the config), so
+  // the template is emitted verbatim after token substitution (#34).
+  emit(`${d}/astro.config.mjs`, substitute(tmpl("core/astro.config.mjs.tmpl"), tokens), true);
+
+  // sidebar.mjs — vendored, dependency-free buildSidebar(manifest.pages) consumed
+  // by astro.config.mjs at build time (#34). Managed plumbing.
+  emit(`${d}/sidebar.mjs`, substitute(tmpl("core/sidebar.mjs.tmpl"), tokens), true);
 
   // rehype-base-links.mjs — zero-dependency plugin wired by astro.config.mjs (#24/#29).
   emit(
