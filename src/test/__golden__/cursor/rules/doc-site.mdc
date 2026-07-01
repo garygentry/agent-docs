@@ -24,6 +24,8 @@ These ride verbatim under `references/`; read the one for the phase/component yo
 working on rather than loading everything up front.
 
 - **`references/detect.md`** — Phase 1 detection probes + graceful-degradation table.
+- **`references/content-plan.md`** — optional content-plan step: consume a `content-architect`
+  **DocPlan** to drive the sidebar + mode-pure page stubs instead of guessing the IA.
 - **`references/interview.md`** — Phase 2 interview parameters + detection-seeded defaults.
 - **`references/core.md`**, **`references/manifest-schema.md`** — core scaffold emit +
   `docs.manifest.json` contract and the `unmanaged` escape hatch.
@@ -46,6 +48,19 @@ package manager, runtime, existing docs, existing CI, default branch, and repo s
 Detection is **best-effort, never a hard prerequisite** — every missing signal yields
 a fallback default plus an assumption record (`00 §6.2`). The only legitimate
 hard-fail is `HARD_FAIL_IMPOSSIBLE` (no writable tree).
+
+### Phase 1.5 — content-plan (optional; `references/content-plan.md`)
+
+If a **DocPlan** exists (`{{DOCS_PKG_DIR}}/docplan.json`, `docs/docplan.json`, or repo-root
+`docplan.json`) — or the user wants a planned site — source the information architecture
+from it instead of guessing during the interview. Validate the DocPlan against its shipped
+`docplan.schema.json`, then translate `grouping` + `documents` into `docs.manifest.json`
+`pages[]` via the adapter in `references/content-plan.md`: each `grouping` section becomes a
+sidebar group (slug-first-segment normalized to the section), each `DocPlanEntry` a
+mode-pure native page stub seeded from `content-architect`'s `references/templates/<type>.md`,
+with home links retargeted to the first planned page. When no DocPlan is present and the user
+does not want one, skip this step entirely and interview as usual. To author a DocPlan from
+scratch, invoke the sibling **`content-architect`** skill first.
 
 ### Phase 2 — interview (`references/interview.md`)
 

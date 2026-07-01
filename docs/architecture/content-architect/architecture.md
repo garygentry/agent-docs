@@ -43,9 +43,12 @@ graph unchanged and the schema colocated with the skill that owns it.
 
 ## Composition edges
 
-- **doc-site (planned)** — consumes a DocPlan to generate the sidebar and page stubs in
+- **doc-site (shipped)** — consumes a DocPlan to generate the sidebar and page stubs in
   their assigned modes instead of guessing the IA during its interview. `grouping` maps
-  onto doc-site's `docs.manifest.json` sidebar model (ordered groups → ordered pages).
+  onto doc-site's `docs.manifest.json` sidebar model (ordered groups → ordered pages) via
+  the documented adapter in `skills/doc-site/references/content-plan.md`: each `grouping`
+  section is normalized to a slug first-segment so `buildSidebar()`'s implicit,
+  prefix-derived grouping reproduces the plan's explicit sections in order.
 - **readme-author (shipped)** — invokes content-architect as the upstream content/accuracy
   step (the `end-user` DocPlan slice: `project.{name,kind,summary}`, primary `audiences[]`,
   quickstart `sources[]`, and `gaps[]`), then keeps owning README structure and section
