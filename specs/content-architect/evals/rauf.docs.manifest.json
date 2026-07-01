@@ -1,0 +1,35 @@
+{
+  "site": { "title": "rauf", "description": "Autonomous coding loop over a structured backlog." },
+  "pages": [
+    {
+      "slug": "getting-started/your-first-loop",
+      "label": "Run your first loop",
+      "group": "Getting started",
+      "source": "native"
+    },
+    {
+      "slug": "guides/recovery",
+      "label": "Recover an interrupted loop",
+      "group": "Guides",
+      "source": "native"
+    },
+    {
+      "slug": "guides/scripting-ci",
+      "label": "Drive rauf from CI or a supervisor",
+      "source": "native"
+    },
+    {
+      "slug": "reference/cli",
+      "label": "CLI command reference",
+      "group": "Reference",
+      "source": "native"
+    },
+    { "slug": "reference/backlog-schema", "label": "Backlog schema reference", "source": "native" },
+    {
+      "slug": "concepts/signals",
+      "label": "How the loop decides an item is done",
+      "group": "Concepts",
+      "source": "native"
+    }
+  ]
+}

@@ -1,0 +1,356 @@
+{
+  "version": "1.0",
+  "provenance": {
+    "generatedBy": "content-architect",
+    "repoRef": "agent-docs@0.1.0",
+    "generatedAt": "eval — greenfield direct, both spines"
+  },
+  "scope": "both",
+  "project": {
+    "name": "agent-docs",
+    "kind": "framework",
+    "summary": "A canonical source-to-multi-target emitter: documentation tools are authored once in Claude-native form and built into five platform bundles (Claude, Codex, Copilot, Cursor, Gemini) by one deterministic pipeline."
+  },
+  "audiences": [
+    {
+      "id": "tool-author",
+      "name": "Skill/tool author",
+      "description": "A contributor authoring or editing a skill under skills/ and running the build.",
+      "expertise": "intermediate"
+    },
+    {
+      "id": "maintainer",
+      "name": "Pipeline maintainer",
+      "description": "A developer working on the emitter itself — transforms, discovery, publish, drift guards.",
+      "expertise": "expert"
+    }
+  ],
+  "sources": [
+    {
+      "id": "cli",
+      "path": "src/cli.ts",
+      "type": "entrypoint",
+      "note": "build and build --check subcommands; bin agent-docs-build."
+    },
+    {
+      "id": "pkg",
+      "path": "package.json",
+      "type": "manifest",
+      "note": "name, bin, scripts (build, gate, schema:gen), deps (zod, zod-to-json-schema)."
+    },
+    {
+      "id": "emit",
+      "path": "src/emit.ts",
+      "type": "api",
+      "note": "Core in-memory pipeline: discover -> per-target transform -> aggregate; returns EmitResult with no disk writes."
+    },
+    {
+      "id": "manifest-mod",
+      "path": "src/manifest.ts",
+      "type": "api",
+      "note": "Loads/validates tools.manifest.json; cross-checks tool names against on-disk frontmatter."
+    },
+    {
+      "id": "discover",
+      "path": "src/discover.ts",
+      "type": "api",
+      "note": "Walks manifest tools into SkillRecord/AgentRecord/CommandRecord + shared refs/scripts; sorts by POSIX path (REQ-EMIT-06)."
+    },
+    {
+      "id": "targets",
+      "path": "src/targets/index.ts",
+      "type": "api",
+      "note": "TRANSFORMS registry: one TargetTransform per target."
+    },
+    {
+      "id": "model",
+      "path": "src/model.ts",
+      "type": "schema",
+      "note": "Zod source of truth: Manifest, Target enum, TARGET_ORDER, tool types."
+    },
+    {
+      "id": "publish",
+      "path": "src/publish.ts",
+      "type": "api",
+      "note": "Atomic, path-confined disk publish of adapters/ + .claude-plugin/ (REQ-SEC-01)."
+    },
+    {
+      "id": "driftguard",
+      "path": "src/driftguard.ts",
+      "type": "api",
+      "note": "Diffs a fresh emit against the committed tree; build --check throws on drift."
+    },
+    {
+      "id": "tools-manifest",
+      "path": "tools.manifest.json",
+      "type": "config",
+      "note": "Canonical tool registry + emitter config (dirs, target list)."
+    },
+    {
+      "id": "manifest-schema",
+      "path": "schemas/tools.manifest.schema.json",
+      "type": "schema",
+      "note": "JSON Schema generated from the Zod Manifest by schema:gen."
+    },
+    {
+      "id": "golden-test",
+      "path": "src/test/golden.test.ts",
+      "type": "test",
+      "note": "Byte-identical golden snapshot per target for the docs-helper sample."
+    },
+    {
+      "id": "emit-test",
+      "path": "src/test/emit.test.ts",
+      "type": "test",
+      "note": "Core emission pipeline over a fixture repo. Integration ground truth."
+    },
+    {
+      "id": "contributing",
+      "path": "CONTRIBUTING.md",
+      "type": "history",
+      "note": "Existing contributor guide: where tools live, how to add one, build process."
+    }
+  ],
+  "documents": [
+    {
+      "id": "d-add-tool",
+      "title": "Add a skill and build it to every target",
+      "slug": "get-started/add-a-skill",
+      "family": "diataxis",
+      "type": "tutorial",
+      "audience": ["tool-author"],
+      "purpose": "Author a minimal skill, register it in the manifest, and see it emitted to all five targets.",
+      "sourceRefs": ["cli", "tools-manifest", "emit-test"],
+      "status": "planned",
+      "priority": 1,
+      "outline": [
+        {
+          "heading": "Create skills/<name>/SKILL.md",
+          "intent": "Author the canonical Claude-native source with frontmatter.",
+          "sourceRefs": ["contributing"]
+        },
+        {
+          "heading": "Register it in tools.manifest.json",
+          "intent": "Add the tool entry the emitter discovers.",
+          "sourceRefs": ["tools-manifest", "manifest-mod"]
+        },
+        {
+          "heading": "Run bun run build",
+          "intent": "See adapters/<target>/ populated for all five targets.",
+          "sourceRefs": ["cli", "emit"]
+        }
+      ],
+      "verification": "Add-tool -> emit flow verified against src/test/emit.test.ts over its fixture repo."
+    },
+    {
+      "id": "d-authoring-howto",
+      "title": "Edit a canonical source without breaking the build",
+      "slug": "guides/authoring",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["tool-author"],
+      "purpose": "Make edits that survive emission and the gate: canonical-only edits, golden regeneration, YAML frontmatter rules.",
+      "sourceRefs": ["contributing", "golden-test", "driftguard"],
+      "status": "planned",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "Edit only skills/<name>/",
+          "intent": "Never hand-edit adapters/ — they are generated.",
+          "sourceRefs": ["contributing"]
+        },
+        {
+          "heading": "Regenerate goldens when needed",
+          "intent": "Run the golden regenerate step and review the diff.",
+          "sourceRefs": ["golden-test"]
+        }
+      ],
+      "verification": "Canonical-source-only rule and drift behavior verified against src/driftguard.ts and src/test/golden.test.ts."
+    },
+    {
+      "id": "d-cli-reference",
+      "title": "Build CLI reference",
+      "slug": "reference/cli",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["tool-author", "maintainer"],
+      "purpose": "Look up the build and build --check commands, their exit behavior, and the gate scripts.",
+      "sourceRefs": ["cli", "pkg"],
+      "status": "planned",
+      "priority": 3,
+      "outline": [
+        {
+          "heading": "build",
+          "intent": "Emit adapters, report, and .claude-plugin/ to disk.",
+          "sourceRefs": ["cli"]
+        },
+        {
+          "heading": "build --check",
+          "intent": "Drift guard — exit 1 on any drift.",
+          "sourceRefs": ["cli", "driftguard"]
+        },
+        {
+          "heading": "gate scripts",
+          "intent": "compile, schema:check, typecheck, lint, format, test, build:check.",
+          "sourceRefs": ["pkg"]
+        }
+      ],
+      "verification": "Command surface verified in src/cli.ts; scripts verified in package.json."
+    },
+    {
+      "id": "d-manifest-reference",
+      "title": "tools.manifest.json reference",
+      "slug": "reference/manifest",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["tool-author", "maintainer"],
+      "purpose": "Look up every field of the canonical tool registry and emitter config.",
+      "sourceRefs": ["tools-manifest", "manifest-schema", "model"],
+      "status": "planned",
+      "priority": 4,
+      "outline": [
+        {
+          "heading": "config block",
+          "intent": "skillsDir, agentsDir, adaptersDir, targets, …",
+          "sourceRefs": ["tools-manifest"]
+        },
+        {
+          "heading": "tools[] entries",
+          "intent": "name, type, source per tool.",
+          "sourceRefs": ["model"]
+        }
+      ],
+      "verification": "Field set verified against the Zod Manifest in src/model.ts and the generated schemas/tools.manifest.schema.json."
+    },
+    {
+      "id": "d-c4-context",
+      "title": "System context",
+      "slug": "architecture/context",
+      "family": "architecture",
+      "type": "c4-view",
+      "subtype": "context",
+      "audience": ["maintainer"],
+      "purpose": "Show agent-docs as one system turning canonical sources into five platform bundles consumed by five agent tools.",
+      "sourceRefs": ["emit", "targets", "tools-manifest"],
+      "status": "planned",
+      "priority": 5,
+      "outline": [
+        {
+          "heading": "Context diagram",
+          "intent": "Canonical sources -> agent-docs emitter -> five target bundles.",
+          "sourceRefs": ["emit"]
+        }
+      ],
+      "verification": "Targets verified against TARGET_ORDER in src/model.ts and the transforms in src/targets/.",
+      "diagrams": [
+        {
+          "description": "System context: the tools.manifest + skills/ sources feed the agent-docs emitter, which produces adapters/{claude,codex,copilot,cursor,gemini}. Draw only the five targets that exist in TARGET_ORDER.",
+          "sourceRefs": ["model", "targets"]
+        }
+      ]
+    },
+    {
+      "id": "d-c4-pipeline",
+      "title": "The emitter pipeline",
+      "slug": "architecture/pipeline",
+      "family": "architecture",
+      "type": "c4-view",
+      "subtype": "component",
+      "audience": ["maintainer"],
+      "purpose": "Show the internal stages that turn a manifest into a published adapter tree.",
+      "sourceRefs": ["emit", "manifest-mod", "discover", "targets", "publish"],
+      "status": "planned",
+      "priority": 6,
+      "outline": [
+        {
+          "heading": "Stages",
+          "intent": "manifest load -> discover -> per-target transform -> override overlay -> atomic publish.",
+          "sourceRefs": ["emit", "publish"]
+        }
+      ],
+      "verification": "Stage set verified against src/emit.ts (discover -> transform -> aggregate) and src/publish.ts.",
+      "diagrams": [
+        {
+          "description": "Component flow: manifest.ts -> discover.ts -> targets/*.ts transforms -> overrides.ts -> publish.ts, with driftguard.ts checking a fresh emit against the committed tree. Only modules that exist under src/.",
+          "sourceRefs": ["emit", "publish", "driftguard"]
+        }
+      ]
+    },
+    {
+      "id": "d-adr-static-schema",
+      "title": "ADR — hand-authored static schemas for in-target contracts",
+      "slug": "architecture/decisions/static-schemas",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record why some schemas (docs.manifest, DocPlan) are hand-authored static assets shipped in skills, while build-input schemas are Zod-generated.",
+      "sourceRefs": ["model", "manifest-schema"],
+      "status": "planned",
+      "priority": 7,
+      "outline": [
+        {
+          "heading": "Context",
+          "intent": "Two kinds of schema: build inputs vs. contracts consumed in target repos.",
+          "sourceRefs": ["manifest-schema"]
+        },
+        {
+          "heading": "Decision",
+          "intent": "Generate build-input schemas from Zod; ship in-target contracts as static assets.",
+          "sourceRefs": ["model"]
+        }
+      ],
+      "verification": "Zod-generated path verified in src/model.ts + schema:gen; the static-asset path is the documented doc-site/docplan precedent."
+    },
+    {
+      "id": "d-determinism",
+      "title": "Why the build is deterministic",
+      "slug": "architecture/determinism",
+      "family": "architecture",
+      "type": "arc42-chapter",
+      "subtype": "cross-cutting concepts",
+      "audience": ["maintainer"],
+      "purpose": "Explain the sorting, target ordering, and path-confinement that make output byte-stable and safe.",
+      "sourceRefs": ["discover", "model", "publish"],
+      "status": "planned",
+      "priority": 8,
+      "outline": [
+        {
+          "heading": "Deterministic discovery",
+          "intent": "Arrays sorted by POSIX path / name; fixed TARGET_ORDER.",
+          "sourceRefs": ["discover", "model"]
+        },
+        {
+          "heading": "Path confinement",
+          "intent": "Publish refuses to write outside the repo root (REQ-SEC-01).",
+          "sourceRefs": ["publish"]
+        }
+      ],
+      "verification": "Sorting/order verified in src/discover.ts and TARGET_ORDER in src/model.ts; confinement in src/publish.ts."
+    }
+  ],
+  "grouping": [
+    { "title": "Getting started", "documents": ["d-add-tool"] },
+    { "title": "Guides", "documents": ["d-authoring-howto"] },
+    { "title": "Reference", "documents": ["d-cli-reference", "d-manifest-reference"] },
+    { "title": "Architecture", "documents": ["d-c4-context", "d-c4-pipeline", "d-determinism"] },
+    { "title": "Decisions", "documents": ["d-adr-static-schema"] }
+  ],
+  "gaps": [
+    {
+      "note": "The diagram-render.mjs CLI contract (args, stdin/stdout, exit codes) is described in README but not covered by a dedicated CLI schema test — only exercised indirectly. Do not assert a formal CLI contract for it as verified.",
+      "affects": ["d-cli-reference"]
+    },
+    {
+      "note": "agents/ and commands/ directories exist but are empty (.gitkeep only). The pipeline supports them; document them as supported-but-unused, not as active surfaces.",
+      "affects": ["d-add-tool"]
+    },
+    {
+      "note": "Manifest name/frontmatter cross-check is marked as a to-be-refined item (TQ-4) in src/manifest.ts; state it as intended behavior, not a guaranteed invariant, until confirmed.",
+      "affects": ["d-manifest-reference"]
+    },
+    {
+      "note": "Override system records replacements but its behavior on override removal / file deletion is undocumented; do not assert deletion semantics.",
+      "affects": ["d-authoring-howto"]
+    }
+  ]
+}

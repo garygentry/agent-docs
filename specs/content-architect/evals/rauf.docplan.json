@@ -1,0 +1,283 @@
+{
+  "version": "1.0",
+  "provenance": {
+    "generatedBy": "content-architect",
+    "repoRef": "rauf@0.11.0",
+    "generatedAt": "eval — audit scenario"
+  },
+  "scope": "end-user",
+  "project": {
+    "name": "rauf",
+    "kind": "cli",
+    "summary": "A CLI that runs an autonomous coding loop, processing a structured JSON backlog one item at a time with a fresh agent session per item, verified via git commits."
+  },
+  "audiences": [
+    {
+      "id": "operator",
+      "name": "Loop operator",
+      "description": "A developer who installs rauf in a project and runs the loop over a backlog.",
+      "expertise": "intermediate"
+    },
+    {
+      "id": "supervisor",
+      "name": "Supervising agent / CI",
+      "description": "A machine consumer driving rauf headless and observing --json / --ndjson output and exit codes.",
+      "expertise": "expert"
+    }
+  ],
+  "sources": [
+    {
+      "id": "cli-entry",
+      "path": "packages/cli/src/index.ts",
+      "type": "entrypoint",
+      "note": "rauf bin entry (shebang bun); dispatches runCli()."
+    },
+    {
+      "id": "cli-main",
+      "path": "packages/cli/src/main.ts",
+      "type": "entrypoint",
+      "note": "runCli() — argv parse and command dispatch."
+    },
+    {
+      "id": "commands",
+      "path": "packages/cli/src/commands.ts",
+      "type": "api",
+      "note": "COMMANDS registry and ExitCode contract (0 SUCCESS … 6 RUNNING)."
+    },
+    {
+      "id": "runner",
+      "path": "packages/loop/src/runner.ts",
+      "type": "api",
+      "note": "LoopRunner — per-iteration orchestration; RAUF_DONE/BLOCKED/NEEDS_HUMAN signal parsing."
+    },
+    {
+      "id": "core-schemas",
+      "path": "packages/core/src/schemas.ts",
+      "type": "schema",
+      "note": "Canonical Zod schemas: BacklogItem, LoopState, config."
+    },
+    {
+      "id": "backlog-schema",
+      "path": "schemas/backlog.schema.json",
+      "type": "schema",
+      "note": "Generated JSON Schema for .rauf/backlog.json."
+    },
+    {
+      "id": "core-integration",
+      "path": "packages/core/src/integration.test.ts",
+      "type": "test",
+      "note": "Install -> backlog lifecycle -> status derivation. Integration ground truth."
+    },
+    {
+      "id": "loop-commands-test",
+      "path": "packages/cli/src/loop-commands.test.ts",
+      "type": "test",
+      "note": "loop run, agent selection, model override, event formatting."
+    },
+    {
+      "id": "readme",
+      "path": "README.md",
+      "type": "history",
+      "note": "Existing install + quickstart + CLI overview (mode-mixed: tutorial + reference)."
+    },
+    {
+      "id": "spec-cli",
+      "path": "docs/SPEC-CLI.md",
+      "type": "history",
+      "note": "Existing full command/flag/exit-code reference."
+    },
+    {
+      "id": "spec-tool-contract",
+      "path": "docs/SPEC-BACKLOG-TOOL-CONTRACT.md",
+      "type": "history",
+      "note": "Existing NDJSON event stream + supervisor observation surfaces."
+    }
+  ],
+  "documents": [
+    {
+      "id": "d-first-loop",
+      "title": "Run your first loop",
+      "slug": "get-started/your-first-loop",
+      "family": "diataxis",
+      "type": "tutorial",
+      "audience": ["operator"],
+      "purpose": "Take a new user from install to a completed loop over a two-item backlog.",
+      "sourceRefs": ["cli-entry", "core-integration", "readme"],
+      "status": "needs-restructure",
+      "priority": 1,
+      "outline": [
+        {
+          "heading": "Install rauf",
+          "intent": "Get the binary on PATH via the npm launcher.",
+          "sourceRefs": ["readme"]
+        },
+        {
+          "heading": "Scaffold a backlog",
+          "intent": "rauf init / add two items so the loop has work.",
+          "sourceRefs": ["core-integration"]
+        },
+        {
+          "heading": "Run the loop and watch it finish",
+          "intent": "loop run to a clean terminal (exit 0).",
+          "sourceRefs": ["cli-entry", "commands"]
+        }
+      ],
+      "verification": "Install/backlog/loop flow verified against packages/core/src/integration.test.ts. README currently mixes this on-rails tutorial with reference material (mode-mixing) — audit flags it for a single-mode tutorial split.",
+      "diagrams": [
+        {
+          "description": "The per-iteration loop: read backlog item -> spawn fresh agent session -> parse RAUF_* signal -> commit -> next item. Only the stages verified in packages/loop/src/runner.ts.",
+          "sourceRefs": ["runner"]
+        }
+      ]
+    },
+    {
+      "id": "d-recovery",
+      "title": "Recover an interrupted loop",
+      "slug": "guides/recovery",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["operator"],
+      "purpose": "Resume or reset a loop after an interruption or a blocked item.",
+      "sourceRefs": ["commands", "core-schemas"],
+      "status": "existing",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "Resume where it stopped",
+          "intent": "rauf resume from state.json.",
+          "sourceRefs": ["core-schemas"]
+        },
+        {
+          "heading": "Reset a stuck loop",
+          "intent": "rauf reset recovery path.",
+          "sourceRefs": ["commands"]
+        }
+      ],
+      "verification": "state.json fields (status, iteration, currentItem, lastSignal) verified in packages/core/src/schemas.ts."
+    },
+    {
+      "id": "d-scripting",
+      "title": "Drive rauf from CI or a supervisor",
+      "slug": "guides/scripting-ci",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["supervisor"],
+      "purpose": "Run rauf headless and react to its machine-readable output and exit codes.",
+      "sourceRefs": ["spec-tool-contract", "commands", "loop-commands-test"],
+      "status": "existing",
+      "priority": 3,
+      "outline": [
+        {
+          "heading": "Emit an NDJSON event stream",
+          "intent": "loop run --ndjson for machine observation.",
+          "sourceRefs": ["spec-tool-contract"]
+        },
+        {
+          "heading": "Branch on exit codes",
+          "intent": "Map 3 NEEDS_HUMAN / 5 BLOCKED for supervision.",
+          "sourceRefs": ["commands"]
+        }
+      ],
+      "verification": "Exit-code contract verified in packages/cli/src/commands.ts (ExitCode); event formatting in packages/cli/src/loop-commands.test.ts."
+    },
+    {
+      "id": "d-cli-reference",
+      "title": "CLI command reference",
+      "slug": "reference/cli",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["operator", "supervisor"],
+      "purpose": "Look up every command, subcommand, flag, and exit code.",
+      "sourceRefs": ["commands", "spec-cli"],
+      "status": "existing",
+      "priority": 4,
+      "outline": [
+        {
+          "heading": "Commands and subcommands",
+          "intent": "The COMMANDS registry, verbatim and complete.",
+          "sourceRefs": ["commands"]
+        },
+        {
+          "heading": "loop run flags",
+          "intent": "--detached, --agent, --model, --ndjson, --pause-on-needs-human, etc.",
+          "sourceRefs": ["commands"]
+        },
+        {
+          "heading": "Exit codes",
+          "intent": "0 SUCCESS through 6 RUNNING.",
+          "sourceRefs": ["commands"]
+        }
+      ],
+      "verification": "Command set and flags verified against packages/cli/src/commands.ts; existing docs/SPEC-CLI.md is already single-mode reference and maps 1:1."
+    },
+    {
+      "id": "d-backlog-reference",
+      "title": "Backlog schema reference",
+      "slug": "reference/backlog-schema",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["operator", "supervisor"],
+      "purpose": "Look up every field of a .rauf/backlog.json item.",
+      "sourceRefs": ["core-schemas", "backlog-schema"],
+      "status": "existing",
+      "priority": 5,
+      "outline": [
+        {
+          "heading": "BacklogItem fields",
+          "intent": "id, type, priority, acceptanceCriteria, status, dependencies, model, …",
+          "sourceRefs": ["core-schemas"]
+        }
+      ],
+      "verification": "Field set verified in packages/core/src/schemas.ts and the generated schemas/backlog.schema.json."
+    },
+    {
+      "id": "d-signals",
+      "title": "How the loop decides an item is done",
+      "slug": "concepts/signals",
+      "family": "diataxis",
+      "type": "explanation",
+      "audience": ["operator", "supervisor"],
+      "purpose": "Explain the RAUF_DONE / RAUF_BLOCKED / RAUF_NEEDS_HUMAN signal model and why the runner reconciles by git commit.",
+      "sourceRefs": ["runner", "spec-tool-contract"],
+      "status": "planned",
+      "priority": 6,
+      "outline": [
+        {
+          "heading": "The three signals",
+          "intent": "What each signal means and how it is emitted on the final line.",
+          "sourceRefs": ["runner"]
+        },
+        {
+          "heading": "Why commits are the source of truth",
+          "intent": "The runner reconciles committed work rather than trusting narration.",
+          "sourceRefs": ["runner"]
+        }
+      ],
+      "verification": "Signal parsing verified in packages/loop/src/runner.ts. GAP: log-redaction completeness of RAUF_* tokens is asserted in guidance but not covered by a dedicated test — see gaps."
+    }
+  ],
+  "grouping": [
+    { "title": "Getting started", "documents": ["d-first-loop"] },
+    { "title": "Guides", "documents": ["d-recovery", "d-scripting"] },
+    { "title": "Reference", "documents": ["d-cli-reference", "d-backlog-reference"] },
+    { "title": "Concepts", "documents": ["d-signals"] }
+  ],
+  "gaps": [
+    {
+      "note": "README.md mixes an on-rails getting-started tutorial with CLI reference material (mode-mixing). Audit recommends splitting the tutorial into get-started/your-first-loop and keeping reference in reference/cli.",
+      "affects": ["d-first-loop", "d-cli-reference"]
+    },
+    {
+      "note": "Web dashboard is documented as a newer, less battle-tested surface than the CLI; no feature-parity matrix exists. Excluded from this end-user plan until stabilized.",
+      "affects": []
+    },
+    {
+      "note": "Gemini and Cursor agents are documented as argv-verified only (not run-to-completion). Any 'supported agents' claim must reflect that, not assert full parity.",
+      "affects": ["d-scripting"]
+    },
+    {
+      "note": "RAUF_* signal-token log redaction is asserted in guidance but not covered by a dedicated test assertion visible in src; do not state redaction is complete as fact.",
+      "affects": ["d-signals"]
+    }
+  ]
+}
