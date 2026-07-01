@@ -11,14 +11,15 @@ and Gemini** — so the same skills work across every agent you use.
 
 ## What's inside
 
-Four skills ship in this plugin:
+Five skills ship in this plugin:
 
-| Skill                 | What it does                                                                                             | Invoke                                 |
-| --------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| **doc-site**          | Scaffolds an Astro + Starlight documentation site into a repo from a short interview.                    | `/doc-site [target repo path]`         |
-| **diagram-generator** | Turns a prose description into a polished SVG/PNG diagram (architecture, flowchart, sequence, and more). | `/diagram-generator [description]`     |
-| **docs-helper**       | Reviews and edits documentation to match a project's house style.                                        | `/docs-helper [doc path]`              |
-| **readme-author**     | Creates or restructures a polished, professional README, with an optional architecture diagram.          | `/readme-author [target repo or path]` |
+| Skill                 | What it does                                                                                             | Invoke                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **content-architect** | Plans what to document, for whom, and how it's organized — emits a typed DocPlan for the other skills.   | `/content-architect [target repo path]` |
+| **doc-site**          | Scaffolds an Astro + Starlight documentation site into a repo from a short interview.                    | `/doc-site [target repo path]`          |
+| **diagram-generator** | Turns a prose description into a polished SVG/PNG diagram (architecture, flowchart, sequence, and more). | `/diagram-generator [description]`      |
+| **docs-helper**       | Reviews and edits documentation to match a project's house style.                                        | `/docs-helper [doc path]`               |
+| **readme-author**     | Creates or restructures a polished, professional README, with an optional architecture diagram.          | `/readme-author [target repo or path]`  |
 
 Each skill is self-contained: it carries its own reference docs (and, for
 diagram-generator, a bundled renderer) so it runs without network access beyond what
@@ -32,8 +33,8 @@ Add it from this repository — the marketplace entry
 
 1. Clone the repo (or point Claude Code at its URL).
 2. Add it as a plugin marketplace source in Claude Code.
-3. The four skills become available as `/doc-site`, `/diagram-generator`,
-   `/docs-helper`, and `/readme-author`.
+3. The five skills become available as `/content-architect`, `/doc-site`,
+   `/diagram-generator`, `/docs-helper`, and `/readme-author`.
 
 Using a different agent?
 The same skills are emitted to four other targets under `adapters/<target>/` —
@@ -43,6 +44,32 @@ Point your agent at the bundle for its platform (for example,
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for how the bundles are generated.
 
 ## The skills
+
+These skills work in three layers. **content-architect** decides _what_ to document and
+how it's organized (content strategy). **docs-helper** polishes _how each sentence reads_
+(style). **doc-site**, **readme-author**, and **diagram-generator** render the _container_
+(endpoints). They compose in sequence — content-architect → docs-helper → endpoint — and
+the seam between them is the **DocPlan**: a typed, engine-neutral information-architecture
+spec that content-architect emits and the endpoints consume.
+
+### content-architect — plan the documentation
+
+`content-architect` owns the layer between "we should document this" and a rendered site
+or README: it analyzes the source for ground truth, fixes the audience, purpose, and
+scope, decides which documents should exist and in what mode (Diátaxis for end-user docs;
+C4 + arc42 + ADRs for architecture docs), and emits a typed **DocPlan** — never inventing
+behavior, recording anything it can't verify as a gap.
+
+It is **primarily a helper** with a thin direct entry: invoked directly it produces (or
+audits) a DocPlan, with an opt-in continuation that drafts the content; invoked as a helper
+it hands `doc-site` and `readme-author` a plan to render. Where `docs-helper` fixes the
+prose of a document, `content-architect` decides what the document says and where it sits
+in the corpus.
+
+Detail lives in
+[`skills/content-architect/references/`](skills/content-architect/references/) — the
+research playbook, the Diátaxis and architecture spines, the DocPlan schema, and worked
+examples.
 
 ### doc-site — scaffold a documentation site
 
@@ -164,6 +191,7 @@ Per-target feature drops (for example, where a target can't represent
 
 ```text
 skills/                  Canonical skill sources (the single source of truth)
+  content-architect/     SKILL.md + references/ (spines, DocPlan schema, examples, templates)
   doc-site/              SKILL.md + references/ (+ templates)
   diagram-generator/     SKILL.md + references/ + bundled renderer
   docs-helper/           SKILL.md + references/style-guide.md

@@ -1,0 +1,75 @@
+{
+  "version": "1.0",
+  "provenance": {
+    "generatedBy": "content-architect",
+    "repoRef": "main"
+  },
+  "scope": "architecture",
+  "project": {
+    "name": "billing-service",
+    "kind": "service",
+    "summary": "Handles invoicing and payment webhooks."
+  },
+  "audiences": [
+    {
+      "id": "maintainer",
+      "name": "Maintainer",
+      "description": "On-call engineers and contributors.",
+      "expertise": "expert"
+    }
+  ],
+  "sources": [
+    {
+      "id": "s1",
+      "path": "cmd/server/main.go",
+      "type": "entrypoint",
+      "note": "Boot and dependency wiring."
+    },
+    { "id": "s2", "path": ".github/workflows/deploy.yml", "type": "ci", "note": "Deploy path." },
+    { "id": "s3", "path": "docs/adr/", "type": "adr", "note": "Existing decisions." }
+  ],
+  "documents": [
+    {
+      "id": "a1",
+      "title": "System context and containers",
+      "slug": "architecture/context",
+      "family": "architecture",
+      "type": "c4-view",
+      "subtype": "container",
+      "audience": ["maintainer"],
+      "purpose": "Show the service and its neighbors at a glance.",
+      "sourceRefs": ["s1"],
+      "status": "planned",
+      "priority": 1,
+      "diagrams": [
+        {
+          "description": "billing-service with Postgres, the payment gateway, and the webhook queue, as wired in main.go.",
+          "sourceRefs": ["s1"]
+        }
+      ],
+      "verification": "Containers derived from main.go wiring; external topology not confirmed (see gaps)."
+    },
+    {
+      "id": "a2",
+      "title": "ADR-014: Idempotent webhook handling",
+      "slug": "architecture/decisions/adr-014",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record why webhooks are deduplicated by event id.",
+      "sourceRefs": ["s3"],
+      "status": "existing",
+      "priority": 2
+    }
+  ],
+  "grouping": [
+    { "title": "Architecture", "documents": ["a1"] },
+    { "title": "Decisions", "documents": ["a2"] }
+  ],
+  "gaps": [
+    {
+      "note": "Deployment topology inferred from CI only; no infrastructure-as-code found to confirm regions.",
+      "affects": ["a1"]
+    }
+  ]
+}

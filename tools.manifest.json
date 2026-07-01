@@ -34,6 +34,12 @@
       "type": "skill",
       "source": "skills/readme-author",
       "description": "Create or restructure a polished, professional README.md, with an optional architecture diagram."
+    },
+    {
+      "name": "content-architect",
+      "type": "skill",
+      "source": "skills/content-architect",
+      "description": "Plan a project's documentation: decide what to document, for whom, from what ground truth, and into what information architecture, emitting a typed engine-neutral DocPlan for the endpoint skills to render."
     }
   ]
 }

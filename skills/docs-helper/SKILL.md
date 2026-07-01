@@ -15,6 +15,11 @@ Assist with writing and reviewing documentation for this repository.
 Use when the user is authoring or editing documentation — READMEs, reference
 pages, or guides — and wants it to match the project's house style.
 
+This skill is the **style** layer. Deciding _what_ to document and how the corpus
+is organized is the `content-architect` skill's job; rendering a site or README is
+the endpoint skills' job. The pipeline runs content-architect → docs-helper →
+endpoint (`doc-site` / `readme-author`).
+
 ## How to help
 
 1. Read the target document (and `references/style-guide.md` in this skill).

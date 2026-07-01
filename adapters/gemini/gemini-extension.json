@@ -7,6 +7,10 @@
   "version": "0.1.0",
   "skills": [
     {
+      "name": "content-architect",
+      "description": "Plan and organize a project's documentation — decide what should be documented, for whom, from what ground truth, and into what information architecture. Use whenever the user wants to document a codebase, figure out what docs to write, structure or reorganize docs by audience and purpose, audit documentation coverage or gaps, or plan a docs site's information architecture — even when they don't name a container (site, README, page). Trigger on \"document this project\", \"what docs do we need\", \"how should I organize these docs\", \"audit our docs\", \"plan the docs\". This is the content-strategy layer — it decides what a document says and where it sits in the corpus, and emits a typed DocPlan. It is NOT prose-style editing (that is docs-helper) and NOT a renderer (doc-site / readme-author / diagram-generator own the container)."
+    },
+    {
       "name": "diagram-generator",
       "description": "Generate rich, professional diagrams as SVG (and PNG) images instead of ASCII art. Use whenever the user asks to create a diagram, visualize architecture, draw a system design, create a flowchart, illustrate data flow, map out infrastructure, show how something works, or produce any technical visual — including sequence diagrams, ER diagrams, network topologies, pipeline flows, state machines, and deployment architectures. Even if the user says \"ASCII diagram\", produce an image with this skill."
     },

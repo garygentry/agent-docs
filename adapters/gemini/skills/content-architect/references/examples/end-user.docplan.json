@@ -1,0 +1,81 @@
+{
+  "version": "1.0",
+  "provenance": {
+    "generatedBy": "content-architect",
+    "repoRef": "main"
+  },
+  "scope": "end-user",
+  "project": {
+    "name": "acme-sdk",
+    "kind": "library",
+    "summary": "Typed client for the Acme API."
+  },
+  "audiences": [
+    {
+      "id": "integrator",
+      "name": "App integrator",
+      "description": "Building an application against the SDK.",
+      "expertise": "intermediate"
+    }
+  ],
+  "sources": [
+    { "id": "s1", "path": "src/index.ts", "type": "entrypoint", "note": "Public exports." },
+    {
+      "id": "s2",
+      "path": "test/integration/*.test.ts",
+      "type": "test",
+      "note": "Canonical usage; least likely to have drifted."
+    },
+    { "id": "s3", "path": "openapi.yaml", "type": "api", "note": "Endpoint surface." }
+  ],
+  "documents": [
+    {
+      "id": "d1",
+      "title": "Get started",
+      "slug": "get-started",
+      "family": "diataxis",
+      "type": "tutorial",
+      "audience": ["integrator"],
+      "purpose": "Make a first successful call in five minutes.",
+      "sourceRefs": ["s1", "s2"],
+      "status": "planned",
+      "priority": 1,
+      "outline": [
+        {
+          "heading": "Install and authenticate",
+          "intent": "On-rails setup to a working client.",
+          "sourceRefs": ["s1"]
+        },
+        {
+          "heading": "Make your first request",
+          "intent": "A single copy-pasteable call that succeeds.",
+          "sourceRefs": ["s2"]
+        }
+      ],
+      "verification": "Install and first-call flow verified against test/integration/quickstart.test.ts."
+    },
+    {
+      "id": "d2",
+      "title": "Client API reference",
+      "slug": "reference/client",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["integrator"],
+      "purpose": "Look up methods, parameters, and return types.",
+      "sourceRefs": ["s1", "s3"],
+      "status": "planned",
+      "priority": 2,
+      "outline": []
+    }
+  ],
+  "grouping": [
+    { "title": "Getting started", "documents": ["d1"] },
+    { "title": "Reference", "documents": ["d2"] }
+  ],
+  "gaps": [
+    {
+      "note": "Retry/backoff behavior is not covered by any test; confirm with maintainers before documenting.",
+      "affects": ["d2"]
+    }
+  ]
+}
