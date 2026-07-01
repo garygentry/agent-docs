@@ -213,6 +213,28 @@ that renders each `src/diagrams/*.json` spec twice (light + dark) chained with `
 the first nonzero renderer exit fails the build. The build smoke test (Phase 6) thus
 exercises **real** diagram generation end-to-end (`REQ-DIAG-03`).
 
+## Content plan — inbound DocPlan integration
+
+doc-site can source its **information architecture** from a `content-architect`
+**DocPlan** instead of eliciting it in the interview. A content-plan step runs after
+detection (Phase 1) and before the interview: when a DocPlan is present (or the user
+wants one), its `grouping` + `documents` become the manifest `pages[]`, and each entry
+seeds a mode-pure native stub from `content-architect`'s per-mode templates.
+
+The seam needs a small documented adapter because the two contracts differ in one
+load-bearing way: `buildSidebar()` derives sidebar groups **implicitly** from each slug's
+first path segment, whereas a DocPlan `grouping` is an **explicit** ordered section list.
+The adapter normalizes every document slug in a section to a shared section-derived first
+segment (`slugify(section.title)`) and sets the `group` label override to the exact
+section title, so the emitted sidebar reproduces the plan's groups and order exactly. Home
+links retarget to the first planned page and the default `guides/setup` seed is suppressed,
+so `pages[]` is a faithful image of the plan. The full mapping — slug normalization,
+collision handling, and the never-clobber rules — is in
+[`skills/doc-site/references/content-plan.md`](../../../skills/doc-site/references/content-plan.md).
+This is an inbound integration (doc-site consumes the plan); it mirrors the outbound
+diagram delegation above in reusing a sibling skill by fixed relative path rather than
+duplicating it.
+
 ## Deploy — one env contract, many targets
 
 All three deploy targets share the same mechanism: they set two build-env vars,

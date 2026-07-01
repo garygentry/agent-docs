@@ -35,8 +35,20 @@ The emitted output and overrides live in:
 - `.claude-plugin/` — generated `plugin.json` + `marketplace.json` (committed).
 - `schemas/tools.manifest.schema.json` — generated JSON Schema for the manifest.
 
-> `agents/` and `commands/` are scaffolded but currently empty — the three shipped
-> tools are all skills. The pipeline supports agents and commands when you add them.
+> `agents/` and `commands/` are scaffolded but currently empty — the shipped tools are
+> all skills (`content-architect`, `doc-site`, `docs-helper`, `diagram-generator`,
+> `readme-author`). The pipeline supports agents and commands when you add them.
+
+### Composing skills (reuse, don't duplicate)
+
+Several skills build on each other rather than restating shared logic — `doc-site` and
+`readme-author` consume a `content-architect` DocPlan, `readme-author` and
+`content-architect` reuse `docs-helper`'s style guide, and both `readme-author` and
+`content-architect` render diagrams through `diagram-generator`. The convention for these
+edges is uniform: a skill reaches a sibling by a **fixed relative path** (`../<skill>/…`,
+which resolves the same in every adapter bundle) and/or by invoking the sibling skill, and
+it **references** the sibling's assets instead of copying them. When you add a cross-skill
+dependency, follow that pattern — point at the canonical file, don't duplicate it.
 
 ## How a tool is named
 

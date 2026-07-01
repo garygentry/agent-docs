@@ -61,10 +61,13 @@ C4 + arc42 + ADRs for architecture docs), and emits a typed **DocPlan** — neve
 behavior, recording anything it can't verify as a gap.
 
 It is **primarily a helper** with a thin direct entry: invoked directly it produces (or
-audits) a DocPlan, with an opt-in continuation that drafts the content; invoked as a helper
-it hands `doc-site` and `readme-author` a plan to render. Where `docs-helper` fixes the
-prose of a document, `content-architect` decides what the document says and where it sits
-in the corpus.
+audits) a DocPlan; invoked as a helper it hands `doc-site` and `readme-author` a plan to
+render. There is also an **opt-in drafting continuation** — when you ask it to draft, it
+writes each document from ground truth, then delegates the prose pass to `docs-helper` and
+any diagrams to `diagram-generator` rather than duplicating them (see
+[`references/drafting.md`](skills/content-architect/references/drafting.md)). Where
+`docs-helper` fixes the prose of a document, `content-architect` decides what the document
+says and where it sits in the corpus.
 
 Detail lives in
 [`skills/content-architect/references/`](skills/content-architect/references/) — the
@@ -82,16 +85,22 @@ It runs as a short, phased workflow:
 
 1. **Detect** — network-free probes for monorepo layout, package manager, runtime,
    existing docs, CI, default branch, and repo slug. Seeds sensible defaults.
-2. **Interview** — asks only what it can't infer: site title and description, social
+1. **Content-plan** _(optional)_ — when a **DocPlan** exists (or you ask for one),
+   source the sidebar and mode-pure page stubs from it instead of guessing the
+   information architecture during the interview.
+1. **Interview** — asks only what it can't infer: site title and description, social
    links, how content is sourced, sidebar mapping, deploy targets, and accent colors.
-3. **Emit** — substitutes tokens into byte-identical templates and writes the site.
-4. **Set up content** — materializes content symlinks when you choose symlink/mixed
+1. **Emit** — substitutes tokens into byte-identical templates and writes the site.
+1. **Set up content** — materializes content symlinks when you choose symlink/mixed
    mode.
-5. **Smoke-test** — installs dependencies and runs the build; it never reports success
+1. **Smoke-test** — installs dependencies and runs the build; it never reports success
    on a red build.
 
 Highlights:
 
+- **DocPlan-driven IA** — hand it a `content-architect` DocPlan and the sidebar order,
+  groups, and mode-pure stubs follow the plan exactly (the adapter is documented in
+  [`references/content-plan.md`](skills/doc-site/references/content-plan.md)).
 - **Content modes** — `native` (author `.mdx` directly), `symlink` (point the docs
   tree at canonical files elsewhere in the repo), or `mixed`.
 - **Optional components** — diagrams (wired to diagram-generator), deploy wiring for
@@ -160,10 +169,18 @@ It detects what the project is — library, app/CLI, or framework — asks only 
 can't infer, then composes a scannable README in a canonical order: hero, install,
 quickstart, and license-last.
 
-It reuses two sibling skills rather than duplicating them: prose follows `docs-helper`'s
-house style, and — when a project is architecturally non-trivial and you approve — it
-renders a light/dark architecture diagram through `diagram-generator` and embeds it with
-`<picture>`.
+Before it composes, it grounds the content in a `content-architect` DocPlan — the
+`end-user` slice: project kind, primary audience, and the quickstart facts (weighting
+integration tests), and it never asserts anything the plan records as an unverified gap.
+`content-architect` improves _selection and accuracy_; `readme-author` keeps owning the
+README's _structure and section order_ (the handshake is documented in
+[`references/content-architect.md`](skills/readme-author/references/content-architect.md),
+and degrades gracefully when no DocPlan is available).
+
+It reuses two more sibling skills rather than duplicating them: prose follows
+`docs-helper`'s house style, and — when a project is architecturally non-trivial and you
+approve — it renders a light/dark architecture diagram through `diagram-generator` and
+embeds it with `<picture>`.
 Where `docs-helper` reviews arbitrary docs for style, `readme-author` authors the README
 structure itself.
 
