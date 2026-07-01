@@ -23,6 +23,9 @@ skill _reuses_ that skill's style guide for its prose, rather than restating it.
 These ride verbatim under `references/`; read the one for the phase you are in rather
 than loading everything up front.
 
+- **`references/content-architect.md`** — the upstream content/accuracy handshake: ground
+  project kind, audience, and quickstart facts in a `content-architect` DocPlan before
+  composing, and never assert a `gaps[]` item as fact.
 - **`references/structure.md`** — canonical section order and the library / app-or-CLI /
   framework variants.
 - **`references/header-style.md`** — this repo's hero convention (title, `>` tagline,
@@ -55,9 +58,20 @@ Read the target repo (read-only) to infer what you can, so you ask as little as 
 Detection is best-effort: every missing signal becomes a question in Phase 2, not a
 hard failure.
 
+**Ground content in a DocPlan (content/accuracy step).** Before interviewing, obtain the
+`end-user` slice of a `content-architect` **DocPlan** — an existing `docs/docplan.json`, or a
+live call to the sibling `content-architect` skill — to fix `project.{name,kind,summary}`,
+the primary `audiences[]`, and the `sources[]` behind the quickstart (weight integration
+tests) from ground truth rather than heuristics. Honor its `gaps[]`: never assert an
+unverified item as fact in the README. This improves _selection and accuracy_ only —
+`readme-author` still owns structure and section order. If no DocPlan is available and
+`content-architect` is declined or absent, skip gracefully and rely on detection + interview.
+See `references/content-architect.md`.
+
 ### Phase 2 — interview (only the gaps)
 
-Ask the minimum you could not detect:
+Ask the minimum you could not detect **or already resolve from the DocPlan** (Phase 1) —
+a DocPlan that fixes project kind, audience, or the quickstart facts removes those questions:
 
 - The one-line tagline (the `>` blockquote under the title).
 - The primary audience and the single most important thing the project does.

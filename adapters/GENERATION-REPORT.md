@@ -10,11 +10,11 @@
 
 | Target | Emitted | Fallback | Skipped | Overridden | Verbatim |
 |--------|---------|----------|---------|------------|----------|
-| claude | 5 | 0 | 0 | 0 | 59 |
-| codex | 5 | 5 | 0 | 0 | 59 |
-| copilot | 5 | 10 | 0 | 0 | 59 |
-| cursor | 5 | 10 | 0 | 0 | 59 |
-| gemini | 6 | 5 | 0 | 0 | 59 |
+| claude | 5 | 0 | 0 | 0 | 60 |
+| codex | 5 | 5 | 0 | 0 | 60 |
+| copilot | 5 | 10 | 0 | 0 | 60 |
+| cursor | 5 | 10 | 0 | 0 | 60 |
+| gemini | 6 | 5 | 0 | 0 | 60 |
 
 ## Dropped & fallback constructs
 
