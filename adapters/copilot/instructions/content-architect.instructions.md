@@ -62,6 +62,8 @@ loading everything up front.
 - **`references/docplan.schema.json`** — the DocPlan contract you validate against
   (Phase 5). Ships into the target repo as `docplan.schema.json` beside the emitted plan.
 - **`references/templates/`** — mode-pure page skeletons for the opt-in drafting phase.
+- **`references/drafting.md`** — the opt-in Phase 6 procedure: draft per entry from ground
+  truth, then delegate the prose pass to `docs-helper` and diagrams to `diagram-generator`.
 - **`references/examples/`** — a worked `end-user` and `architecture` DocPlan.
 
 ## Phased procedure
@@ -131,12 +133,16 @@ reconcile rather than overwrite.
 
 ### Phase 6 — draft (opt-in continuation)
 
-Only when the user explicitly opts in: draft the content for each `DocPlanEntry`, honoring
-the single-mode invariant, seeding from `references/templates/`. Then hand drafted prose to
-**`docs-helper`** for the house-style pass, and hand any `diagrams[]` to
-**`diagram-generator`** — describing only components you verified in source. You decide
-content and structure; you delegate prose polish and diagram rendering rather than
-duplicating them.
+Only when the user explicitly opts in (asks you to _draft_, not merely to plan): draft the
+content for each `DocPlanEntry` from ground truth, honoring the single-mode invariant and
+seeding from `references/templates/<type>.md`. Trace every claim to `sourceRefs`; never
+assert anything in `gaps[]`. Then hand drafted prose to **`docs-helper`** for the house-style
+pass (`../docs-helper/references/style-guide.md`), and hand any `diagrams[]` to
+**`diagram-generator`** (`../diagram-generator/scripts/diagram-render.mjs`) — describing only
+components you verified in source, preserving its "draw only what you're told" rule. You
+decide content and structure; you delegate prose polish and diagram rendering rather than
+duplicating them. The full procedure — per-mode seeding, the delegation handshakes, and the
+done criteria — is in **`references/drafting.md`**.
 
 ## Verify a DocPlan against the schema
 
