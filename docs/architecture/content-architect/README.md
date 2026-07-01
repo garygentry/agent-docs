@@ -19,6 +19,22 @@ content-architect  →  docs-helper  →  doc-site / readme-author
 The seam between them is the **DocPlan** — a typed information-architecture spec that
 content-architect authors and the endpoints consume.
 
+## Integration status
+
+All four composition edges are implemented (see [`architecture.md`](./architecture.md) for
+the shipped-edge detail):
+
+- **`doc-site`** consumes a DocPlan for its sidebar + mode-pure page stubs —
+  `skills/doc-site/references/content-plan.md`.
+- **`readme-author`** runs content-architect upstream for the `end-user` content/accuracy
+  slice — `skills/readme-author/references/content-architect.md`.
+- **`docs-helper`** and **`diagram-generator`** receive prose and diagram requests during
+  the opt-in Phase 6 drafting continuation —
+  `skills/content-architect/references/drafting.md`.
+
+Worked, schema-validated evidence for both spines and the `both` route lives in
+[`specs/content-architect/evals/`](../../../specs/content-architect/evals/).
+
 > This document is the architecture reference for maintainers. For the DocPlan contract
 > itself, see [`architecture.md`](./architecture.md) and the schema at
 > `skills/content-architect/references/docplan.schema.json`.
