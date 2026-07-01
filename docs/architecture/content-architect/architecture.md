@@ -48,10 +48,10 @@ graph unchanged and the schema colocated with the skill that owns it.
   onto doc-site's `docs.manifest.json` sidebar model (ordered groups → ordered pages).
 - **readme-author (planned)** — invokes content-architect as the upstream content/accuracy
   step, then keeps owning README structure and section order.
-- **docs-helper** — receives drafted prose for the house-style pass (opt-in Phase 6).
-- **diagram-generator** — receives `diagrams[]` prose requests during drafting; only
-  components verified in source are described.
+- **docs-helper (shipped)** — receives drafted prose for the house-style pass in the opt-in
+  Phase 6 drafting continuation (`skills/content-architect/references/drafting.md`).
+- **diagram-generator (shipped)** — receives `diagrams[]` prose requests during Phase 6
+  drafting; only components verified in source are described, preserving its
+  "draw only what you're told" rule.
 
-The doc-site/readme-author integration and the Phase 6 drafting implementation are tracked
-in the hand-off queue in
-`plans/review-plans-docs-architect-spec-md-for-inherited-thacker.md`.
+The remaining hand-off items are tracked in `specs/content-architect/HANDOFF.md`.
