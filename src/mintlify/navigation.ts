@@ -20,16 +20,28 @@
 /** A Mintlify nav item: either a page path (string) or a nested group. */
 export type NavItem = string | NavGroup;
 
-/** A Mintlify navigation group (docs.json navigation.groups[] / nested). */
+/**
+ * A Mintlify navigation group (docs.json navigation.groups[] / nested). A group either
+ * lists `pages` OR points at an OpenAPI spec via `openapi` (Mintlify then generates one
+ * page per endpoint — no hand-authored stubs, api-docs.md); an `openapi` group MAY still
+ * curate order with an explicit `pages` list of `METHOD /path` items.
+ */
 export interface NavGroup {
   readonly group: string;
-  readonly pages: ReadonlyArray<NavItem>;
+  readonly pages?: ReadonlyArray<NavItem>;
+  /** Mintlify-unique: an OpenAPI/AsyncAPI spec path; endpoints are auto-generated. */
+  readonly openapi?: string;
 }
 
-/** A Mintlify navigation tab (docs.json navigation.tabs[]). */
+/**
+ * A Mintlify navigation tab (docs.json navigation.tabs[]). A tab either carries `groups`
+ * OR is a pure OpenAPI tab (`openapi` with no groups — api-docs.md).
+ */
 export interface NavTab {
   readonly tab: string;
-  readonly groups: ReadonlyArray<NavGroup>;
+  readonly groups?: ReadonlyArray<NavGroup>;
+  /** Mintlify-unique: a tab whose pages are generated from an OpenAPI spec. */
+  readonly openapi?: string;
 }
 
 /**
@@ -128,14 +140,33 @@ export function collectNavPagePaths(nav: Navigation): string[] {
   const visitItems = (items: ReadonlyArray<NavItem>): void => {
     for (const item of items) {
       if (typeof item === "string") out.push(item);
-      else visitItems(item.pages);
+      else if (item.pages) visitItems(item.pages);
     }
   };
   const visitGroups = (groups: ReadonlyArray<NavGroup>): void => {
-    for (const g of groups) visitItems(g.pages);
+    for (const g of groups) if (g.pages) visitItems(g.pages);
   };
   if (nav.pages) visitItems(nav.pages);
   if (nav.groups) visitGroups(nav.groups);
-  if (nav.tabs) for (const t of nav.tabs) visitGroups(t.groups);
+  if (nav.tabs) for (const t of nav.tabs) if (t.groups) visitGroups(t.groups);
+  return out;
+}
+
+/**
+ * Every OpenAPI/AsyncAPI spec path referenced anywhere in a navigation object (api-docs.md).
+ * An `openapi` entry contributes NO page stubs (collectNavPagePaths ignores it), so this is
+ * the complementary reach used to tell a spec-driven nav apart from an empty one.
+ */
+export function collectOpenapiSpecs(nav: Navigation): string[] {
+  const out: string[] = [];
+  const visitGroups = (groups: ReadonlyArray<NavGroup>): void => {
+    for (const g of groups) if (g.openapi) out.push(g.openapi);
+  };
+  if (nav.groups) visitGroups(nav.groups);
+  if (nav.tabs)
+    for (const t of nav.tabs) {
+      if (t.openapi) out.push(t.openapi);
+      if (t.groups) visitGroups(t.groups);
+    }
   return out;
 }

@@ -8,7 +8,7 @@
  * path with no backing file, a duplicate page path, or a missing required key. A
  * violation is a `SCHEMA_VIOLATION` — the emitter must reject before writing further.
  */
-import { type Navigation, collectNavPagePaths } from "./navigation.js";
+import { type Navigation, collectNavPagePaths, collectOpenapiSpecs } from "./navigation.js";
 
 /** The subset of docs.json this validator inspects. */
 export interface DocsJson {
@@ -62,7 +62,9 @@ export function validateDocsJson(
   }
 
   const paths = collectNavPagePaths(docs.navigation);
-  if (paths.length === 0) {
+  // A nav is non-empty if it references pages OR points at an OpenAPI spec (whose
+  // endpoint pages Mintlify generates — a spec-only tab has zero page paths, api-docs.md).
+  if (paths.length === 0 && collectOpenapiSpecs(docs.navigation).length === 0) {
     errors.push({
       code: "empty-navigation",
       message: "docs.json navigation references no pages",
