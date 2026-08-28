@@ -107,11 +107,14 @@ link_file() {
 # existing symlink that points at a directory, dereferences it, and creates the
 # new link *inside* the target dir (e.g. images/images), corrupting the tree.
 link_dir() {
-  assert_inside_repo "$1"
+  # The images dir is OPTIONAL: a repo with no images must not fail content setup.
+  # Skip (non-fatal) when the source dir is absent — before the escape check, so a
+  # missing dir is a skip, not a hard error.
   if [ ! -d "$REPO_ROOT/$1" ]; then
-    echo "ERROR: symlink source directory not found: $1" >&2
-    exit 1
+    echo "  skip $2/ — no $1 directory (optional)"
+    return 0
   fi
+  assert_inside_repo "$1"
   _dest="$CONTENT_DIR/$2"
   # Same source == destination guard as link_file: when the images source already IS the
   # content-root images dir, `ln -sfn` would create a dangling images/images loop inside it.

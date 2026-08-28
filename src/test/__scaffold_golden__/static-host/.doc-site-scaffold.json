@@ -11,7 +11,7 @@
     "site/package.json": "sha256:889f418127885b2126663ce7ac21f9ceb8fbcda7f5a954477bd62acce8639d12",
     "site/public/favicon.svg": "sha256:c5502606818d508b5d91a75ceef9a00e59b36c3cbcfcfa8659313cfb9cb3d064",
     "site/rehype-base-links.mjs": "sha256:e30cad6562f33c42cf35e9a7b0a0226d3e23a6272936247af3aec53a52393795",
-    "site/setup-docs.sh": "sha256:ca9e7ef2dac7d69893850fd76ad7cfce4010afb1d809e62824032d7bda135b39",
+    "site/setup-docs.sh": "sha256:f1fb62d217c222eb002338527452145c5f1e123501eb541480bfde91c9897e84",
     "site/sidebar.mjs": "sha256:4d2afc12395f2de4a2a5bb7f3a3fab518e7fecdf05d1413919d58a5e7a2877d9",
     "site/src/content.config.ts": "sha256:1f8b206b5f7c0afb44c3715a3fe79954b448885fe9e753ba372dddf1210ecfd5",
     "site/src/content/docs/index.mdx": "sha256:3767aaa1bcadd65011c09fc74deea1f79a5290c9636ed3a4faab333f2d0a9a6c",

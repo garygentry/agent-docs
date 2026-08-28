@@ -4,8 +4,8 @@
     "docs/.gitignore": "sha256:f7f2b983fadc6e5de344a255dbe193db659dcb0e8e2fdd30cda653bf6e3a93de",
     "docs/docs.json": "sha256:04297fb60ed213cf6dda4dccd500873e07e2f66a5132c061e9192a75a4c11a26",
     "docs/favicon.svg": "sha256:c5502606818d508b5d91a75ceef9a00e59b36c3cbcfcfa8659313cfb9cb3d064",
-    "docs/index.mdx": "sha256:0312c14091a51347f4ddbc3f13de1b090ce7b9420cee0fb96d0ab398c2957968",
+    "docs/index.mdx": "sha256:406e845596c7a3d18d50a80226346649981d047cb1d8958feacf4134dbdb761b",
     "docs/package.json": "sha256:90a52f6899c04ec32bcd6e8e8186f4e55164b84c090fe22febae1fae66a172e3",
-    "docs/setup-docs.sh": "sha256:728e7c5e0998bd0df2b93413a216d177ab207695a0de2ad1df748059c5ba4d1b"
+    "docs/setup-docs.sh": "sha256:7a38bbd6b57342457c9215a98007ed1c93c90bdf0a90c75db180b8e13040b968"
   }
 }

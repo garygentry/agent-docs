@@ -13,7 +13,7 @@
     "packages/docs/public/favicon.svg": "sha256:c5502606818d508b5d91a75ceef9a00e59b36c3cbcfcfa8659313cfb9cb3d064",
     "packages/docs/rehype-base-links.mjs": "sha256:e30cad6562f33c42cf35e9a7b0a0226d3e23a6272936247af3aec53a52393795",
     "packages/docs/scripts/diagram-render.mjs": "sha256:2638d87ab17bad9cc5195cd09e0bb90ae219a4c1292a9927403faf8091fe1c75",
-    "packages/docs/setup-docs.sh": "sha256:2995fa433e504e5dd4897a4dbf304e400b39232edbe9a514916f225877a3cf8f",
+    "packages/docs/setup-docs.sh": "sha256:a8ba73cf76275274092e8e7f9fd7f8211438813c1f874daf340be05fcf55db4f",
     "packages/docs/sidebar.mjs": "sha256:15a21d33fcc0ba0bad6701f94497b6dc3fc8febd2735ac894785d3a228b0dbcb",
     "packages/docs/src/content.config.ts": "sha256:1f8b206b5f7c0afb44c3715a3fe79954b448885fe9e753ba372dddf1210ecfd5",
     "packages/docs/src/content/docs/index.mdx": "sha256:c90b907ec7f89968b417b93e124a936c3d53df7f323a4aac71316737052fdf48",
