@@ -126,7 +126,8 @@ token set (`REQ-INT-02`).
 
 Phases 2-3 produce two artifacts that drive everything downstream:
 
-1. **A full token map** — values for all 17 canonical tokens (`api-reference.md`).
+1. **A full token map** — values for every substitution token in the renderer-partitioned
+   sets (`api-reference.md`).
 2. **The component-selection record** — the single structure that gates emission:
 
    ```jsonc
@@ -324,7 +325,8 @@ The feature is purely additive (`09-integration-and-emission.md`):
 
 A deliberate split (`10-testing-strategy.md`):
 
-- **In `agent-docs` CI** — token-coverage (all 17 tokens used, none undefined),
+- **In `agent-docs` CI** — token-coverage (every token used, none undefined, partitioned
+  by renderer),
   schema-fixture validation (the manifest schema accepts/rejects fixtures via ajv),
   golden emission to all 5 targets, and scaffold-output golden fixtures (including the
   decline-all and double-apply invariants). These never run the emitted Astro build.
@@ -335,4 +337,4 @@ A deliberate split (`10-testing-strategy.md`):
 ## Further reading
 
 - [README](./README.md) — overview, quick start, when (not) to use it
-- [API Reference](./api-reference.md) — the 17 tokens, the manifest/PageEntry contract and schema rules, runtime-script exit codes, the provenance shape, and the deploy env contract
+- [API Reference](./api-reference.md) — the substitution tokens (Starlight + Mintlify sets), the manifest/PageEntry contract and schema rules, runtime-script exit codes, the provenance shape, and the deploy env contract

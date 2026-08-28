@@ -129,4 +129,4 @@ schema, starter page, custom CSS, favicon) and nothing else.
 ## Further reading
 
 - [Architecture](./architecture.md) — the 7-phase pipeline, the emission model, the manifest triad, never-clobber, vendoring, and safety
-- [API Reference](./api-reference.md) — the 17 tokens, the manifest/PageEntry contract, runtime-script exit codes, the provenance shape, and the deploy env contract
+- [API Reference](./api-reference.md) — the substitution tokens (Starlight + Mintlify sets), the manifest/PageEntry contract, runtime-script exit codes, the provenance shape, and the deploy env contract

@@ -11,16 +11,24 @@ emitted files and the scaffold-time contracts below.
 
 ---
 
-## 1. The 17 substitution tokens
+## 1. The substitution tokens
 
-Emission is global literal `{{TOKEN}}` replacement. The vocabulary is **frozen at
-exactly 17 tokens** — every token used under `references/templates/**` must appear in
-the `SKILL.md` table and vice-versa (enforced by the token-coverage test). After
+Emission is global literal `{{TOKEN}}` replacement. The vocabulary is **partitioned by
+renderer** into three sets — **shared** (used by both containers), **Starlight-only**
+(used under `templates/core/**` and the Starlight deploy/diagram/monorepo groups), and
+**Mintlify-only** (used under `templates/mintlify/**`). `SKILL.md` is the single
+authoritative substitution table; the tables below mirror it. The token-coverage test is
+**partitioned to match**: every token under `templates/core/**` must be in the shared or
+Starlight-only set, every token under `templates/mintlify/**` in the shared or
+Mintlify-only set, and vice-versa — no token appears in a group outside its set. After
 substitution, **no literal `{{…}}` may survive** in any emitted file.
+
+### 1.1 Starlight set (shared + Starlight-only)
 
 | Token                      | Source                                                             | Default                                        |
 | -------------------------- | ------------------------------------------------------------------ | ---------------------------------------------- |
 | `{{SITE_TITLE}}`           | interview                                                          | repo name (titlecased)                         |
+| `{{SITE_TITLE_SLUG}}`      | **derived** (slugified `{{SITE_TITLE}}`)                           | derived                                        |
 | `{{SITE_DESC}}`            | interview                                                          | `Documentation for <title>`                    |
 | `{{SITE_URL}}`             | interview / deploy target                                          | `""` (env-driven at build)                     |
 | `{{BASE_PATH}}`            | deploy target (subpath vs root)                                    | `""`                                           |
@@ -37,11 +45,47 @@ substitution, **no literal `{{…}}` may survive** in any emitted file.
 | `{{STARLIGHT_VERSION}}`    | resolution                                                         | latest                                         |
 | `{{DOCS_PKG_DIR_TO_ROOT}}` | **derived** — one `..` per `{{DOCS_PKG_DIR}}` segment              | derived                                        |
 | `{{SYMLINK_PAGE_LINES}}`   | **derived/generated** — one `link_file` per `source: symlink` page | generated                                      |
+| `{{CI_SETUP_ACTION}}`      | **derived** from `{{RUNTIME}}` (CI runtime setup action)           | `actions/setup-node@v4`                        |
+| `{{INSTALL_CMD}}`          | **derived** from `{{PKG_MANAGER}}` (frozen-lockfile install)       | `npm ci`                                       |
+| `{{RUN_PREFIX}}`           | **derived** from `{{PKG_MANAGER}}` (run-a-script prefix)           | `npm run`                                      |
+| `{{WORKSPACE_BUILD}}`      | **derived** from `{{PKG_MANAGER}}`+`{{DOCS_PKG_DIR}}`              | `npm run build --workspace <dir>`              |
 
 **Derived tokens.** `{{DOCS_PKG_DIR_TO_ROOT}}` = `..` repeated per path segment
 (`docs` → `..`, `packages/docs` → `../..`). `{{SYMLINK_PAGE_LINES}}` expands to a
 generated `link_file "<from>" "<slug>"` block from the manifest's `source: symlink`,
-non-`unmanaged` pages, in manifest order.
+non-`unmanaged` pages, in manifest order. The four **derived toolchain tokens**
+(`{{CI_SETUP_ACTION}}`, `{{INSTALL_CMD}}`, `{{RUN_PREFIX}}`, `{{WORKSPACE_BUILD}}`) are
+pure functions of the two orthogonal `{{RUNTIME}}`/`{{PKG_MANAGER}}` axes, so a CI/deploy
+fragment stays one tokenized form instead of shipping coupled Bun+pnpm / Node+npm
+variants (`SKILL.md` _Derived toolchain tokens_).
+
+### 1.2 Mintlify token set (used only under `templates/mintlify/**`)
+
+Emitted only when `renderer ∈ {mintlify, both}`, **in addition to** the shared tokens the
+Mintlify templates reuse verbatim. Those shared reuses are the identity/toolchain tokens
+(`{{SITE_TITLE}}`, `{{SITE_TITLE_SLUG}}`, `{{SITE_DESC}}`, `{{GITHUB_URL}}`,
+`{{REPO_SLUG}}`, `{{DEFAULT_BRANCH}}`, `{{DOCS_PKG_DIR}}`, `{{IMAGES_SRC_DIR}}`,
+`{{PKG_MANAGER}}`, `{{RUNTIME}}`) **plus the content-sourcing / symlink-layer tokens**
+(`{{DOCS_PKG_DIR_TO_ROOT}}`, `{{SYMLINK_PAGE_LINES}}`), which the shared symlink engine
+uses under either renderer. The genuinely Starlight-only tokens — accents,
+`{{ASTRO_VERSION}}` / `{{STARLIGHT_VERSION}}`, `{{SITE_URL}}`, `{{BASE_PATH}}`, and the CI
+derived tokens — are **never** present in a Mintlify template.
+
+| Token                  | Source                                                                            | Default                     |
+| ---------------------- | --------------------------------------------------------------------------------- | --------------------------- |
+| `{{MINT_THEME}}`       | interview M1                                                                      | `mint`                      |
+| `{{MINT_PRIMARY}}`     | interview M2 (from the accent answer if not given)                                | canon default primary (hex) |
+| `{{MINT_COLOR_LIGHT}}` | **derived** from `{{MINT_PRIMARY}}` (light-tint)                                  | derived                     |
+| `{{MINT_COLOR_DARK}}`  | **derived** from `{{MINT_PRIMARY}}` (dark-tint)                                   | derived                     |
+| `{{MINT_NAVIGATION}}`  | **generated** by the DocPlan→nav adapter — the `navigation` block for `docs.json` | generated                   |
+
+`{{MINT_NAVIGATION}}` is the Mintlify analogue of Starlight's build-time
+`buildSidebar(manifest.pages)`: Mintlify has no JS build hook, so the `navigation` block is
+materialized into `docs.json` at **emit time** (generated pretty and byte-stable, not
+substituted as a raw multi-line block — `src/mintlify/emit.ts`) and reconciled
+managed-but-merged on re-run. Single-renderer Mintlify uses the shared `{{DOCS_PKG_DIR}}`
+as its content root; the `both`-mode shared-content directory
+(`references/mintlify/content-sourcing.md`) adds no template token.
 
 > **Not tokens:** GitHub Actions `${{ ... }}` expressions in `docs.yml` are _not_
 > generator tokens (generator tokens are `{{UPPER_SNAKE}}` with no leading `$`), so the

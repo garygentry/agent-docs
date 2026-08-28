@@ -8,11 +8,11 @@ How page bodies reach a Mintlify site under each `contentMode`, and — for `ren
 The Mintlify project **is** the content root (`{{DOCS_PKG_DIR}}`, default `docs/`). `docs.json`
 and the `.mdx` pages live there together; there is no build/content split.
 
-| `contentMode` | Where page bodies come from                                                                                                         |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `native`      | Authored stubs written directly under `{{DOCS_PKG_DIR}}/` (DocPlan-seeded, `docplan-adapter.md §4`, or the default `guides/setup`). |
-| `symlink`     | Repo markdown symlinked into `{{DOCS_PKG_DIR}}/` at each nav path, via the shared `setup-docs.sh`.                                  |
-| `mixed`       | Per-page: some symlinked, some authored.                                                                                            |
+| `contentMode` | Where page bodies come from                                                                                                                              |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `native`      | Authored stubs written directly under `{{DOCS_PKG_DIR}}/` (DocPlan-seeded, `docplan-adapter.md §4`, or the default `guides/setup`).                      |
+| `symlink`     | Repo markdown symlinked into `{{DOCS_PKG_DIR}}/` at each nav path, via the emitted `setup-docs.sh` (shared symlink engine, `mintlify-symlink/` variant). |
+| `mixed`       | Per-page: some symlinked, some authored.                                                                                                                 |
 
 The symlink layer is the **same engine** as Starlight's (`../symlink.md`) — the only change is
 the **target content dir**: Starlight links into `src/content/docs/`, Mintlify links into the
