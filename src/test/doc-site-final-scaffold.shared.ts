@@ -326,6 +326,19 @@ function mintlifyScaffold(
   // guides/setup.mdx is a source:native authored page — NEVER recorded (rerun.md §1.2).
   emit(`${d}/guides/setup.mdx`, substitute(tmpl("mintlify/starter-page.mdx.tmpl"), tokens), false);
 
+  // symlink/mixed: the Mintlify content-sourcing script (links repo markdown into the
+  // project root; content-sourcing.md). Symlinked page bodies are materialized by
+  // running the script, not emitted here (same as the Starlight symlink layer).
+  const symlink =
+    answers.selection.contentMode === "symlink" || answers.selection.contentMode === "mixed";
+  if (symlink) {
+    emit(
+      `${d}/setup-docs.sh`,
+      substitute(tmpl("mintlify-symlink/setup-docs.sh.tmpl"), tokens),
+      true,
+    );
+  }
+
   const provFiles: Record<string, string> = {};
   for (const f of files.filter((f) => f.recorded).sort((a, b) => a.path.localeCompare(b.path))) {
     provFiles[f.path] = sha256(f.bytes);

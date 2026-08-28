@@ -250,12 +250,14 @@ npm/yarn/bun need no extra package-manager setup step.
 ## Mintlify token set (used only under `templates/mintlify/**`)
 
 Emitted only when `renderer ∈ {mintlify, both}`. These are **in addition to** the shared
-tokens (`{{SITE_TITLE}}`, `{{SITE_TITLE_SLUG}}`, `{{SITE_DESC}}`, `{{GITHUB_URL}}`,
+tokens the Mintlify templates reuse verbatim: the identity/toolchain tokens
+(`{{SITE_TITLE}}`, `{{SITE_TITLE_SLUG}}`, `{{SITE_DESC}}`, `{{GITHUB_URL}}`,
 `{{REPO_SLUG}}`, `{{DEFAULT_BRANCH}}`, `{{DOCS_PKG_DIR}}`, `{{IMAGES_SRC_DIR}}`,
-`{{PKG_MANAGER}}`, `{{RUNTIME}}`), which the Mintlify templates reuse verbatim. The
-Starlight-only tokens (accents, Astro/Starlight versions, `{{SITE_URL}}`, `{{BASE_PATH}}`,
-`{{DOCS_PKG_DIR_TO_ROOT}}`, the CI/deploy derived tokens) are **never** present in a
-Mintlify template.
+`{{PKG_MANAGER}}`, `{{RUNTIME}}`) **plus** the content-sourcing/symlink-layer tokens
+(`{{DOCS_PKG_DIR_TO_ROOT}}`, `{{SYMLINK_PAGE_LINES}}`), which the shared symlink engine
+uses under either renderer. The genuinely **Starlight-only** tokens (accents,
+Astro/Starlight versions, `{{SITE_URL}}`, `{{BASE_PATH}}`, and the CI/deploy derived
+tokens) are **never** present in a Mintlify template.
 
 | Token                  | Source                                                                                                                                      | Default                     |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |

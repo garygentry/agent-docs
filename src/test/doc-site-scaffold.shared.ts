@@ -87,7 +87,20 @@ export const GROUPS: Array<{
     dir: "mintlify",
     emit: (s) => s.renderer === "mintlify" || s.renderer === "both",
   },
-  { dir: "symlink", emit: (s) => s.contentMode === "symlink" || s.contentMode === "mixed" },
+  // The content-sourcing symlink layer is shared but renderer-targeted: the Starlight
+  // variant links into src/content/docs, the Mintlify variant into the project root.
+  {
+    dir: "symlink",
+    emit: (s) =>
+      (s.renderer ?? "starlight") !== "mintlify" &&
+      (s.contentMode === "symlink" || s.contentMode === "mixed"),
+  },
+  {
+    dir: "mintlify-symlink",
+    emit: (s) =>
+      (s.renderer === "mintlify" || s.renderer === "both") &&
+      (s.contentMode === "symlink" || s.contentMode === "mixed"),
+  },
   { dir: "diagrams", emit: (s) => s.diagrams },
   { dir: "deploy/github-pages", emit: (s) => s.deploy.includes("github-pages") },
   { dir: "deploy/vercel", emit: (s) => s.deploy.includes("vercel") },
@@ -248,4 +261,5 @@ export const ANSWER_SETS = [
   "decline-all",
   "static-host",
   "mintlify-native",
+  "mintlify-symlink",
 ] as const;
