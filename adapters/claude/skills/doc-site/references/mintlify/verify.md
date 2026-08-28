@@ -30,6 +30,13 @@ non-zero exit is `VALIDATE_RED`: report the failed check and remediation and **n
 success on red** (the exact mirror of `BUILD_RED`). A failure mid-emission is `PARTIAL_EMISSION`
 — no rollback, flag the partial tree and the failed step (`rerun.md §7`).
 
+> **Favicon path.** Mintlify serves static assets from the **project root**, not an
+> Astro-style `public/` dir. The favicon is emitted at `{{DOCS_PKG_DIR}}/favicon.svg` to match
+> `docs.json`'s `"favicon": "/favicon.svg"`; a stray `public/favicon.svg` makes `mint validate`
+> log `Error generating favicons: ENOENT` (it still exits 0, but the icon is missing). The
+> Phase-6 live smoke (native / symlink / OpenAPI / `both`) confirmed the root layout validates
+> clean.
+
 ## 2. `mint broken-links` — the drift-guard analogue
 
 ```sh

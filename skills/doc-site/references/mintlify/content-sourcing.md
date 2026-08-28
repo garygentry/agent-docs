@@ -62,8 +62,11 @@ docs-mintlify/             # Mintlify run 2: docs.json, index.mdx landing
 
 ### Mintlify-cloud symlink caveat
 
-Git preserves symlinks, and `mint dev` / `mint export` follow them locally. **Verify** the
-hosted Mintlify build resolves git symlinks before relying on the layout above. If it does not,
+Git preserves symlinks, and `mint dev` / `mint export` follow them locally — the Phase-6
+live smoke confirmed `mint validate` and `mint broken-links` resolve symlinked pages (relative
+links into a sibling `docs-src/`) with no broken-link findings. That covers the **local** CLI;
+**still verify** the hosted Mintlify build resolves git symlinks before relying on the layout
+above (a hosted git checkout may materialize symlinks differently). If it does not,
 **invert** the `both` layout: make the shared source Mintlify's **real** files (Mintlify is
 content-first — files + `docs.json`, no build dir) and have the **Starlight** container symlink
 _from_ the Mintlify content dir. Either way the source exists once.

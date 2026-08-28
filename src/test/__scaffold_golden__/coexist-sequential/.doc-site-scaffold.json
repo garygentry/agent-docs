@@ -5,9 +5,9 @@
   "files": {
     "docs-mintlify/.gitignore": "sha256:f7f2b983fadc6e5de344a255dbe193db659dcb0e8e2fdd30cda653bf6e3a93de",
     "docs-mintlify/docs.json": "sha256:04297fb60ed213cf6dda4dccd500873e07e2f66a5132c061e9192a75a4c11a26",
+    "docs-mintlify/favicon.svg": "sha256:c5502606818d508b5d91a75ceef9a00e59b36c3cbcfcfa8659313cfb9cb3d064",
     "docs-mintlify/index.mdx": "sha256:0312c14091a51347f4ddbc3f13de1b090ce7b9420cee0fb96d0ab398c2957968",
     "docs-mintlify/package.json": "sha256:90a52f6899c04ec32bcd6e8e8186f4e55164b84c090fe22febae1fae66a172e3",
-    "docs-mintlify/public/favicon.svg": "sha256:c5502606818d508b5d91a75ceef9a00e59b36c3cbcfcfa8659313cfb9cb3d064",
     "docs-mintlify/setup-docs.sh": "sha256:21dc89d88717eed1d6f0b79a4f5de11f36c7237ac20fbb6e35f11408c1115f8c",
     "docs/.gitignore": "sha256:fdd155e829158da0b21172e24f4d370c845deae47038c166a12d00a0f5d6493d",
     "docs/astro.config.mjs": "sha256:fd9b9a50936673656980cb88570f00b2b3cef202a1c419d733b3d7e06c636a0b",

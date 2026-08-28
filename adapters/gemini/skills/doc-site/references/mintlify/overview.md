@@ -19,13 +19,13 @@ materialized into `docs.json` at emit time.
 Emitted into the docs package directory (`{{DOCS_PKG_DIR}}/`, default `docs/`), which for a
 single-renderer Mintlify site **is** the content root:
 
-| Template asset      | Target path (under `{{DOCS_PKG_DIR}}/`)                                | Managed?                                      |
-| ------------------- | ---------------------------------------------------------------------- | --------------------------------------------- |
-| `docs.json.tmpl`    | `docs.json`                                                            | managed-but-merged (nav reconciled on re-run) |
-| `index.mdx.tmpl`    | `index.mdx` (home landing)                                             | managed (hash-tracked)                        |
-| `package.json.tmpl` | `package.json` (thin `mint` script wrapper)                            | managed (hash-tracked)                        |
-| `.gitignore.tmpl`   | `.gitignore`                                                           | managed (hash-tracked)                        |
-| `favicon.svg`       | `public/favicon.svg` (verbatim; `docs.json` references `/favicon.svg`) | managed (verbatim)                            |
+| Template asset      | Target path (under `{{DOCS_PKG_DIR}}/`)                               | Managed?                                      |
+| ------------------- | --------------------------------------------------------------------- | --------------------------------------------- |
+| `docs.json.tmpl`    | `docs.json`                                                           | managed-but-merged (nav reconciled on re-run) |
+| `index.mdx.tmpl`    | `index.mdx` (home landing)                                            | managed (hash-tracked)                        |
+| `package.json.tmpl` | `package.json` (thin `mint` script wrapper)                           | managed (hash-tracked)                        |
+| `.gitignore.tmpl`   | `.gitignore`                                                          | managed (hash-tracked)                        |
+| `favicon.svg`       | `favicon.svg` (container root; `docs.json` references `/favicon.svg`) | managed (verbatim)                            |
 
 Page bodies (`guides/setup.mdx`, DocPlan stubs, …) are **authored content**, `source: native`,
 and are **never** hash-tracked — the user owns them after first write (`rerun.md §2`). This is

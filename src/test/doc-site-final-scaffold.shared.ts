@@ -326,7 +326,11 @@ function mintlifyScaffold(
   emit(`${d}/index.mdx`, substitute(tmpl("mintlify/index.mdx.tmpl"), tokens), true);
   emit(`${d}/package.json`, substitute(tmpl("mintlify/package.json.tmpl"), tokens), true);
   emit(`${d}/.gitignore`, substitute(tmpl("mintlify/.gitignore.tmpl"), tokens), true);
-  emit(`${d}/public/favicon.svg`, tmpl("mintlify/favicon.svg"), true);
+  // Mintlify serves static assets from the project root (no Astro-style `public/` dir), so
+  // the favicon lands at the container root to match docs.json's `"/favicon.svg"` — a
+  // `public/favicon.svg` yields a `mint validate` "Error generating favicons: ENOENT"
+  // (verify.md; caught by the Phase-6 live smoke).
+  emit(`${d}/favicon.svg`, tmpl("mintlify/favicon.svg"), true);
   // guides/setup.mdx is a source:native authored page — NEVER recorded (rerun.md §1.2).
   emit(`${d}/guides/setup.mdx`, substitute(tmpl("mintlify/starter-page.mdx.tmpl"), tokens), false);
 
