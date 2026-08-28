@@ -6,7 +6,7 @@
     "docs-mintlify/.gitignore": "sha256:f7f2b983fadc6e5de344a255dbe193db659dcb0e8e2fdd30cda653bf6e3a93de",
     "docs-mintlify/docs.json": "sha256:04297fb60ed213cf6dda4dccd500873e07e2f66a5132c061e9192a75a4c11a26",
     "docs-mintlify/favicon.svg": "sha256:c5502606818d508b5d91a75ceef9a00e59b36c3cbcfcfa8659313cfb9cb3d064",
-    "docs-mintlify/index.mdx": "sha256:406e845596c7a3d18d50a80226346649981d047cb1d8958feacf4134dbdb761b",
+    "docs-mintlify/index.mdx": "sha256:9693b74d04a8c9d9be7b6cf8e1b129eb233880739d7973350104dbef30c228c6",
     "docs-mintlify/package.json": "sha256:90a52f6899c04ec32bcd6e8e8186f4e55164b84c090fe22febae1fae66a172e3",
     "docs-mintlify/setup-docs.sh": "sha256:471c9f324b297b96b5c95683835df9169f2c3beb3b1501d40a88a53f5a0924ff",
     "docs/.gitignore": "sha256:fdd155e829158da0b21172e24f4d370c845deae47038c166a12d00a0f5d6493d",
@@ -19,7 +19,7 @@
     "docs/setup-docs.sh": "sha256:5303325285d15cf3d0ec324089e6988dca8a0091135dab29ed23b20c75bb1613",
     "docs/sidebar.mjs": "sha256:095abde378b34cf2fb5ef77e1e3b7029c7238bf3c8d2655cbd281e4764ba68c2",
     "docs/src/content.config.ts": "sha256:1f8b206b5f7c0afb44c3715a3fe79954b448885fe9e753ba372dddf1210ecfd5",
-    "docs/src/content/docs/index.mdx": "sha256:ccf2f970d6533a2d778644ff5a0b46d1740b28295c7cea823f300420db67fd76",
+    "docs/src/content/docs/index.mdx": "sha256:deb95ba851810ac512aeb678cf43cf0926c1faa5f387b9fb856eeb187a6812b4",
     "docs/src/styles/custom.css": "sha256:4cc33e77daf1dad9ac9459fd29d7e0f389f11e806e0d765950fd324a611f3110",
     "docs/tsconfig.json": "sha256:974b0a3b37e52f3649d9df63e72e374794e9e797c8ae61eca4812f844406f7ef"
   }

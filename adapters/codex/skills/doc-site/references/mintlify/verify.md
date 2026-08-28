@@ -49,6 +49,28 @@ internal-link checker. When the `driftGuard` component is selected under `render
 `package.json`) into the repo gate, and run `mint broken-links` here. A broken internal link is
 a drift finding — report it; treat it like the Starlight guard's `broken-link` rule.
 
+## 2.1 Page & link gotchas (confirmed on real deploys)
+
+These bite when sourcing pre-existing repo markdown (written for GitHub) into a Mintlify site;
+each surfaces as a `mint validate` warning or a `mint broken-links` finding.
+
+- **`README.md` is not a page.** Mintlify does **not** serve a `README.md` as a route —
+  `mint validate` reports the nav path as _"referenced in docs.json navigation but the file does
+  not exist"_. Rename such pages (`overview.md`, or `index.md` to own a folder's **root** route);
+  never point a nav entry at a `README`.
+- **Links must resolve to routes, not files.** A repo-relative _file_ link — `./README.md`,
+  `../../../foo.md` — only works if it targets a page that exists **in the site**. Retarget
+  intra-site links to the served page (a sibling `.md` that is itself a page resolves; so does a
+  root-relative `/group/page`); rewrite links to repo files **not** in the site to absolute
+  GitHub URLs (`https://github.com/<slug>/blob/<branch>/…`). `mint broken-links` catches these.
+- **Frontmatter values containing a colon must be quoted.** `description: Tooling: plan and
+render` is invalid YAML and fails `mint validate` with an MDX parse error; quote it —
+  `description: "Tooling: plan and render"`. The emitted templates already quote `title` /
+  `description`; apply the same when authoring DocPlan stub frontmatter (`docplan-adapter.md §4`).
+- **Content-root scoping (cloud).** The hosted git build serves only files **inside** the folder
+  the GitHub app is pointed at; symlinks whose targets escape it 404. See
+  `content-sourcing.md` — _symlinked content must live inside the content root_.
+
 ## 3. Ordering in symlink/mixed mode
 
 When `contentMode ∈ {symlink, mixed}`, the page bodies are materialized by `setup-docs.sh`
