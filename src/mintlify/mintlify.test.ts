@@ -13,7 +13,6 @@ import {
   buildTabbedNavigation,
   collectNavPagePaths,
   titleize,
-  type NavGroup,
 } from "./navigation.js";
 import { validateDocsJson } from "./validate.js";
 
@@ -34,8 +33,10 @@ describe("mintlify navigation — interview fallback (buildNavigationFromPages)"
 
   it("preserves page order and fixes group order at first occurrence", () => {
     const nav = buildNavigationFromPages([{ slug: "b/one" }, { slug: "a/one" }, { slug: "b/two" }]);
-    // group "B" appears before "A" because b/one came first; b/two joins the existing group.
-    expect(nav.pages).toEqual([
+    // All grouped ⇒ idiomatic top-level `groups`. Group "B" precedes "A" (b/one came
+    // first); b/two joins the existing group.
+    expect(nav.pages).toBeUndefined();
+    expect(nav.groups).toEqual([
       { group: "B", pages: ["b/one", "b/two"] },
       { group: "A", pages: ["a/one"] },
     ]);
@@ -52,7 +53,13 @@ describe("mintlify navigation — interview fallback (buildNavigationFromPages)"
   it("titleizes hyphenated segments", () => {
     expect(titleize("getting-started")).toBe("Getting Started");
     const nav = buildNavigationFromPages([{ slug: "getting-started/install" }]);
-    expect((nav.pages![0] as NavGroup).group).toBe("Getting Started");
+    expect(nav.groups![0]!.group).toBe("Getting Started");
+  });
+
+  it("uses the flat `pages` decorator when a loose top-level page is present", () => {
+    const nav = buildNavigationFromPages([{ slug: "intro" }, { slug: "guides/setup" }]);
+    expect(nav.groups).toBeUndefined();
+    expect(nav.pages).toEqual(["intro", { group: "Guides", pages: ["guides/setup"] }]);
   });
 });
 

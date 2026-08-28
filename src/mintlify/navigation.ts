@@ -88,7 +88,12 @@ export function buildNavigationFromPages(pages: ReadonlyArray<NavSourcePage>): N
     }
     groupPages.push(page.slug);
   }
-  return { pages: items };
+
+  // Choose the idiomatic top-level decorator: when every item is a group (no loose
+  // top-level page), use `groups` — the documented grouped form. When any bare page
+  // sits at the top level, use `pages` (whose items may be strings or nested groups).
+  const hasTopLevelPage = items.some((i) => typeof i === "string");
+  return hasTopLevelPage ? { pages: items } : { groups: items as NavGroup[] };
 }
 
 /**

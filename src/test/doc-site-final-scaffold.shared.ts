@@ -23,6 +23,8 @@ import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import { buildDocsJson, serializeDocsJson } from "../mintlify/emit.js";
+import { buildNavigationFromPages } from "../mintlify/navigation.js";
 import {
   PREEXISTING_DIR,
   TEMPLATES_DIR,
@@ -292,6 +294,51 @@ export function loadPreexisting(name: string): Record<string, string> {
 }
 
 /**
+ * The Mintlify container's final emitted tree (mintlify/overview.md). `docs.json` is
+ * GENERATED (buildDocsJson) rather than substituted, so its navigation block is pretty
+ * and byte-stable; the landing / thin package.json / gitignore / favicon ride the
+ * `templates/mintlify/**` group; `guides/setup.mdx` is a native seed (never recorded).
+ * Provenance carries NO astro/starlight pins (rerun.md §4 is a no-op for Mintlify).
+ */
+function mintlifyScaffold(
+  answers: ScaffoldAnswers,
+  tokens: Record<string, string>,
+  d: string,
+  emit: (p: string, bytes: string, recorded: boolean) => void,
+  files: EmittedFile[],
+): Map<string, string> {
+  const navigation = buildNavigationFromPages(effectivePages(answers.pages));
+  const docs = buildDocsJson({
+    theme: tokens.MINT_THEME!,
+    name: answers.site.title,
+    description: answers.site.description,
+    primary: tokens.MINT_PRIMARY!,
+    light: tokens.MINT_COLOR_LIGHT!,
+    dark: tokens.MINT_COLOR_DARK!,
+    githubUrl: tokens.GITHUB_URL ?? "",
+    navigation,
+  });
+  emit(`${d}/docs.json`, serializeDocsJson(docs), true);
+  emit(`${d}/index.mdx`, substitute(tmpl("mintlify/index.mdx.tmpl"), tokens), true);
+  emit(`${d}/package.json`, substitute(tmpl("mintlify/package.json.tmpl"), tokens), true);
+  emit(`${d}/.gitignore`, substitute(tmpl("mintlify/.gitignore.tmpl"), tokens), true);
+  emit(`${d}/public/favicon.svg`, tmpl("mintlify/favicon.svg"), true);
+  // guides/setup.mdx is a source:native authored page — NEVER recorded (rerun.md §1.2).
+  emit(`${d}/guides/setup.mdx`, substitute(tmpl("mintlify/starter-page.mdx.tmpl"), tokens), false);
+
+  const provFiles: Record<string, string> = {};
+  for (const f of files.filter((f) => f.recorded).sort((a, b) => a.path.localeCompare(b.path))) {
+    provFiles[f.path] = sha256(f.bytes);
+  }
+  const provenance = { version: SCAFFOLD_VERSION, files: provFiles };
+  emit(".doc-site-scaffold.json", JSON.stringify(provenance, null, 2) + "\n", false);
+
+  const out = new Map<string, string>();
+  for (const f of files) out.set(f.path, f.bytes);
+  return out;
+}
+
+/**
  * Resolve an answer set to its FINAL emitted target tree (repo-relative path →
  * bytes), including the `.doc-site-scaffold.json` provenance over the managed
  * plumbing subset. `preexisting` supplies realistic root files for the monorepo
@@ -308,6 +355,14 @@ export function finalScaffold(
   const files: EmittedFile[] = [];
   const emit = (p: string, bytes: string, recorded: boolean) =>
     files.push({ path: p, bytes, recorded });
+
+  // —— Mintlify renderer branch (mintlify/overview.md) ——————————————————————
+  // A wholly different container: docs.json (generated, not substituted, so the nav
+  // block is pretty + byte-stable) + landing + thin package.json + gitignore + favicon,
+  // and a native starter page. No astro/starlight pins in provenance (rerun.md §4 no-op).
+  if ((selection.renderer ?? "starlight") === "mintlify") {
+    return mintlifyScaffold(answers, tokens, d, emit, files);
+  }
 
   // —— core group (always) ————————————————————————————————————————————————
   // package.json with composed scripts (script merge mechanic).
