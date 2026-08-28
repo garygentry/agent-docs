@@ -34,8 +34,18 @@ const MANIFEST_FIXTURES = path.join(
   "manifests",
 );
 
-/** Canonical token set — the in-test mirror of 00 §4.1 (exactly 22 tokens). */
-const CANONICAL_TOKENS = [
+/**
+ * Canonical token set — the in-test mirror of 00 §4.1, partitioned by renderer.
+ *
+ * STARLIGHT_TOKENS is the historical set used by templates/core/** and the Starlight
+ * deploy/diagram/monorepo groups (exactly 22 tokens). MINTLIFY_ONLY_TOKENS is the
+ * Mintlify-only set used by templates/mintlify/**; Mintlify templates also reuse the
+ * SHARED subset of the Starlight set (SITE_*, GITHUB_URL, etc.). A template under
+ * mintlify/ may use SHARED ∪ MINTLIFY_ONLY; a non-mintlify template may use only
+ * STARLIGHT_TOKENS. SKILL.md's substitution tables (Starlight table + Mintlify table)
+ * together mirror STARLIGHT_TOKENS ∪ MINTLIFY_ONLY_TOKENS exactly.
+ */
+const STARLIGHT_TOKENS = [
   "SITE_TITLE",
   "SITE_TITLE_SLUG",
   "SITE_DESC",
@@ -62,6 +72,21 @@ const CANONICAL_TOKENS = [
   "WORKSPACE_BUILD",
 ] as const;
 
+/** Mintlify-only tokens (used only under templates/mintlify/**). */
+const MINTLIFY_ONLY_TOKENS = [
+  "MINT_THEME",
+  "MINT_PRIMARY",
+  "MINT_COLOR_LIGHT",
+  "MINT_COLOR_DARK",
+  "MINT_NAVIGATION",
+] as const;
+
+/** Every token that may legally appear in any doc-site template. */
+const ALL_TOKENS = [...STARLIGHT_TOKENS, ...MINTLIFY_ONLY_TOKENS] as const;
+
+const MINTLIFY_TEMPLATES_DIR = path.join(TEMPLATES_DIR, "mintlify");
+const isMintlifyTemplate = (rel: string) => rel.split(path.sep)[0] === "mintlify";
+
 const TOKEN_RE = /\{\{([A-Z0-9_]+)\}\}/g;
 
 function walkFiles(dir: string): string[] {
@@ -81,32 +106,38 @@ function tokensIn(text: string): Set<string> {
 }
 
 describe("doc-site token coverage (00 §4.1 closed vocabulary)", () => {
-  const canonical = new Set<string>(CANONICAL_TOKENS);
+  const allValid = new Set<string>(ALL_TOKENS);
+  const mintlifyOnlySet = new Set<string>(MINTLIFY_ONLY_TOKENS);
 
   const templateFiles = walkFiles(TEMPLATES_DIR);
-  // Map each used token → the template basenames that use it (for failure messages).
+  // Map each used token → the template rel-paths that use it (for failure messages),
+  // partitioned into the Mintlify group vs the rest.
   const usedTokens = new Map<string, string[]>();
+  const usedInMintlify = new Map<string, string[]>();
+  const usedInStarlight = new Map<string, string[]>();
   for (const file of templateFiles) {
+    const rel = path.relative(TEMPLATES_DIR, file);
     const text = fs.readFileSync(file, "utf8");
     for (const tok of tokensIn(text)) {
-      const list = usedTokens.get(tok) ?? [];
-      list.push(path.relative(TEMPLATES_DIR, file));
-      usedTokens.set(tok, list);
+      (usedTokens.get(tok) ?? usedTokens.set(tok, []).get(tok)!).push(rel);
+      const bucket = isMintlifyTemplate(rel) ? usedInMintlify : usedInStarlight;
+      (bucket.get(tok) ?? bucket.set(tok, []).get(tok)!).push(rel);
     }
   }
 
   const skillText = fs.readFileSync(SKILL_MD, "utf8");
   const skillTokens = tokensIn(skillText);
+  const hasMintlifyTemplates = fs.existsSync(MINTLIFY_TEMPLATES_DIR);
 
   it("finds template assets to scan", () => {
     expect(templateFiles.length).toBeGreaterThan(0);
   });
 
-  it("uses no undefined tokens (every template token is canonical AND in SKILL.md)", () => {
+  it("uses no undefined tokens (every template token is a valid token AND in SKILL.md)", () => {
     for (const [tok, files] of usedTokens) {
       expect(
-        canonical.has(tok),
-        `token {{${tok}}} (used in ${files.join(", ")}) is not canonical`,
+        allValid.has(tok),
+        `token {{${tok}}} (used in ${files.join(", ")}) is not a valid doc-site token`,
       ).toBe(true);
       expect(
         skillTokens.has(tok),
@@ -115,22 +146,42 @@ describe("doc-site token coverage (00 §4.1 closed vocabulary)", () => {
     }
   });
 
-  it("has no orphan tokens (every canonical token is exercised by ≥1 template)", () => {
-    for (const tok of CANONICAL_TOKENS) {
-      expect(usedTokens.has(tok), `canonical token {{${tok}}} is never used by any template`).toBe(
+  it("respects the renderer partition (non-mintlify templates use no Mintlify-only token)", () => {
+    for (const [tok, files] of usedInStarlight) {
+      expect(
+        !mintlifyOnlySet.has(tok),
+        `Mintlify-only token {{${tok}}} used by a non-mintlify template (${files.join(", ")})`,
+      ).toBe(true);
+    }
+  });
+
+  it("has no orphan Starlight tokens (each is exercised by ≥1 template)", () => {
+    for (const tok of STARLIGHT_TOKENS) {
+      expect(usedTokens.has(tok), `Starlight token {{${tok}}} is never used by any template`).toBe(
         true,
       );
     }
   });
 
-  it("SKILL.md's substitution table mirrors the canonical set exactly", () => {
-    // Substitution-table rows are the only lines shaped `| `{{TOKEN}}` |`.
+  it("has no orphan Mintlify-only tokens once the mintlify template group exists", () => {
+    if (!hasMintlifyTemplates) return; // Phase A: mintlify templates not yet emitted
+    for (const tok of MINTLIFY_ONLY_TOKENS) {
+      expect(
+        usedInMintlify.has(tok),
+        `Mintlify-only token {{${tok}}} is never used by any templates/mintlify asset`,
+      ).toBe(true);
+    }
+  });
+
+  it("SKILL.md's substitution tables mirror the full token set exactly", () => {
+    // Substitution-table rows are the only lines shaped `| `{{TOKEN}}` |` — the
+    // Starlight table and the Mintlify table together cover every valid token.
     const tableTokens = new Set<string>();
     for (const line of skillText.split("\n")) {
       const m = /^\|\s*`\{\{([A-Z0-9_]+)\}\}`/.exec(line);
       if (m) tableTokens.add(m[1]!);
     }
-    expect([...tableTokens].sort()).toEqual([...CANONICAL_TOKENS].sort());
+    expect([...tableTokens].sort()).toEqual([...ALL_TOKENS].sort());
   });
 });
 

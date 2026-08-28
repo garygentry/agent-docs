@@ -12,6 +12,11 @@ fork-free custom-rule convention.
 runtime paths from `import.meta.url`, so the resolved script is location-independent
 (works under `docs/`, `packages/docs/`, `docs-site/`, … without an extra token).
 
+> **This component is Starlight-only.** Under `renderer=mintlify`, the drift guard is
+> Mintlify's first-party `mint broken-links` — `check-docs.mjs` is **not** emitted. See
+> `references/mintlify/verify.md`. The rest of this file applies only to
+> `renderer ∈ {starlight, both}`.
+
 ---
 
 ## 1. Gating: emit only when `driftGuard: true`

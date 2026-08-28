@@ -22,7 +22,7 @@ All paths are **repo-relative POSIX paths**, resolved against the target-repo ro
 that errors (missing file, non-git tree, command absent) is **not** fatal — it yields
 "absent," which routes to the graceful-degradation table below.
 
-## Probe set (7 probes)
+## Probe set (8 probes)
 
 Run all probes, in any order. Each produces either a detected value (seeds an interview
 default) or "absent" (routes to the degradation table). None block the interview.
@@ -118,6 +118,40 @@ Parse the `owner/name` slug from common URL forms (`git@host:owner/name.git`,
 `https://host/owner/name(.git)`). Absent or unparseable ⇒ **ask** the user. Seeds
 `{{REPO_SLUG}}` and `{{GITHUB_URL}}` (derived as `https://github.com/{{REPO_SLUG}}`).
 
+### Probe 8 — renderer signals (Starlight vs Mintlify)
+
+Seeds the **renderer** selection-record field (`starlight` | `mintlify` | `both`) and the
+Mintlify-only sub-fields (`apiDocs`). Purely advisory — the renderer question in the interview
+(question 0) always lets the user override.
+
+```sh
+# existing Mintlify?
+ls docs.json mint.json */docs.json 2>/dev/null          # a Mintlify config anywhere ⇒ mintlify present
+# existing Starlight?
+grep -RIl '@astrojs/starlight' package.json */package.json 2>/dev/null   # dep ⇒ starlight present
+ls astro.config.* */astro.config.* 2>/dev/null
+# OpenAPI/AsyncAPI spec (drives Mintlify's api-docs capability)?
+ls openapi.json openapi.yml openapi.yaml asyncapi.yaml 2>/dev/null
+# (broaden if absent) any spec file named like an API contract:
+grep -RIl '^openapi:\|"openapi"' . --include=*.yaml --include=*.yml --include=*.json 2>/dev/null | head
+# is the Mintlify CLI available for the verify phase?
+mint --version 2>/dev/null
+```
+
+Resolution:
+
+- **Existing `docs.json`/`mint.json`** present and no Starlight ⇒ default `renderer = mintlify`.
+- **Existing `@astrojs/starlight`** (or `astro.config` with Starlight) and no Mintlify config ⇒
+  default `renderer = starlight`.
+- **Both** present ⇒ default `renderer = both`. **Neither** present ⇒ default
+  `renderer = starlight` (`ASSUME-RENDERER-STARLIGHT`; preserves historical behavior).
+- An **OpenAPI/AsyncAPI spec** present seeds a `sources`-style hint that lets the interview
+  **auto-offer** Mintlify's api-docs tab (`apiDocs`); absent ⇒ api-docs stays declined.
+- **`mint` absent** is **not** a detection failure — it only affects the Mintlify verify phase
+  (surfaced there as `MINT_CLI_MISSING`, `references/mintlify/verify.md`), never a hard-fail.
+
+This probe never blocks the interview and never writes.
+
 ## Detection output
 
 Phase 1 produces two artifacts for Phase 2 to consume:
@@ -134,15 +168,16 @@ Detection completes regardless of how many signals are absent; it never blocks t
 For each signal the probes could not resolve affirmatively, proceed with the fallback
 default and emit **one** assumption record carrying the code below (`00 §6.1`).
 
-| Signal             | Probe   | Fallback default                              | Assumption code          |
-| ------------------ | ------- | --------------------------------------------- | ------------------------ |
-| monorepo vs single | Probe 1 | single-package (`monorepo = false`)           | `ASSUME-MONOREPO-SINGLE` |
-| package manager    | Probe 2 | `npm` (`{{PKG_MANAGER}}=npm`)                 | `ASSUME-PKGMGR-NPM`      |
-| runtime            | Probe 3 | `node` (`{{RUNTIME}}=node`)                   | `ASSUME-RUNTIME-NODE`    |
-| existing docs      | Probe 4 | none → default `contentMode=native`           | `ASSUME-NO-DOCS`         |
-| existing CI        | Probe 5 | none → emit fresh workflow if GH Pages chosen | `ASSUME-NO-CI`           |
-| default branch     | Probe 6 | `main` (after asking)                         | `ASSUME-BRANCH-MAIN`     |
-| repo slug / remote | Probe 7 | ask the user                                  | `ASSUME-SLUG-ASKED`      |
+| Signal             | Probe   | Fallback default                              | Assumption code             |
+| ------------------ | ------- | --------------------------------------------- | --------------------------- |
+| monorepo vs single | Probe 1 | single-package (`monorepo = false`)           | `ASSUME-MONOREPO-SINGLE`    |
+| package manager    | Probe 2 | `npm` (`{{PKG_MANAGER}}=npm`)                 | `ASSUME-PKGMGR-NPM`         |
+| runtime            | Probe 3 | `node` (`{{RUNTIME}}=node`)                   | `ASSUME-RUNTIME-NODE`       |
+| existing docs      | Probe 4 | none → default `contentMode=native`           | `ASSUME-NO-DOCS`            |
+| existing CI        | Probe 5 | none → emit fresh workflow if GH Pages chosen | `ASSUME-NO-CI`              |
+| default branch     | Probe 6 | `main` (after asking)                         | `ASSUME-BRANCH-MAIN`        |
+| repo slug / remote | Probe 7 | ask the user                                  | `ASSUME-SLUG-ASKED`         |
+| renderer           | Probe 8 | `starlight` (neither config found)            | `ASSUME-RENDERER-STARLIGHT` |
 
 Notes:
 

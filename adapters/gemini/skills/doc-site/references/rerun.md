@@ -192,6 +192,14 @@ control. This property is asserted by the double-apply scaffold-output golden fi
 
 ## 4. Version resolution & pin policy
 
+> **Starlight-only.** This entire section is a **no-op for `renderer=mintlify`**: a Mintlify
+> site has no build-time site dependencies to pin (the `mint` CLI is a global tool, not a repo
+> dependency), so no `npm view` resolution runs and `astroPin`/`starlightPin` are absent from a
+> Mintlify provenance manifest. The Mintlify managed set is `docs.json` (managed-but-merged),
+> `index.mdx`, the thin `package.json`, `favicon.svg`, and `setup-docs.sh` — all governed by the
+> never-clobber decision table (§2) exactly as here, minus the pins. See
+> `references/mintlify/overview.md`.
+
 `{{ASTRO_VERSION}}` and `{{STARLIGHT_VERSION}}` feed the emitted `docs/package.json`
 (`core.md`). Their values are governed entirely by this section.
 
