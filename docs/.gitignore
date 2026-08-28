@@ -1,0 +1,3 @@
+# Mintlify local cache + static export artifact
+.mintlify/
+export.zip

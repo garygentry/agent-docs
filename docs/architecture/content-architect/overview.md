@@ -33,7 +33,7 @@ the shipped-edge detail):
   `skills/content-architect/references/drafting.md`.
 
 Worked, schema-validated evidence for both spines and the `both` route lives in
-[`specs/content-architect/evals/`](../../../specs/content-architect/evals/).
+[`specs/content-architect/evals/`](https://github.com/garygentry/agent-docs/tree/main/specs/content-architect/evals/).
 
 > This document is the architecture reference for maintainers. For the DocPlan contract
 > itself, see [`architecture.md`](./architecture.md) and the schema at

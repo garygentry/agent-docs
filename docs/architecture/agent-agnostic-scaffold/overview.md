@@ -10,7 +10,7 @@ manifest-driven transform pipeline that reads canonical sources under `skills/`,
 into `adapters/<target>/` plus the installable `.claude-plugin/` manifests.
 
 > For the **end-user** workflow (where a tool lives, how to add one, how to run a
-> build), see the repo-root [`README.md`](../../../README.md). This document is the
+> build), see the repo-root [`README.md`](https://github.com/garygentry/agent-docs/blob/main/README.md). This document is the
 > **architecture reference** for developers maintaining or extending the emitter
 > itself.
 

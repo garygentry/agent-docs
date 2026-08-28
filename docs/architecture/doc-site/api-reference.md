@@ -340,5 +340,5 @@ The agent reports one of these (`00 §7`):
 
 ## Further reading
 
-- [README](./README.md) — overview, quick start, when (not) to use it
+- [README](./overview.md) — overview, quick start, when (not) to use it
 - [Architecture](./architecture.md) — the pipeline, emission model, manifest triad, never-clobber, vendoring, safety
