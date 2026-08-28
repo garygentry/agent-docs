@@ -1,0 +1,53 @@
+// astro.config.mjs — emitted into docs/
+// MANAGED by doc-site (tracked in .doc-site-scaffold.json). The `sidebar` is
+// DERIVED from docs.manifest.json at build time (see sidebar.mjs) — there is no
+// parallel array to keep in sync, so it cannot drift. Edit the manifest, not this
+// file.
+import { readFileSync } from "node:fs";
+import { defineConfig, passthroughImageService } from "astro/config";
+import starlight from "@astrojs/starlight";
+import rehypeBaseLinks from "./rehype-base-links.mjs";
+import { buildSidebar } from "./sidebar.mjs";
+
+// REQ-CONTENT-03: single source of truth. The manifest is read beside this config
+// and mapped to the Starlight sidebar at build time — adding a page is a one-line
+// manifest edit and the sidebar follows automatically.
+const manifest = JSON.parse(
+  readFileSync(new URL("./docs.manifest.json", import.meta.url), "utf8"),
+);
+
+export default defineConfig({
+  // REQ-CORE-02: derive site/base from env so the SAME build works on a hosted
+  // subpath (GitHub Pages, BASE_PATH="/repo/") and at root (Vercel/static,
+  // BASE_PATH unset) with no code changes. Both are undefined-safe: Astro treats
+  // an undefined `base` as "/" and an undefined `site` as a relative build.
+  site: process.env.SITE,
+  base: process.env.BASE_PATH,
+  // REQ-CORE-03: SVG diagrams need no rasterization; the passthrough image
+  // service serves them as-is and keeps the install free of the Sharp dependency.
+  image: { service: passthroughImageService() },
+  // #24/#29 — Astro does NOT apply `base` to links written in Markdown/MDX
+  // content. Authors SHOULD write internal links as root-absolute slug URLs (see
+  // doc-site SKILL.md) and the drift-guard enforces it; this zero-dependency
+  // plugin is the runtime backstop. It (1) prepends BASE_PATH to root-absolute
+  // links so `/start-here/install/` → `/repo/start-here/install/` on a subpath
+  // deploy (no-op at root, #29), and (2) rewrites relative `.md`/`.mdx` links in
+  // dual-context symlinked docs to absolute base-aware slugs (#24), leaving the
+  // source files untouched so GitHub rendering stays correct.
+  markdown: {
+    rehypePlugins: [[rehypeBaseLinks, { base: process.env.BASE_PATH }]],
+  },
+  integrations: [
+    starlight({
+      title: "Acme",
+      description: "Documentation for Acme",
+      social: [
+        { icon: "github", label: "GitHub", href: "https://github.com/acme/acme" },
+      ],
+      // Derived from docs.manifest.json at build time (see sidebar.mjs) — single
+      // source of truth, never hand-kept in parallel. REQ-CONTENT-03.
+      sidebar: buildSidebar(manifest.pages),
+      customCss: ["./src/styles/custom.css"],
+    }),
+  ],
+});

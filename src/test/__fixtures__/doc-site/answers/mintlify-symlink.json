@@ -1,0 +1,38 @@
+{
+  "tokens": {
+    "SITE_TITLE": "Acme",
+    "SITE_TITLE_SLUG": "acme",
+    "SITE_DESC": "Documentation for Acme",
+    "GITHUB_URL": "https://github.com/acme/acme",
+    "REPO_SLUG": "acme/acme",
+    "DEFAULT_BRANCH": "main",
+    "PKG_MANAGER": "npm",
+    "RUNTIME": "node",
+    "DOCS_PKG_DIR": "docs",
+    "DOCS_PKG_DIR_TO_ROOT": "..",
+    "IMAGES_SRC_DIR": "docs-src/images",
+    "MINT_THEME": "mint",
+    "MINT_PRIMARY": "#3B82F6",
+    "MINT_COLOR_LIGHT": "#93C5FD",
+    "MINT_COLOR_DARK": "#1D4ED8"
+  },
+  "selection": {
+    "renderer": "mintlify",
+    "contentMode": "symlink",
+    "diagrams": false,
+    "deploy": [],
+    "driftGuard": false,
+    "monorepo": false,
+    "mintTheme": "mint",
+    "apiDocs": false,
+    "scopeTabs": false
+  },
+  "site": {
+    "title": "Acme",
+    "description": "Documentation for Acme"
+  },
+  "pages": [
+    { "slug": "getting-started", "source": "symlink", "from": "docs-src/getting-started.md" },
+    { "slug": "guides/usage", "source": "symlink", "from": "docs-src/guides/usage.md" }
+  ]
+}

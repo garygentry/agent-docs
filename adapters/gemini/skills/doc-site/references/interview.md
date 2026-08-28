@@ -14,10 +14,52 @@ the user accepts or overrides. Because every parameter has a non-detection defau
 interview alone is sufficient to fill all parameters even with **zero** detection signals
 (REQ-INT-02) — detection strictly improves defaults, it is never a gate.
 
+## Question 0 — renderer (asked first; gates the rest)
+
+Before the identity questions, ask which documentation **renderer** to scaffold:
+
+- **`starlight`** (default) — Astro 5/6 + Starlight static site. The historical behavior;
+  unchanged.
+- **`mintlify`** — a Mintlify site (`docs.json` + MDX). Forks emit/verify/deploy per
+  `references/mintlify/*`.
+- **`both`** — scaffold **both** containers over one shared content source. There is no
+  dual-emit mode: `both` runs the two single-renderer passes **into two distinct
+  `{{DOCS_PKG_DIR}}`s** (e.g. `docs/` + `docs-mintlify/`) so they never clobber each other,
+  each symlinking the same source markdown (`references/mintlify/content-sourcing.md`).
+  Adding the second renderer later is just re-running the skill into a new dir.
+
+Seed the default from **Probe 8** (`detect.md`): an existing `docs.json`/`mint.json` ⇒
+`mintlify`; an existing Starlight install ⇒ `starlight`; both ⇒ `both`; neither ⇒ `starlight`
+(`ASSUME-RENDERER-STARLIGHT`). The answer fills the selection-record field `renderer` and
+decides which of the parameters below apply:
+
+| Parameter group                                          | `starlight`                             | `mintlify`                                                | `both`                            |
+| -------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------- | --------------------------------- |
+| Identity (1–3, 8) — title, description, social, docs dir | ✓                                       | ✓                                                         | ✓                                 |
+| Content sourcing (4–5)                                   | ✓                                       | ✓                                                         | ✓ (into a shared `content/` root) |
+| Title-frontmatter remediation (5a)                       | ✓ (Starlight `docsSchema()` hard-fails) | — (lighter check; no load-fail)                           | ✓ (for the Starlight container)   |
+| Deploy (6) — GH Pages / Vercel / Netlify                 | ✓                                       | — (uses Mintlify deploy, `references/mintlify/deploy.md`) | ✓ (Starlight container only)      |
+| Accent colors (7)                                        | ✓ (`--sl-*` CSS)                        | reused as `docs.json` `colors`                            | ✓ (both)                          |
+| Mintlify params (M1–M3, below)                           | —                                       | ✓                                                         | ✓                                 |
+
+## Mintlify-only parameters (asked when `renderer ∈ {mintlify, both}`)
+
+| #   | Parameter           | Fills token / field                          | Default                                                                  |
+| --- | ------------------- | -------------------------------------------- | ------------------------------------------------------------------------ |
+| M1  | Named theme         | `{{MINT_THEME}}` → `docs.json` `theme`       | `mint`                                                                   |
+| M2  | Primary color       | `{{MINT_PRIMARY}}` (+ light/dark) → `colors` | derived from the accent answer (question 7)                              |
+| M3  | API docs (OpenAPI)  | selection field `apiDocs`                    | **auto-offered** if Probe 8 found a spec; else declined                  |
+| M4  | Scope/audience tabs | selection field `scopeTabs`                  | on when the DocPlan `scope` is `both` or has ≥2 audiences; else declined |
+
+The **accent/brand color** (question 7) is asked once and rendered per renderer: Starlight
+writes `{{ACCENT_LIGHT}}`/`{{ACCENT_DARK}}` into `custom.css`; Mintlify writes
+`{{MINT_PRIMARY}}` + light/dark into `docs.json` `colors`. Do not ask twice.
+
 ## Minimum required parameter set (8 parameters, REQ-INT-01)
 
 Capture, at minimum, all 8 of the following. Each maps to its token(s) / selection-record
-field with a detection-seeded default.
+field with a detection-seeded default. (These are the **identity + content** parameters shared
+by every renderer; the renderer question above and the Mintlify params gate what else is asked.)
 
 | #   | Parameter             | Fills token(s) / field                                      | Default (seeded from detection)                                             |
 | --- | --------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -55,8 +97,13 @@ without a destination; no token in `00 §4.1` lacks a source.
   - In `mixed` mode the per-page `source` is chosen page-by-page. Propose slugs from
     filenames (Probe 4) and let the user rename. **Page order in the array is sidebar order.**
 
-**Title frontmatter (question 5a — symlink/mixed only, when Probe 4's frontmatter scan
-found docs missing `title:`):** Starlight's `docsSchema()` **requires** `title:` and
+**Title frontmatter (question 5a — Starlight only; symlink/mixed only, when Probe 4's
+frontmatter scan found docs missing `title:`):** This remediation exists because Starlight's
+`docsSchema()` hard-fails the build on a missing `title:`. Under `renderer=mintlify` it does
+**not** apply (Mintlify has no equivalent load-time schema fail; a missing `title` is a
+`mint validate` warning, not a build-breaker) — keep a lighter advisory check instead. Under
+`renderer=both`, apply it for the Starlight container. Starlight's `docsSchema()` **requires**
+`title:` and
 validates it at load (before remark), so a frontmatter-less symlinked page hard-fails the
 build with `InvalidContentEntryDataError: title: Required`. The remediation is to **add a
 `title:` frontmatter key to each source doc, derived from its first `# H1`** (fall back to
@@ -116,13 +163,24 @@ The selection record this phase produces:
 
 ```jsonc
 {
+  "renderer": "starlight" | "mintlify" | "both",   // from question 0 (default "starlight")
   "contentMode": "symlink" | "native" | "mixed",   // from question 4
   "diagrams": false,                                 // default declined
-  "deploy": [],                                      // default declined (opt-in subset)
+  "deploy": [],                                      // default declined (opt-in subset) — Starlight only
   "driftGuard": false,                               // default declined
-  "monorepo": false                                  // detection-seeded (Probe 1)
+  "monorepo": false,                                 // detection-seeded (Probe 1)
+
+  // Mintlify-only fields (present iff renderer ∈ {mintlify, both}):
+  "mintTheme": "mint",                               // from M1
+  "apiDocs": false,                                  // from M3 (auto-offered when a spec is detected)
+  "scopeTabs": false                                 // from M4
 }
 ```
+
+For `renderer=mintlify`, the Starlight-only optional fields (`deploy[]`, and the diagram
+component's vendored-renderer variant) are inert; Mintlify uses its own deploy/verify/diagram
+paths (`references/mintlify/*`). For `renderer=both`, both the Starlight and Mintlify fields
+apply.
 
 When the user declines every optional component and chooses `contentMode="native"`, the
 selection record triggers the **decline-all invariant** (`00 §5`): only the core scaffold is

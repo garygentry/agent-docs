@@ -1,0 +1,24 @@
+---
+title: {{SITE_TITLE}}
+description: {{SITE_DESC}}
+---
+
+Welcome to the **{{SITE_TITLE}}** documentation.
+
+{/*
+  Mintlify components (Columns, Card, …) are globally available — do NOT import them.
+  Internal links are root-relative WITHOUT a file extension and WITHOUT a trailing
+  slash — Mintlify's link form (e.g. `/guides/setup`, never `/guides/setup/` or
+  `/guides/setup.mdx`). The Get-started target is retargeted to the first planned
+  page when a DocPlan drives the navigation (references/mintlify/docplan-adapter.md).
+*/}
+
+<Columns cols={2}>
+  <Card title="Get started" icon="rocket" href="/guides/setup">
+    Head to the setup guide to begin.
+  </Card>
+  <Card title="Single source of truth" icon="book">
+    Every page is registered in `docs.json` navigation; edit it to change the
+    sidebar.
+  </Card>
+</Columns>

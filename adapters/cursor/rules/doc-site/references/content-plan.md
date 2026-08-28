@@ -9,6 +9,13 @@ This is the seam between the two skills: `content-architect` decides **what** do
 exist, **for whom**, and **how they group**; `doc-site` renders the container. See the
 DocPlan contract in `../../content-architect/references/docplan.schema.json`.
 
+> **This adapter is the Starlight target** (DocPlan → `docs.manifest.json`). The DocPlan
+> **discovery + validation** step (§1) is renderer-neutral and shared; under
+> `renderer=mintlify` the same discovered/validated DocPlan is instead translated to
+> `docs.json` `navigation` by `mintlify/docplan-adapter.md` (a more direct mapping — Mintlify
+> groups are explicit, so no slug-first-segment normalization is needed, and `scope`/audiences
+> can become tabs). `renderer=both` runs both adapters over the one DocPlan.
+
 ---
 
 ## 1. When this applies

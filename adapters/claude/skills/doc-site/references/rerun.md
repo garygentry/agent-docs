@@ -73,7 +73,38 @@ emitted** (omitted otherwise, `00 §3.2`), then `files`. The `files` map is orde
 by **lexicographically sorted repo-relative path**, each value the literal
 `sha256:<lowercase-hex>` digest over the emitted bytes (§1.1). Pretty-print with
 2-space indent and a trailing newline. Native content pages are never present in
-`files` (§1.2).
+`files` (§1.2). For a **Mintlify** scaffold, `astroPin`/`starlightPin` are omitted
+(no site dependencies to pin — §4), and `version` is the current generator's.
+
+### 1.4 Coexisting renderers (sequential separate-dir runs)
+
+Two renderers can share one repo by running the skill **twice — once per renderer, into
+two distinct `{{DOCS_PKG_DIR}}`s** (e.g. Starlight in `docs/`, Mintlify in
+`docs-mintlify/`). This is how `renderer=both` is realized (`references/mintlify/
+content-sourcing.md`): there is **no** dual-emit mode — `both` is two ordinary
+single-renderer passes over one shared content source. Because the two containers live in
+disjoint directories, their emitted file sets are disjoint; the **only** shared artifact
+is this repo-root `.doc-site-scaffold.json`.
+
+So the second renderer's run is a **re-run** (the provenance already exists) whose managed
+set is **entirely disjoint** from what is recorded. Handle it by **merge, never replace**:
+
+- **`files`** — union. Every recorded entry the current run does not own is "skipped" and
+  **kept** verbatim (§1.3); the current run's files are added/re-hashed. The second
+  renderer never emits, hashes, or clobbers the first renderer's files (they are absent in
+  its own dir → not in its emit set; it simply preserves their provenance entries).
+- **`astroPin`/`starlightPin`** — **preserve** whatever is present (§4.2). A Mintlify run
+  keeps a prior Starlight run's pins untouched (they are harmless to it) and adds none; a
+  Starlight run after a Mintlify run resolves/keeps its own pins as usual.
+- **`version`/`diagramContract`** — per §1.3 (current generator's `version`;
+  `diagramContract` preserved unless diagrams re-emit).
+
+The net effect: `.doc-site-scaffold.json` accumulates both renderers' managed files under
+their distinct paths, each renderer's re-run stays a no-op for the other's entries, and
+never-clobber holds across renderers. **Same-`{{DOCS_PKG_DIR}}` coexistence is refused at
+detection time** (`detect.md` Probe 8, `SAME_DIR_RENDERER_CONFLICT`) — two renderers in one
+directory _would_ collide on `package.json`/`.gitignore`/`setup-docs.sh`, so the skill
+requires distinct dirs rather than merging those.
 
 ---
 
@@ -191,6 +222,14 @@ control. This property is asserted by the double-apply scaffold-output golden fi
 ---
 
 ## 4. Version resolution & pin policy
+
+> **Starlight-only.** This entire section is a **no-op for `renderer=mintlify`**: a Mintlify
+> site has no build-time site dependencies to pin (the `mint` CLI is a global tool, not a repo
+> dependency), so no `npm view` resolution runs and `astroPin`/`starlightPin` are absent from a
+> Mintlify provenance manifest. The Mintlify managed set is `docs.json` (managed-but-merged),
+> `index.mdx`, the thin `package.json`, `favicon.svg`, and `setup-docs.sh` — all governed by the
+> never-clobber decision table (§2) exactly as here, minus the pins. See
+> `references/mintlify/overview.md`.
 
 `{{ASTRO_VERSION}}` and `{{STARLIGHT_VERSION}}` feed the emitted `docs/package.json`
 (`core.md`). Their values are governed entirely by this section.

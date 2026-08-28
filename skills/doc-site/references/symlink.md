@@ -10,6 +10,12 @@ The script is idempotent (`ln -sfn`, no-dereference) and repo-confined. The
 authoritative re-run / safety policy is covered in `rerun.md`; this file is the
 emit-time procedure.
 
+> **Renderer note.** The same symlink engine serves Mintlify — only the **target content
+> dir** changes: Starlight links into `src/content/docs/`, Mintlify into the project root
+> (`{{DOCS_PKG_DIR}}/`); `renderer=both` fans out into both from one shared source. Mintlify
+> needs no `.md`→route fallback and no `title:` remediation. See
+> `references/mintlify/content-sourcing.md`.
+
 ---
 
 ## 1. Gating: native vs symlink vs mixed

@@ -18,6 +18,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import { buildNavigationFromPages } from "../mintlify/navigation.js";
 import { REPO_ROOT } from "./golden.shared.js";
 
 export const TEMPLATES_DIR = path.join(REPO_ROOT, "skills/doc-site/references/templates");
@@ -56,11 +57,17 @@ export interface ScaffoldAnswers {
   readonly tokens: Record<string, string>;
   /** Component-selection record (00 §5) deciding which template groups emit. */
   readonly selection: {
+    /** Which container(s) to emit. Absent ⇒ "starlight" (historical default). */
+    readonly renderer?: "starlight" | "mintlify" | "both";
     readonly contentMode: "symlink" | "native" | "mixed";
     readonly diagrams: boolean;
     readonly deploy: ReadonlyArray<"github-pages" | "vercel" | "static-netlify">;
     readonly driftGuard: boolean;
     readonly monorepo: boolean;
+    /** Mintlify-only fields (present iff renderer ∈ {mintlify, both}). */
+    readonly mintTheme?: string;
+    readonly apiDocs?: boolean;
+    readonly scopeTabs?: boolean;
   };
   /** `docs.manifest.json` site block. */
   readonly site: SiteMeta;
@@ -73,8 +80,27 @@ export const GROUPS: Array<{
   dir: string;
   emit: (s: ScaffoldAnswers["selection"]) => boolean;
 }> = [
-  { dir: "core", emit: () => true }, // always (01 §2.2)
-  { dir: "symlink", emit: (s) => s.contentMode === "symlink" || s.contentMode === "mixed" },
+  // The container group is renderer-selected: `core` (Starlight) emits unless the
+  // renderer is Mintlify; `mintlify` emits for mintlify/both. `both` emits both.
+  { dir: "core", emit: (s) => (s.renderer ?? "starlight") !== "mintlify" },
+  {
+    dir: "mintlify",
+    emit: (s) => s.renderer === "mintlify" || s.renderer === "both",
+  },
+  // The content-sourcing symlink layer is shared but renderer-targeted: the Starlight
+  // variant links into src/content/docs, the Mintlify variant into the project root.
+  {
+    dir: "symlink",
+    emit: (s) =>
+      (s.renderer ?? "starlight") !== "mintlify" &&
+      (s.contentMode === "symlink" || s.contentMode === "mixed"),
+  },
+  {
+    dir: "mintlify-symlink",
+    emit: (s) =>
+      (s.renderer === "mintlify" || s.renderer === "both") &&
+      (s.contentMode === "symlink" || s.contentMode === "mixed"),
+  },
   { dir: "diagrams", emit: (s) => s.diagrams },
   { dir: "deploy/github-pages", emit: (s) => s.deploy.includes("github-pages") },
   { dir: "deploy/vercel", emit: (s) => s.deploy.includes("vercel") },
@@ -182,6 +208,12 @@ export function deriveTokens(answers: ScaffoldAnswers): Record<string, string> {
     INSTALL_CMD: installCmd(t.PKG_MANAGER ?? "npm"),
     RUN_PREFIX: runPrefix(t.PKG_MANAGER ?? "npm"),
     WORKSPACE_BUILD: workspaceBuild(t.PKG_MANAGER ?? "npm", t.DOCS_PKG_DIR ?? "docs"),
+    // {{MINT_NAVIGATION}} — the generated docs.json navigation block (Mintlify only).
+    // Derived from the effective pages so a fixture can never hand-author a value
+    // inconsistent with `pages` (the same guard as SYMLINK_PAGE_LINES). The FINAL
+    // docs.json is generated pretty by the emitter (src/mintlify/emit.ts); this compact
+    // form is what the RAW-template substitution guard sees.
+    MINT_NAVIGATION: JSON.stringify(buildNavigationFromPages(effectivePages(answers.pages))),
   };
 }
 
@@ -228,4 +260,6 @@ export const ANSWER_SETS = [
   "monorepo-mixed",
   "decline-all",
   "static-host",
+  "mintlify-native",
+  "mintlify-symlink",
 ] as const;

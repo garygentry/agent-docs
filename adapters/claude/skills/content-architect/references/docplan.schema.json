@@ -126,7 +126,7 @@
     },
     "grouping": {
       "type": "array",
-      "description": "The corpus's information architecture: ordered sections that map onto doc-site's sidebar model. Array order is sidebar order.",
+      "description": "The corpus's information architecture: ordered sections that map onto a renderer's navigation model (doc-site's sidebar, Mintlify's docs.json navigation, …). Array order is navigation order.",
       "items": {
         "type": "object",
         "additionalProperties": false,

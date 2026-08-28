@@ -1,7 +1,7 @@
 # Architecture
 
-How `doc-site` turns an agent-led interview into a working Astro + Starlight
-documentation site in a target repo, why it is built the way it is, and where its
+How `doc-site` turns an agent-led interview into a working documentation site — Astro +
+Starlight or Mintlify — in a target repo, why it is built the way it is, and where its
 safety and determinism guarantees come from. This documents the **implemented**
 skill (`skills/doc-site/`), cross-referenced to the design specs under
 `specs/doc-site-plugin/`.
@@ -23,12 +23,15 @@ Four constraints shape every decision below:
 4. **Real verification.** "Done" means the emitted site actually installs and builds
    green in the target repo (`REQ-VERIFY-01`) — not that the right files were written.
 
-A consequence worth stating up front: **there is no in-repo runtime module.** Unlike
-`diagram-generator` (which has `src/diagram/*.ts`), this feature's "code" is the
+A consequence worth stating up front: the **Starlight** scaffold has no in-repo runtime
+module. Unlike `diagram-generator` (which has `src/diagram/*.ts`), its "code" is the
 SKILL.md procedure, the reference docs, the `.tmpl` assets, and the shell/CLI commands
-the agent runs **at scaffold time in the target repo**. What lives in `src/` is only
-the _tests_ (`src/test/doc-site-*.test.ts`) and one line of `SAMPLE_RELPATHS` for the
-golden-emission suite.
+the agent runs **at scaffold time in the target repo**; what lives in `src/` for it is
+only the _tests_. The **Mintlify** path is the one exception: it adds small, pure-logic
+modules under `src/mintlify/` (navigation/emit/validate) because generating `docs.json`
+navigation is real logic worth unit-testing and sharing with the golden harness — see
+[Renderers](#renderers--starlight-or-mintlify-the-fork). Neither renderer adds a gate
+stage.
 
 ## The pipeline at a glance
 
@@ -58,9 +61,43 @@ target repo
  Phase 7  next steps ........ run/preview/deploy guidance + every assumption + RERUN_SKIPs
 ```
 
+Phase 1 runs an 8th probe (renderer signals) and Phase 2 asks question 0 (renderer)
+first; the selection record carries `renderer` plus the Mintlify fields. Phases 4/6/7
+fork by renderer as described next.
+
+## Renderers — Starlight or Mintlify (the fork)
+
+The site targets one of two **renderers**, chosen first (interview question 0):
+**Astro 5/6 + Starlight** (default) or **Mintlify** (`docs.json` + MDX), or **both** from
+one shared content source. The renderer forks only the **back half** of the pipeline; the
+front half is shared and unchanged.
+
+| Stage              | Shared (renderer-neutral)                                | Starlight                                                       | Mintlify                                                                 |
+| ------------------ | -------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| detect / interview | probes 1–7, identity + content params, DocPlan discovery | probe: starlight; title-fm remediation                          | probe: docs.json/OpenAPI/mint; theme/color/api-docs                      |
+| container config   | —                                                        | `templates/core/**` + `docs.manifest.json` → build-time sidebar | `templates/mintlify/**` → `docs.json navigation` (emit-time)             |
+| IA adapter         | the engine-neutral DocPlan                               | `content-plan.md` (implicit slug grouping)                      | `mintlify/docplan-adapter.md` (explicit groups; scope→tabs; OpenAPI tab) |
+| content sourcing   | the `setup-docs.sh` symlink engine (safety + `rel_path`) | links into `src/content/docs`                                   | links into the project root (`mintlify-symlink/`)                        |
+| verify             | provenance / never-clobber                               | `astro build` + base-path crawl                                 | `mint validate` + `mint broken-links`                                    |
+| deploy             | —                                                        | GH Pages / Vercel / Netlify (static)                            | Mintlify cloud git-connect + `mint export`                               |
+| diagrams           | `diagram-generator` specs                                | vendored renderer + Astro prebuild                              | native Mermaid (default)                                                 |
+
+**Content is single-sourced.** Page bodies live once — the repo markdown (symlink mode) or
+a shared native tree — and each container references them; only container chrome (config,
+nav, theme, landing) forks. In `both` mode the two containers point at one shared `content/`
+directory (`references/mintlify/content-sourcing.md`).
+
+**Where the code lives.** The Starlight scaffold adds no `src/` emitter (its mechanics are
+modeled only in the golden-test harness). The Mintlify path adds small pure-logic modules
+under `src/mintlify/`: `navigation.ts` (DocPlan/interview → `docs.json navigation`, groups
+and tabs), `emit.ts` (the canonical `docs.json` assembler), and `validate.ts` (a structural
+pre-wiring check). These are unit-tested and reused by the golden harness's
+`mintlifyScaffold` branch. The agent-facing procedure is entirely in
+`skills/doc-site/references/mintlify/*`.
+
 ## Phase 1 — detection (best-effort, never a gate)
 
-Seven probes run read-only and network-free against the target repo (`detect.md`):
+Eight probes run read-only and network-free against the target repo (`detect.md`):
 
 | #   | Probe                  | Seeds                                  | Fallback (assumption code)                  |
 | --- | ---------------------- | -------------------------------------- | ------------------------------------------- |
@@ -71,6 +108,7 @@ Seven probes run read-only and network-free against the target repo (`detect.md`
 | 5   | existing CI            | GH-Pages workflow strategy             | fresh workflow (`ASSUME-NO-CI`)             |
 | 6   | default branch         | `{{DEFAULT_BRANCH}}`                   | `main`, after asking (`ASSUME-BRANCH-MAIN`) |
 | 7   | repo slug / remote     | `{{REPO_SLUG}}`, `{{GITHUB_URL}}`      | ask (`ASSUME-SLUG-ASKED`)                   |
+| 8   | renderer signals       | `renderer`, `apiDocs`                  | `starlight` (`ASSUME-RENDERER-STARLIGHT`)   |
 
 The **load-bearing principle**: detection ambiguity is _never_ a hard-fail. Every
 unresolved signal degrades to a documented default plus one assumption record, and
@@ -88,16 +126,22 @@ token set (`REQ-INT-02`).
 
 Phases 2-3 produce two artifacts that drive everything downstream:
 
-1. **A full token map** — values for all 17 canonical tokens (`api-reference.md`).
+1. **A full token map** — values for every substitution token in the renderer-partitioned
+   sets (`api-reference.md`).
 2. **The component-selection record** — the single structure that gates emission:
 
    ```jsonc
-   { "contentMode": "symlink" | "native" | "mixed",
-     "diagrams": false, "deploy": [], "driftGuard": false, "monorepo": false }
+   { "renderer": "starlight" | "mintlify" | "both",
+     "contentMode": "symlink" | "native" | "mixed",
+     "diagrams": false, "deploy": [], "driftGuard": false, "monorepo": false,
+     "mintTheme": "mint", "apiDocs": false, "scopeTabs": false }
    ```
 
-   Optional components default to declined. When the user declines everything and
-   picks `native`, the record triggers the **decline-all invariant** — core only.
+   Optional components default to declined; `renderer` defaults to `starlight`. The
+   `renderer` field selects the container group (`core` vs `mintlify`) and the
+   content-sourcing variant (`symlink` vs `mintlify-symlink`). When the user declines
+   everything and picks `native` under `starlight`, the record triggers the
+   **decline-all invariant** — core only.
 
 ## Phase 4 — the emission model
 
@@ -281,7 +325,8 @@ The feature is purely additive (`09-integration-and-emission.md`):
 
 A deliberate split (`10-testing-strategy.md`):
 
-- **In `agent-docs` CI** — token-coverage (all 17 tokens used, none undefined),
+- **In `agent-docs` CI** — token-coverage (every token used, none undefined, partitioned
+  by renderer),
   schema-fixture validation (the manifest schema accepts/rejects fixtures via ajv),
   golden emission to all 5 targets, and scaffold-output golden fixtures (including the
   decline-all and double-apply invariants). These never run the emitted Astro build.
@@ -292,4 +337,4 @@ A deliberate split (`10-testing-strategy.md`):
 ## Further reading
 
 - [README](./README.md) — overview, quick start, when (not) to use it
-- [API Reference](./api-reference.md) — the 17 tokens, the manifest/PageEntry contract and schema rules, runtime-script exit codes, the provenance shape, and the deploy env contract
+- [API Reference](./api-reference.md) — the substitution tokens (Starlight + Mintlify sets), the manifest/PageEntry contract and schema rules, runtime-script exit codes, the provenance shape, and the deploy env contract

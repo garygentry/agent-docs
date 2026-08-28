@@ -1,0 +1,35 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Acme",
+  "description": "Documentation for Acme",
+  "colors": {
+    "primary": "#3B82F6",
+    "light": "#93C5FD",
+    "dark": "#1D4ED8"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/setup"
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/acme/acme"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/acme/acme"
+    }
+  }
+}
