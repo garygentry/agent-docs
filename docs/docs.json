@@ -13,40 +13,38 @@
     "groups": [
       {
         "group": "Overview",
-        "pages": [
-          "index"
-        ]
+        "pages": ["index"]
       },
       {
         "group": "doc-site",
         "pages": [
-          "doc-site/overview",
-          "doc-site/architecture",
-          "doc-site/api-reference"
+          "architecture/doc-site/overview",
+          "architecture/doc-site/architecture",
+          "architecture/doc-site/api-reference"
         ]
       },
       {
         "group": "content-architect",
         "pages": [
-          "content-architect/overview",
-          "content-architect/architecture"
+          "architecture/content-architect/overview",
+          "architecture/content-architect/architecture"
         ]
       },
       {
         "group": "diagram-generator",
         "pages": [
-          "diagram-generator/overview",
-          "diagram-generator/architecture",
-          "diagram-generator/api-reference"
+          "architecture/diagram-generator/overview",
+          "architecture/diagram-generator/architecture",
+          "architecture/diagram-generator/api-reference"
         ]
       },
       {
         "group": "agent-agnostic-scaffold",
         "pages": [
-          "agent-agnostic-scaffold/overview",
-          "agent-agnostic-scaffold/architecture",
-          "agent-agnostic-scaffold/api-reference",
-          "agent-agnostic-scaffold/integration"
+          "architecture/agent-agnostic-scaffold/overview",
+          "architecture/agent-agnostic-scaffold/architecture",
+          "architecture/agent-agnostic-scaffold/api-reference",
+          "architecture/agent-agnostic-scaffold/guides/integration"
         ]
       }
     ]

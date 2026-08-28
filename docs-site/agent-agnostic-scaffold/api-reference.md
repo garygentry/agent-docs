@@ -1,1 +1,0 @@
-../../docs/architecture/agent-agnostic-scaffold/api-reference.md

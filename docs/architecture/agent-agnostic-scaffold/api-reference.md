@@ -6,7 +6,7 @@ can be reused from another repo (`REQ-REUSE-01`). This reference documents that
 public surface, the core types, the manifest config block, and the error hierarchy.
 
 > Signatures below are taken from the implementation (`src/`). The CLI commands
-> (`build`, `build --check`) are documented in the [root README](../../../README.md);
+> (`build`, `build --check`) are documented in the [root README](https://github.com/garygentry/agent-docs/blob/main/README.md);
 > the functions here are what those commands compose.
 
 ## Public barrel (`src/index.ts`)

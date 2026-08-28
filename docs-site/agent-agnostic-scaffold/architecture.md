@@ -1,1 +1,0 @@
-../../docs/architecture/agent-agnostic-scaffold/architecture.md

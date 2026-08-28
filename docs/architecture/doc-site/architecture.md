@@ -274,7 +274,7 @@ section title, so the emitted sidebar reproduces the plan's groups and order exa
 links retarget to the first planned page and the default `guides/setup` seed is suppressed,
 so `pages[]` is a faithful image of the plan. The full mapping — slug normalization,
 collision handling, and the never-clobber rules — is in
-[`skills/doc-site/references/content-plan.md`](../../../skills/doc-site/references/content-plan.md).
+[`skills/doc-site/references/content-plan.md`](https://github.com/garygentry/agent-docs/blob/main/skills/doc-site/references/content-plan.md).
 This is an inbound integration (doc-site consumes the plan); it mirrors the outbound
 diagram delegation above in reusing a sibling skill by fixed relative path rather than
 duplicating it.
@@ -336,5 +336,5 @@ A deliberate split (`10-testing-strategy.md`):
 
 ## Further reading
 
-- [README](./README.md) — overview, quick start, when (not) to use it
+- [README](./overview.md) — overview, quick start, when (not) to use it
 - [API Reference](./api-reference.md) — the substitution tokens (Starlight + Mintlify sets), the manifest/PageEntry contract and schema rules, runtime-script exit codes, the provenance shape, and the deploy env contract

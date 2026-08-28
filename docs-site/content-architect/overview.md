@@ -1,1 +1,0 @@
-../../docs/architecture/content-architect/README.md
