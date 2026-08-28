@@ -1,18 +1,30 @@
 # doc-site
 
-Scaffold a canon-faithful **Astro 5 + Starlight** documentation site into **any**
-target repo, driven by a short agent-led interview. The agent never authors plumbing
-content — it runs a set of detection probes, asks the user a handful of questions,
-then **mechanically emits** component-gated template assets by substituting tokens
-into byte-identical `.tmpl` files. Because emission is pure string replacement over
-fixed assets, the file set is a deterministic function of the interview answers
-(`REQ-PORT-02`).
+Scaffold a canon-faithful documentation site into **any** target repo, driven by a
+short agent-led interview. The site can target one of two **renderers** — **Astro 5/6 +
+Starlight** (default) or **Mintlify** (`docs.json` + MDX), or **both** from one shared
+content source. The agent never authors plumbing content — it runs a set of detection
+probes, asks the user a handful of questions, then **mechanically emits** component-gated
+template assets by substituting tokens into byte-identical `.tmpl` files. Because emission
+is pure string replacement over fixed assets, the file set is a deterministic function of
+the interview answers (`REQ-PORT-02`).
+
+**Renderer fork.** The renderer is chosen first (interview question 0) and forks only the
+back half of the pipeline. The front half — detect, DocPlan consumption, the identity
+interview, safety/confinement, provenance/re-run, and the content-sourcing symlink engine
+— is renderer-neutral and shared. Config/nav/theme, verify, deploy, and diagrams fork:
+Starlight uses `templates/core/**` + the top-level `references/*`; Mintlify uses
+`templates/mintlify/**` + `references/mintlify/*`. Page **content** is single-sourced —
+bodies live once and are referenced by each container; only container chrome forks.
 
 This feature ships as a **skill** (`skills/doc-site/`), registered in
 `tools.manifest.json` and emitted verbatim to all five agent targets (claude, codex,
 gemini, cursor, copilot) by the existing `agent-agnostic-scaffold` build — exactly
-like its siblings `docs-helper` and `diagram-generator`. It adds **no** `src/`
-emitter code: the whole feature is the skill directory plus one manifest entry.
+like its siblings `docs-helper` and `diagram-generator`. The Starlight path adds **no**
+`src/` emitter code (its scaffold mechanics are modeled only in the golden-test harness);
+the Mintlify path adds small pure-logic modules under `src/mintlify/` (the DocPlan→
+`docs.json` navigation builder, the `docs.json` assembler, and a structural validator),
+unit-tested and reused by the golden harness.
 
 > This document is the **overview** for developers maintaining or extending the
 > feature. For the design and data flow, see [`architecture.md`](./architecture.md);
@@ -21,9 +33,10 @@ emitter code: the whole feature is the skill directory plus one manifest entry.
 
 ## What it does
 
-- **Detect, then interview.** Seven read-only, network-free probes (monorepo, package
-  manager, runtime, existing docs, CI, default branch, repo slug) seed sensible
-  defaults; a conversational interview captures 8 parameters. Detection is
+- **Detect, then interview.** Eight read-only, network-free probes (monorepo, package
+  manager, runtime, existing docs, CI, default branch, repo slug, renderer signals) seed
+  sensible defaults; a conversational interview captures the renderer choice plus the
+  identity/content parameters. Detection is
   **best-effort, never a gate** — a brand-new repo with no git, no lockfile, and no
   `docs/` still completes the interview from fallback defaults (`REQ-INT-02`).
 - **Emit only what was selected.** A single **component-selection record** decides
