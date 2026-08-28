@@ -28,6 +28,37 @@ function intoDir(answers: ScaffoldAnswers, dir: string): ScaffoldAnswers {
   return { ...answers, tokens: { ...answers.tokens, DOCS_PKG_DIR: dir } };
 }
 
+interface Provenance {
+  version: string;
+  astroPin?: string;
+  starlightPin?: string;
+  diagramContract?: string;
+  files: Record<string, string>;
+}
+
+const provenanceOf = (tree: Map<string, string>): Provenance =>
+  JSON.parse(tree.get(PROVENANCE)!) as Provenance;
+
+/**
+ * The rerun.md §1.4 cross-renderer merge the second run performs on the shared
+ * repo-root provenance: union `files`, PRESERVE the other renderer's pins, take the
+ * current run's `version`. Modeled here (agent behavior, no runtime module) to pin the
+ * documented semantics.
+ */
+function mergeProvenance(existing: Provenance, current: Provenance): Provenance {
+  const merged: Provenance = {
+    version: current.version,
+    files: { ...existing.files, ...current.files },
+  };
+  const astroPin = existing.astroPin ?? current.astroPin;
+  const starlightPin = existing.starlightPin ?? current.starlightPin;
+  const diagramContract = current.diagramContract ?? existing.diagramContract;
+  if (astroPin !== undefined) merged.astroPin = astroPin;
+  if (starlightPin !== undefined) merged.starlightPin = starlightPin;
+  if (diagramContract !== undefined) merged.diagramContract = diagramContract;
+  return merged;
+}
+
 describe("renderer coexistence (rerun.md §1.4)", () => {
   const starlight = finalScaffold(loadAnswers("decline-all.json")); // → docs/
   const mintlifyNative = loadAnswers("mintlify-native.json"); // → docs/
@@ -53,5 +84,23 @@ describe("renderer coexistence (rerun.md §1.4)", () => {
       if (p === PROVENANCE) continue;
       expect(p.startsWith("docs-mintlify/")).toBe(true);
     }
+  });
+
+  it("the second run merges the shared provenance (union files, preserve pins)", () => {
+    const first = provenanceOf(starlight); // Starlight into docs/ (carries astro/starlight pins)
+    const second = provenanceOf(finalScaffold(intoDir(mintlifyNative, "docs-mintlify")));
+    const merged = mergeProvenance(first, second);
+
+    // Both renderers' managed files survive under their distinct paths.
+    expect(Object.keys(merged.files).some((p) => p.startsWith("docs/"))).toBe(true);
+    expect(Object.keys(merged.files).some((p) => p.startsWith("docs-mintlify/"))).toBe(true);
+    // No first-run entry is dropped or altered by the merge.
+    for (const [p, hash] of Object.entries(first.files)) {
+      expect(merged.files[p]).toBe(hash);
+    }
+    // The Mintlify run preserves the Starlight pins (it adds none of its own).
+    expect(merged.astroPin).toBe(first.astroPin);
+    expect(merged.starlightPin).toBe(first.starlightPin);
+    expect(second.astroPin).toBeUndefined();
   });
 });
