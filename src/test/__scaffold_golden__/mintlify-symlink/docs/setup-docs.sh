@@ -83,6 +83,18 @@ link_file() {
   fi
   _dest="$CONTENT_DIR/$2.md"
   mkdir -p "$(dirname "$_dest")"
+  # Guard against source == destination. For Mintlify the content dir IS the project
+  # root, so a `from` that already lives at this slug (e.g. from=docs/setup.md with the
+  # docs pkg dir itself) would make `ln -sf` overwrite the source with a self-referential
+  # symlink and DESTROY the content. Canonicalize both and skip when they coincide — the
+  # page body is already in place, no link needed. (Starlight can't hit this: its content
+  # dir is src/content/docs/, never the source.)
+  _src_canon="$(cd "$(dirname "$REPO_ROOT/$1")" && pwd -P)/$(basename "$1")"
+  _dest_canon="$(cd "$(dirname "$_dest")" && pwd -P)/$(basename "$_dest")"
+  if [ "$_src_canon" = "$_dest_canon" ]; then
+    echo "  skip $2.md — source already at destination (no link needed)"
+    return 0
+  fi
   # Relative path FROM the destination's directory TO the source file.
   _rel=$(rel_path "$(dirname "$_dest")" "$REPO_ROOT/$1")
   ln -sf "$_rel" "$_dest"
@@ -101,6 +113,13 @@ link_dir() {
     exit 1
   fi
   _dest="$CONTENT_DIR/$2"
+  # Same source == destination guard as link_file: when the images source already IS the
+  # content-root images dir, `ln -sfn` would create a dangling images/images loop inside it.
+  _src_canon=$(cd "$REPO_ROOT/$1" && pwd -P)
+  if [ -d "$_dest" ] && [ "$(cd "$_dest" 2>/dev/null && pwd -P)" = "$_src_canon" ]; then
+    echo "  skip $2/ — source already at destination (no link needed)"
+    return 0
+  fi
   _rel=$(rel_path "$(dirname "$_dest")" "$REPO_ROOT/$1")
   ln -sfn "$_rel" "$_dest"
   echo "  linked $2/ -> $_rel (no-dereference)"
@@ -108,10 +127,10 @@ link_dir() {
 
 # >>> manifest-managed symlinks (generated from the nav/plan at emit time)
 # One link_file call per `source: "symlink"` page; native/unmanaged pages omitted.
-link_file "docs/getting-started.md" "getting-started"
-link_file "docs/guides/usage.md" "guides/usage"
+link_file "docs-src/getting-started.md" "getting-started"
+link_file "docs-src/guides/usage.md" "guides/usage"
 # Directory symlink for images so `/images/<x>.png` resolves in Mintlify:
-link_dir "docs/images" "images"
+link_dir "docs-src/images" "images"
 # <<< manifest-managed symlinks
 
 echo "Done."

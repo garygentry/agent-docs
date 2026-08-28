@@ -67,6 +67,7 @@ export function slugifyPath(raw: string): string {
     .toLowerCase()
     .split("/")
     .map((seg) => seg.replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, ""))
+    .filter((seg) => seg.length > 0) // drop segments that reduced to empty (no `//` or empty path)
     .join("/");
 }
 
@@ -82,17 +83,25 @@ function tabLabelFor(family: string | undefined): string {
   return family === "architecture" ? "Architecture" : "Documentation";
 }
 
-/** Resolve one grouping section to a NavSection, mapping its document ids to page paths. */
-function toNavSection(section: DocPlanSection, byId: Map<string, DocPlanEntry>): NavSection {
+/**
+ * Resolve one grouping section to a NavSection, mapping its document ids to page paths.
+ * `seen` is the NAV-WIDE set of already-claimed page paths (§2 step 2: collisions are
+ * de-duped "within the nav", not per-section) — a colliding path gets a `-2`/`-3` suffix
+ * so it never reaches the validator as a hard `duplicate-nav-page`.
+ */
+function toNavSection(
+  section: DocPlanSection,
+  byId: Map<string, DocPlanEntry>,
+  seen: Set<string>,
+): NavSection {
   const pages: string[] = [];
-  const seen = new Set<string>();
   for (const id of section.documents) {
     const entry = byId.get(id);
     if (!entry) continue; // an id with no backing document is dropped (validation owns the error)
-    let path = pagePath(entry);
-    // Path-collision de-dup within the nav (§2 step 2): append -2, -3, …
+    const base = pagePath(entry);
+    let path = base;
     let n = 2;
-    while (seen.has(path)) path = `${pagePath(entry)}-${n++}`;
+    while (seen.has(path)) path = `${base}-${n++}`;
     seen.add(path);
     pages.push(path);
   }
@@ -108,7 +117,10 @@ function toNavSection(section: DocPlanSection, byId: Map<string, DocPlanEntry>):
  */
 export function buildNavigationFromDocPlan(plan: DocPlan): Navigation {
   const byId = new Map(plan.documents.map((d) => [d.id, d]));
-  const sections = plan.grouping.map((s) => toNavSection(s, byId));
+  // One nav-wide `seen` threaded across every section so collisions de-dup across
+  // sections/tabs, not just within one section (finding: cross-section duplicate → hard fail).
+  const seen = new Set<string>();
+  const sections = plan.grouping.map((s) => toNavSection(s, byId, seen));
 
   const apiSource = plan.apiDocs ? plan.sources?.find((s) => s.type === "api") : undefined;
   const families = new Set(plan.grouping.map((s) => tabLabelFor(s.family)));

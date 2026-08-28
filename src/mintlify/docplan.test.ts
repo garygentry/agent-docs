@@ -118,6 +118,31 @@ describe("DocPlan page-path resolution (slug ?? path ?? id)", () => {
     expect(slugifyPath("/Guides/My Page.mdx")).toBe("guides/my-page");
   });
 
+  it("drops segments that reduce to empty rather than emitting a `//` or empty path", () => {
+    expect(slugifyPath("api/@@@/client")).toBe("api/client"); // middle segment collapses → dropped
+    expect(slugifyPath("§§§")).toBe(""); // wholly non-slug input → empty (validation catches it)
+  });
+
+  it("de-dups page-path collisions ACROSS sections (nav-wide, not per-section)", () => {
+    const nav = buildNavigationFromDocPlan({
+      scope: "end-user",
+      grouping: [
+        { title: "A", documents: ["a"], family: "diataxis" },
+        { title: "B", documents: ["b"], family: "diataxis" },
+      ],
+      documents: [
+        { id: "a", slug: "reference/client", title: "A" },
+        { id: "b", slug: "reference/client", title: "B" }, // same path, different section
+      ],
+    });
+    // The second occurrence is suffixed, so the validator never sees a duplicate-nav-page.
+    expect(nav.groups).toEqual([
+      { group: "A", pages: ["reference/client"] },
+      { group: "B", pages: ["reference/client-2"] },
+    ]);
+    expect(collectNavPagePaths(nav)).toEqual(["reference/client", "reference/client-2"]);
+  });
+
   it("falls back path→id, drops unknown ids, and de-dups colliding paths within a group", () => {
     const nav = buildNavigationFromDocPlan({
       scope: "end-user",

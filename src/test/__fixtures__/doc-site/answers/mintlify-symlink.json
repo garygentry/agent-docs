@@ -10,7 +10,7 @@
     "RUNTIME": "node",
     "DOCS_PKG_DIR": "docs",
     "DOCS_PKG_DIR_TO_ROOT": "..",
-    "IMAGES_SRC_DIR": "docs/images",
+    "IMAGES_SRC_DIR": "docs-src/images",
     "MINT_THEME": "mint",
     "MINT_PRIMARY": "#3B82F6",
     "MINT_COLOR_LIGHT": "#93C5FD",
@@ -32,7 +32,7 @@
     "description": "Documentation for Acme"
   },
   "pages": [
-    { "slug": "getting-started", "source": "symlink", "from": "docs/getting-started.md" },
-    { "slug": "guides/usage", "source": "symlink", "from": "docs/guides/usage.md" }
+    { "slug": "getting-started", "source": "symlink", "from": "docs-src/getting-started.md" },
+    { "slug": "guides/usage", "source": "symlink", "from": "docs-src/guides/usage.md" }
   ]
 }
