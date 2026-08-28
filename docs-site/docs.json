@@ -1,0 +1,67 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "agent-docs",
+  "description": "Agent-driven documentation tooling: plan, scaffold, and render project docs.",
+  "colors": {
+    "primary": "#2563EB",
+    "light": "#60A5FA",
+    "dark": "#1D4ED8"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Overview",
+        "pages": [
+          "index"
+        ]
+      },
+      {
+        "group": "doc-site",
+        "pages": [
+          "doc-site/overview",
+          "doc-site/architecture",
+          "doc-site/api-reference"
+        ]
+      },
+      {
+        "group": "content-architect",
+        "pages": [
+          "content-architect/overview",
+          "content-architect/architecture"
+        ]
+      },
+      {
+        "group": "diagram-generator",
+        "pages": [
+          "diagram-generator/overview",
+          "diagram-generator/architecture",
+          "diagram-generator/api-reference"
+        ]
+      },
+      {
+        "group": "agent-agnostic-scaffold",
+        "pages": [
+          "agent-agnostic-scaffold/overview",
+          "agent-agnostic-scaffold/architecture",
+          "agent-agnostic-scaffold/api-reference",
+          "agent-agnostic-scaffold/integration"
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/garygentry/agent-docs"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/garygentry/agent-docs"
+    }
+  }
+}

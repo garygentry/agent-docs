@@ -1,0 +1,1 @@
+../../docs/architecture/agent-agnostic-scaffold/guides/integration.md

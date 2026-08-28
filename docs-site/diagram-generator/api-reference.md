@@ -1,0 +1,1 @@
+../../docs/architecture/diagram-generator/api-reference.md

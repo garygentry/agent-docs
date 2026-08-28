@@ -1,0 +1,1 @@
+../../docs/architecture/content-architect/architecture.md

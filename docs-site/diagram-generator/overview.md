@@ -1,0 +1,1 @@
+../../docs/architecture/diagram-generator/README.md
