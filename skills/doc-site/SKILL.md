@@ -119,8 +119,11 @@ container group first:
   Mintlify content root) when `contentMode ∈ {symlink, mixed}`; the Mintlify diagram/verify/deploy
   paths per `references/mintlify/*`. The Starlight-only groups (`core/`, `deploy/*`) are **not**
   emitted.
-- `renderer=both` → emit **both** container groups over one shared content source
-  (`references/mintlify/content-sourcing.md`).
+- `renderer=both` → **no dual-emit**: run the Starlight pass and the Mintlify pass
+  **into two distinct `{{DOCS_PKG_DIR}}`s** over one shared content source, so the two
+  containers never clobber each other (`references/mintlify/content-sourcing.md`,
+  `rerun.md §1.4`). The same-dir guard (`detect.md` Probe 8,
+  `SAME_DIR_RENDERER_CONFLICT`) enforces distinct dirs.
 
 ### Phase 4 — emit (Starlight: `references/core.md`, `symlink.md`, `diagrams.md`, `deploy-*.md`, `monorepo.md`, `drift-guard.md`; Mintlify: `references/mintlify/*`)
 
@@ -136,8 +139,10 @@ PRESERVE).
 Starlight sidebar from `docs.manifest.json` (`references/core.md`). For `renderer=mintlify`,
 emit `templates/mintlify/**` and inject the adapter-built `navigation` into `docs.json`
 (`references/mintlify/docplan-adapter.md`, `docs-json.md`) — `docs.json` is managed-but-merged
-like `docs.manifest.json`. For `renderer=both`, do both over the shared `content/` source. The
-provenance/never-clobber machinery is identical across renderers.
+like `docs.manifest.json`. For `renderer=both`, run the two single-renderer passes into
+distinct dirs (above). The provenance/never-clobber machinery is identical across renderers,
+and a second renderer's run **merges** into the shared repo-root `.doc-site-scaffold.json`
+rather than replacing it (`references/rerun.md §1.4`).
 
 ### Phase 5 — run setup-docs (`references/symlink.md`) — symlink/mixed only
 

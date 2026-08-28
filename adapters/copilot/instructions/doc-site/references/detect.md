@@ -150,6 +150,17 @@ Resolution:
 - **`mint` absent** is **not** a detection failure — it only affects the Mintlify verify phase
   (surfaced there as `MINT_CLI_MISSING`, `references/mintlify/verify.md`), never a hard-fail.
 
+**Same-directory renderer guard (`SAME_DIR_RENDERER_CONFLICT`).** After the interview picks a
+renderer and a `{{DOCS_PKG_DIR}}`, check whether that **exact directory** already holds the
+**other** renderer's site: a Starlight run whose `{{DOCS_PKG_DIR}}` contains a `docs.json`, or a
+Mintlify run whose `{{DOCS_PKG_DIR}}` contains an `astro.config.*` / `@astrojs/starlight`
+dependency. Two renderers in one directory collide on `package.json`, `.gitignore`, and
+`setup-docs.sh`, and each toolchain would scan the other's content tree. So **refuse** and ask
+the user to choose a **distinct** `{{DOCS_PKG_DIR}}` (e.g. `docs/` + `docs-mintlify/`) — the
+supported coexistence path (`references/mintlify/content-sourcing.md`, `rerun.md §1.4`). This is
+a soft refusal of the directory choice, not a `HARD_FAIL_IMPOSSIBLE`: re-interview the docs-dir
+and continue. Distinct dirs never conflict (only the shared repo-root provenance merges).
+
 This probe never blocks the interview and never writes.
 
 ## Detection output

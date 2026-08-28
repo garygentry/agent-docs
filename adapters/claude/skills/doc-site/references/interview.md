@@ -22,8 +22,11 @@ Before the identity questions, ask which documentation **renderer** to scaffold:
   unchanged.
 - **`mintlify`** — a Mintlify site (`docs.json` + MDX). Forks emit/verify/deploy per
   `references/mintlify/*`.
-- **`both`** — one shared content source rendered by _both_ containers (the power path;
-  `references/mintlify/content-sourcing.md`).
+- **`both`** — scaffold **both** containers over one shared content source. There is no
+  dual-emit mode: `both` runs the two single-renderer passes **into two distinct
+  `{{DOCS_PKG_DIR}}`s** (e.g. `docs/` + `docs-mintlify/`) so they never clobber each other,
+  each symlinking the same source markdown (`references/mintlify/content-sourcing.md`).
+  Adding the second renderer later is just re-running the skill into a new dir.
 
 Seed the default from **Probe 8** (`detect.md`): an existing `docs.json`/`mint.json` ⇒
 `mintlify`; an existing Starlight install ⇒ `starlight`; both ⇒ `both`; neither ⇒ `starlight`

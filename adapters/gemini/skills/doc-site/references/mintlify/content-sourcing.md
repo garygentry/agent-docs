@@ -22,30 +22,41 @@ links. Mintlify needs **no** `.md`→route fallback and **no** `title:` load-fai
 (that is a Starlight `docsSchema()` artifact) — a missing `title` is a `mint validate` warning,
 surfaced but not build-breaking.
 
-## `both` — one source, two containers (the anti-duplication layout)
+## `both` — two containers, one source, via sequential runs (no dual-emit)
 
-Content lives **once**; each container references it. Recommended layout:
+`renderer=both` is **not** a special single-run mode that emits two containers at once. It is
+**two ordinary single-renderer runs into two distinct `{{DOCS_PKG_DIR}}`s**, over one shared
+source. Running the skill twice is what makes the two sites coexist without clobbering — the
+containers live in disjoint directories, so their emitted file sets are disjoint and each
+toolchain scans only its own dir. (Two renderers in the **same** dir would collide on
+`package.json`/`.gitignore`/`setup-docs.sh`; the Phase-1 guard `SAME_DIR_RENDERER_CONFLICT`
+refuses that — `../detect.md` Probe 8.)
+
+Recommended layout — the shared source is the repo's markdown, symlinked into each container:
 
 ```
-docs/
-  content/                 # SINGLE SOURCE OF TRUTH — portable .md (title+description only)
-    guides/setup.md
-  starlight/               # Starlight container (astro.config, docs.manifest.json, sidebar.mjs)
-    src/content/docs/  ->  symlinks into ../../content
-  mintlify/                # Mintlify container (docs.json, index.mdx landing)
-    guides/setup.md    ->  symlinks into ../content
+docs-src/                  # SINGLE SOURCE OF TRUTH — portable .md (title+description only)
+  guides/setup.md
+docs/                      # Starlight run 1: astro.config, docs.manifest.json, sidebar.mjs
+  src/content/docs/  ->  symlinks into ../../docs-src   (its own setup-docs.sh)
+docs-mintlify/             # Mintlify run 2: docs.json, index.mdx landing
+  guides/setup.md    ->  symlinks into ../docs-src        (its own setup-docs.sh)
 ```
 
-- The **DocPlan is authored once** and drives **both** adapters — `docs.manifest.json`
-  (`../content-plan.md`) _and_ `docs.json` (`docplan-adapter.md`). Config is generated per
-  renderer; it is not duplicated content.
-- Page bodies live once under `docs/content/`; a single `setup-docs.sh` run fans them out into
-  both containers (one `link_file` block per active renderer target).
+- **Author once, render twice.** The DocPlan is authored once and drives **both** adapters —
+  `docs.manifest.json` (`../content-plan.md`) _and_ `docs.json` (`docplan-adapter.md`). Config
+  is generated per renderer; content is not duplicated. Both runs use `symlink` mode pointing
+  at the same `docs-src/`, so page bodies live once and each container symlinks them in.
+- **Provenance merges, never replaces.** Both runs share the repo-root
+  `.doc-site-scaffold.json`; the second run keeps the first's entries/pins and unions in its own
+  (`rerun.md §1.4`). Each run stays a no-op for the other's files.
+- **Order-independent and incremental.** Run Starlight now and add Mintlify months later (or the
+  reverse) — the later run is just a scaffold into a new dir. Neither disturbs the other.
 - **Portability constraint (enforced by the Phase 6 lint, `verify.md §4`):** shared pages under
-  `content/` use only the portable frontmatter subset (`title`, `description`) and CommonMark —
+  `docs-src/` use only the portable frontmatter subset (`title`, `description`) and CommonMark —
   **no renderer-specific MDX components** (Starlight `<Card>` renders only in Starlight; Mintlify
   `<Steps>` only in Mintlify). Component-rich pages (each container's home/landing) are the
-  **only** per-renderer content and live inside the container dir, never in `content/`.
+  **only** per-renderer content and live inside the container dir, never in `docs-src/`.
 - `both` is the explicit power path; single-renderer is the default. Prefer it only when the user
   genuinely wants two published sites from one corpus.
 
