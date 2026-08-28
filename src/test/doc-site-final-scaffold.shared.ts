@@ -30,10 +30,14 @@ import {
   TEMPLATES_DIR,
   effectivePages,
   deriveTokens,
+  loadAnswers,
   substitute,
   walk,
   type ScaffoldAnswers,
 } from "./doc-site-scaffold.shared.js";
+
+/** Repo-root provenance manifest path (rerun.md §1). */
+export const PROVENANCE_PATH = ".doc-site-scaffold.json";
 
 /** scaffold-format version recorded in provenance (rerun.md §1.3). */
 const SCAFFOLD_VERSION = "1";
@@ -496,4 +500,119 @@ export function finalScaffold(
   const out = new Map<string, string>();
   for (const f of files) out.set(f.path, f.bytes);
   return out;
+}
+
+// ── second-run reconciliation: never-clobber (rerun.md §2) + coexistence merge (§1.4) ──
+
+/** The `.doc-site-scaffold.json` shape (00 §3; rerun.md §1.3). */
+interface Provenance {
+  version: string;
+  astroPin?: string;
+  starlightPin?: string;
+  diagramContract?: string;
+  files: Record<string, string>;
+}
+
+const parseProvenance = (bytes: string): Provenance => JSON.parse(bytes) as Provenance;
+
+/**
+ * Serialize provenance with the fixed §1.3 key order (`version`, `astroPin`,
+ * `starlightPin`, then `diagramContract` only when present, then `files`) with `files`
+ * lexicographically sorted — so an identical re-run is a byte-for-byte no-op (§3). This
+ * matches the inline serialization both `finalScaffold` branches use.
+ */
+export function serializeProvenance(p: Provenance): string {
+  const out: Record<string, unknown> = { version: p.version };
+  if (p.astroPin !== undefined) out.astroPin = p.astroPin;
+  if (p.starlightPin !== undefined) out.starlightPin = p.starlightPin;
+  if (p.diagramContract !== undefined) out.diagramContract = p.diagramContract;
+  const files: Record<string, string> = {};
+  for (const k of Object.keys(p.files).sort()) files[k] = p.files[k]!;
+  out.files = files;
+  return JSON.stringify(out, null, 2) + "\n";
+}
+
+/**
+ * The rerun.md §1.4 cross-renderer provenance merge a second run performs on the shared
+ * repo-root manifest: union `files` (the current run's entries win on any shared key,
+ * though coexisting renderers own disjoint paths), take the current generator's
+ * `version`, and **preserve** the other renderer's pins / `diagramContract`.
+ */
+export function mergeProvenance(existing: Provenance, current: Provenance): Provenance {
+  const merged: Provenance = {
+    version: current.version,
+    files: { ...existing.files, ...current.files },
+  };
+  const astroPin = existing.astroPin ?? current.astroPin;
+  const starlightPin = existing.starlightPin ?? current.starlightPin;
+  const diagramContract = current.diagramContract ?? existing.diagramContract;
+  if (astroPin !== undefined) merged.astroPin = astroPin;
+  if (starlightPin !== undefined) merged.starlightPin = starlightPin;
+  if (diagramContract !== undefined) merged.diagramContract = diagramContract;
+  return merged;
+}
+
+/**
+ * Model a SECOND run over an already-scaffolded tree (rerun.md §2 never-clobber + §1.4
+ * provenance merge). `existing` is the tree a prior run left (its files plus the shared
+ * `.doc-site-scaffold.json`); the current run emits `answers` and reconciles per file:
+ *
+ *  - absent in `existing`               → EMIT (fresh bytes)
+ *  - present, hash == recorded          → REGENERATE (deterministic ⇒ identical bytes, §3)
+ *  - present, user-edited / untracked   → SKIP_FLAG (keep the existing bytes)
+ *  - native page (never recorded)       → PRESERVE (keep the existing bytes)
+ *
+ * The shared repo-root provenance is merged, never replaced (§1.4). This is how a
+ * `renderer=both` pair — two distinct-dir single-renderer runs over one content source —
+ * accumulates both containers' managed files under one manifest, with each renderer's
+ * re-run a no-op for the other's entries.
+ */
+export function finalScaffoldOnto(
+  existing: Map<string, string>,
+  answers: ScaffoldAnswers,
+  preexisting: Record<string, string> = {},
+): Map<string, string> {
+  const fresh = finalScaffold(answers, preexisting);
+  const freshProv = parseProvenance(fresh.get(PROVENANCE_PATH)!);
+  const existingProv = existing.has(PROVENANCE_PATH)
+    ? parseProvenance(existing.get(PROVENANCE_PATH)!)
+    : undefined;
+
+  // Start from the prior tree; overlay the current run's files under never-clobber.
+  const out = new Map(existing);
+  for (const [rel, bytes] of fresh) {
+    if (rel === PROVENANCE_PATH) continue; // the shared manifest is merged below, not overlaid
+    const managed = freshProv.files[rel] !== undefined; // in this run's recorded set?
+    if (!existing.has(rel)) {
+      out.set(rel, bytes); // EMIT — absent on disk
+      continue;
+    }
+    if (!managed) continue; // native / unrecorded page already on disk → PRESERVE
+    const recorded = existingProv?.files[rel];
+    if (recorded !== undefined && sha256(existing.get(rel)!) === recorded) {
+      out.set(rel, bytes); // REGENERATE — we own it and it is unedited (deterministic ⇒ same bytes)
+    }
+    // else: user-edited (hash mismatch) or untracked → SKIP_FLAG, keep the existing bytes
+  }
+
+  const merged = existingProv ? mergeProvenance(existingProv, freshProv) : freshProv;
+  out.set(PROVENANCE_PATH, serializeProvenance(merged));
+  return out;
+}
+
+/** The committed answer-fixture names for the sequential coexistence golden (rerun.md §1.4). */
+export const COEXIST_SEQUENTIAL = {
+  golden: "coexist-sequential",
+  first: "coexist-starlight.json",
+  second: "coexist-mintlify.json",
+} as const;
+
+/**
+ * Build the `renderer=both` sequential coexistence tree: Starlight into `docs/`, then
+ * Mintlify into `docs-mintlify/`, over one shared `docs-src/` content source (rerun.md
+ * §1.4). The single source of truth for both the golden regenerator and its test.
+ */
+export function buildCoexistSequential(): Map<string, string> {
+  const first = finalScaffold(loadAnswers(COEXIST_SEQUENTIAL.first));
+  return finalScaffoldOnto(first, loadAnswers(COEXIST_SEQUENTIAL.second));
 }

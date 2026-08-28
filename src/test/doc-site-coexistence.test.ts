@@ -13,10 +13,17 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { type ScaffoldAnswers, loadAnswers } from "./doc-site-scaffold.shared.js";
-import { finalScaffold } from "./doc-site-final-scaffold.shared.js";
+import { type ScaffoldAnswers, loadAnswers, readGoldenTree } from "./doc-site-scaffold.shared.js";
+import {
+  COEXIST_SEQUENTIAL,
+  PROVENANCE_PATH,
+  buildCoexistSequential,
+  finalScaffold,
+  finalScaffoldOnto,
+  mergeProvenance,
+} from "./doc-site-final-scaffold.shared.js";
 
-const PROVENANCE = ".doc-site-scaffold.json";
+const PROVENANCE = PROVENANCE_PATH;
 
 /** Path keys emitted to both trees (a collision surface). */
 function sharedPaths(a: Map<string, string>, b: Map<string, string>): string[] {
@@ -39,25 +46,10 @@ interface Provenance {
 const provenanceOf = (tree: Map<string, string>): Provenance =>
   JSON.parse(tree.get(PROVENANCE)!) as Provenance;
 
-/**
- * The rerun.md §1.4 cross-renderer merge the second run performs on the shared
- * repo-root provenance: union `files`, PRESERVE the other renderer's pins, take the
- * current run's `version`. Modeled here (agent behavior, no runtime module) to pin the
- * documented semantics.
- */
-function mergeProvenance(existing: Provenance, current: Provenance): Provenance {
-  const merged: Provenance = {
-    version: current.version,
-    files: { ...existing.files, ...current.files },
-  };
-  const astroPin = existing.astroPin ?? current.astroPin;
-  const starlightPin = existing.starlightPin ?? current.starlightPin;
-  const diagramContract = current.diagramContract ?? existing.diagramContract;
-  if (astroPin !== undefined) merged.astroPin = astroPin;
-  if (starlightPin !== undefined) merged.starlightPin = starlightPin;
-  if (diagramContract !== undefined) merged.diagramContract = diagramContract;
-  return merged;
-}
+// The rerun.md §1.4 cross-renderer merge the second run performs on the shared repo-root
+// provenance (union `files`, PRESERVE the other renderer's pins, take the current run's
+// `version`) is `mergeProvenance`, imported from the scaffold model so the test and the
+// golden regenerator pin one source of truth.
 
 describe("renderer coexistence (rerun.md §1.4)", () => {
   const starlight = finalScaffold(loadAnswers("decline-all.json")); // → docs/
@@ -102,5 +94,59 @@ describe("renderer coexistence (rerun.md §1.4)", () => {
     expect(merged.astroPin).toBe(first.astroPin);
     expect(merged.starlightPin).toBe(first.starlightPin);
     expect(second.astroPin).toBeUndefined();
+  });
+});
+
+/**
+ * The on-disk materialization of the above: `renderer=both` realized as two sequential
+ * distinct-dir runs (Starlight → `docs/`, then Mintlify → `docs-mintlify/`) over one
+ * shared `docs-src/` content source, committed as a single golden tree. The prior three
+ * tests model the merge in memory; this one pins the merged tree byte-for-byte and proves
+ * a re-run of either renderer is a no-op (rerun.md §1.4 + §3).
+ */
+describe("renderer coexistence — sequential golden (rerun.md §1.4)", () => {
+  const golden = readGoldenTree(COEXIST_SEQUENTIAL.golden);
+  const starlight = loadAnswers(COEXIST_SEQUENTIAL.first); // → docs/ (first run)
+  const mintlify = loadAnswers(COEXIST_SEQUENTIAL.second); // → docs-mintlify/ (second run)
+
+  it("the two-run merged tree is byte-identical to its committed golden", () => {
+    const resolved = buildCoexistSequential();
+    for (const [rel, content] of golden) {
+      expect(resolved.get(rel), `missing/changed: ${COEXIST_SEQUENTIAL.golden}/${rel}`).toBe(
+        content,
+      );
+    }
+    expect([...resolved.keys()].sort()).toEqual([...golden.keys()].sort());
+  });
+
+  it("no unresolved {{TOKEN}} survives in the merged tree", () => {
+    for (const [rel, content] of golden) {
+      expect(/\{\{[A-Z0-9_]+\}\}/.test(content), `unresolved token in ${rel}`).toBe(false);
+    }
+  });
+
+  it("one provenance manifest carries BOTH containers' managed files plus the Starlight pins", () => {
+    const prov = provenanceOf(golden);
+    const paths = Object.keys(prov.files);
+    expect(paths.some((p) => p.startsWith("docs/"))).toBe(true);
+    expect(paths.some((p) => p.startsWith("docs-mintlify/"))).toBe(true);
+    // The Starlight run's pins are preserved; the Mintlify run adds none of its own.
+    expect(prov.astroPin).toBe(starlight.tokens.ASTRO_VERSION);
+    expect(prov.starlightPin).toBe(starlight.tokens.STARLIGHT_VERSION);
+    // Distinct dirs ⇒ the containers never collide (only the manifest is shared).
+    const both = [...golden.keys()].filter((p) => p !== PROVENANCE);
+    expect(both.every((p) => p.startsWith("docs/") || p.startsWith("docs-mintlify/"))).toBe(true);
+  });
+
+  it("re-running EITHER renderer over the merged tree is a no-op diff (§3)", () => {
+    // Re-run Starlight: its docs/ plumbing REGENERATEs to identical bytes; docs-mintlify/
+    // is untouched; the shared manifest merges back to itself.
+    expect([...finalScaffoldOnto(golden, starlight).entries()].sort()).toEqual(
+      [...golden.entries()].sort(),
+    );
+    // Re-run Mintlify: symmetrically a no-op, and it preserves the Starlight pins.
+    expect([...finalScaffoldOnto(golden, mintlify).entries()].sort()).toEqual(
+      [...golden.entries()].sort(),
+    );
   });
 });
