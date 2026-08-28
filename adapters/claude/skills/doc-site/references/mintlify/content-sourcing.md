@@ -22,6 +22,11 @@ links. Mintlify needs **no** `.md`→route fallback and **no** `title:` load-fai
 (that is a Starlight `docsSchema()` artifact) — a missing `title` is a `mint validate` warning,
 surfaced but not build-breaking.
 
+> **Deploying to Mintlify cloud?** A `symlink` source **outside** `{{DOCS_PKG_DIR}}/` renders
+> locally but 404s on the hosted git build — see _Mintlify-cloud: symlinked content must live
+> inside the content root_ below. Prefer `native` (or a content root that IS the canonical
+> markdown dir) for a cloud deploy.
+
 ## `both` — two containers, one source, via sequential runs (no dual-emit)
 
 `renderer=both` is **not** a special single-run mode that emits two containers at once. It is
@@ -60,13 +65,30 @@ docs-mintlify/             # Mintlify run 2: docs.json, index.mdx landing
 - `both` is the explicit power path; single-renderer is the default. Prefer it only when the user
   genuinely wants two published sites from one corpus.
 
-### Mintlify-cloud symlink caveat
+### Mintlify-cloud: symlinked content must live INSIDE the content root (CONFIRMED)
 
-Git preserves symlinks, and `mint dev` / `mint export` follow them locally — the Phase-6
-live smoke confirmed `mint validate` and `mint broken-links` resolve symlinked pages (relative
-links into a sibling `docs-src/`) with no broken-link findings. That covers the **local** CLI;
-**still verify** the hosted Mintlify build resolves git symlinks before relying on the layout
-above (a hosted git checkout may materialize symlinks differently). If it does not,
-**invert** the `both` layout: make the shared source Mintlify's **real** files (Mintlify is
-content-first — files + `docs.json`, no build dir) and have the **Starlight** container symlink
-_from_ the Mintlify content dir. Either way the source exists once.
+The `mint` CLI — `dev`, `validate`, `broken-links`, `export` — follows symlinks **locally**,
+because the whole working tree is present. Mintlify's **hosted git build does not**: the GitHub
+app builds only the folder it is pointed at (the one holding `docs.json`), and a symlink whose
+target is **outside** that folder resolves to nothing — the page 404s. Git preserves the symlink
+correctly (mode `120000`); the target simply isn't in the build context. **This was confirmed on
+a real deploy**: only the native page inside the content root rendered; every page symlinked from
+a sibling `../docs-src/` (or `../../docs/**`) 404'd.
+
+**Implication per mode — for a Mintlify _cloud_ deploy the content root must physically hold the
+page files:**
+
+- **Single-renderer `symlink`** from a source **outside** `{{DOCS_PKG_DIR}}/` works with `mint
+dev`/`export` locally but **fails on the hosted build**. For cloud, either author the pages
+  **natively inside the content root**, or make the content root itself the canonical home of the
+  markdown (Mintlify is content-first: real `.md` + `docs.json`, no build dir) and point the app
+  there — e.g. put `docs.json` in the existing `docs/` folder rather than symlinking into a
+  separate `docs-site/`.
+- **`both`** — the `docs-src/` → `docs-mintlify/` symlink layout shown above is **local-only** for
+  the Mintlify container (its links escape `docs-mintlify/`). For a cloud deploy, **invert** it: the
+  Mintlify content dir holds the **real** files and the **Starlight** container symlinks _from_
+  there (Astro's build follows those local symlinks at build time). Mintlify cloud then serves
+  real files; the source still exists once.
+
+`mint export` resolves symlinks at export time, so a symlink layout **can** still be published
+statically — the restriction is specific to the **git-connected hosted build**.

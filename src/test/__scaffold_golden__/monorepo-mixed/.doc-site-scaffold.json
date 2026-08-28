@@ -16,7 +16,7 @@
     "packages/docs/setup-docs.sh": "sha256:a8ba73cf76275274092e8e7f9fd7f8211438813c1f874daf340be05fcf55db4f",
     "packages/docs/sidebar.mjs": "sha256:15a21d33fcc0ba0bad6701f94497b6dc3fc8febd2735ac894785d3a228b0dbcb",
     "packages/docs/src/content.config.ts": "sha256:1f8b206b5f7c0afb44c3715a3fe79954b448885fe9e753ba372dddf1210ecfd5",
-    "packages/docs/src/content/docs/index.mdx": "sha256:c90b907ec7f89968b417b93e124a936c3d53df7f323a4aac71316737052fdf48",
+    "packages/docs/src/content/docs/index.mdx": "sha256:697859a9bbbe6eea2f17f71d685092fbad5b572b28308cdb04738ebdc375559d",
     "packages/docs/src/diagrams/arch.json": "sha256:e21fe243e12a7c7f8ad2cd3146846520771fde45d85a2457cd1c48879129f0a7",
     "packages/docs/src/styles/custom.css": "sha256:fd5194ea9dc6bf4aed0c748a43115ced4601e40435b644aa86705394d6f70e60",
     "packages/docs/tsconfig.json": "sha256:974b0a3b37e52f3649d9df63e72e374794e9e797c8ae61eca4812f844406f7ef",

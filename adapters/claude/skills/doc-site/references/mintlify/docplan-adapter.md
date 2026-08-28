@@ -103,6 +103,11 @@ Keep the body **mode-pure** (one `type` per document — the DocPlan guarantees 
 `entry.outline[]` headings as scaffolding, and **never assert anything the DocPlan recorded in
 `gaps[]`**.
 
+**Quote colon-bearing frontmatter.** A `title`/`description` that contains a `:` (or other
+YAML-special punctuation) is invalid unquoted — `description: Plan: then render` fails
+`mint validate` with an MDX parse error. Always quote: `description: "Plan: then render"`
+(`verify.md §2.1`).
+
 ## 5. Home-link reconciliation
 
 When a DocPlan drives the nav, the default `guides/setup` seed is **not** part of the plan:
